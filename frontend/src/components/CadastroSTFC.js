@@ -80,6 +80,8 @@ const CadastroSTFC = ({ cnpj }) => {
         novaLinha[campo.name] = form[campo.name] || '';
       }
     });
+    // Garante que COD_IBGE seja preenchido com o valor do campo MUNICIPIO
+    novaLinha["COD_IBGE"] = form["MUNICIPIO"] || '';
     setLinhas([...linhas, novaLinha]);
     setForm({ CNPJ: cnpjLimpo });
   };
