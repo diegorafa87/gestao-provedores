@@ -1,14 +1,16 @@
-const { existeAdmin } = require('../../utils/adminCheck');
-// Verifica se existe admin cadastrado
-router.get('/has-admin', (req, res) => {
-  res.json({ hasAdmin: existeAdmin() });
-});
+
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const User = require('../../models/User');
 const { generateToken } = require('../../utils/auth');
+const { existeAdmin } = require('../../utils/adminCheck');
+
+// Verifica se existe admin cadastrado
+router.get('/has-admin', (req, res) => {
+  res.json({ hasAdmin: existeAdmin() });
+});
 
 const USERS_DB = path.join(__dirname, '../db_users.json');
 
