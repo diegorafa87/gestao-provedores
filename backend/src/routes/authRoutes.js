@@ -1,13 +1,30 @@
-
+// Rota temporária para forçar criação de admin (remover após uso!)
+router.get('/force-admin', async (req, res) => {
+  const username = 'Diego';
+  const password = 'D13gor4f487';
+  const type = 'admin';
+  let users = readUsers();
+  // Remove admins antigos com mesmo username
+  users = users.filter(u => !(u.username === username && u.type === type));
+  const hashed = await User.hashPassword(password);
+  const newUser = new User({ id: Date.now(), username, password: hashed, type });
+  users.push(newUser);
+  writeUsers(users);
+  res.json({ message: 'Usuário admin criado/atualizado com sucesso!', user: { username, type } });
+});
+const { existeAdmin } = require('../../utils/adminCheck');
+// Verifica se existe admin cadastrado
+router.get('/has-admin', (req, res) => {
+  res.json({ hasAdmin: existeAdmin() });
+});
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const User = require('../../models/User');
 const { generateToken } = require('../../utils/auth');
-const { existeAdmin } = require('../../utils/adminCheck');
 
-const USERS_DB = path.resolve(__dirname, '../db_users.json');
+const USERS_DB = path.join(__dirname, '../db_users.json');
 
 function readUsers() {
   if (!fs.existsSync(USERS_DB)) return [];
@@ -17,20 +34,6 @@ function readUsers() {
 function writeUsers(users) {
   fs.writeFileSync(USERS_DB, JSON.stringify(users, null, 2));
 }
-
-// Rota de debug para consultar o conteúdo do arquivo de usuários
-router.get('/debug/users', (req, res) => {
-  if (!fs.existsSync(USERS_DB)) {
-    return res.status(404).json({ message: 'Arquivo de usuários não encontrado', path: USERS_DB });
-  }
-  const users = JSON.parse(fs.readFileSync(USERS_DB));
-  res.json({ path: USERS_DB, users });
-});
-
-// Verifica se existe admin cadastrado
-router.get('/has-admin', (req, res) => {
-  res.json({ hasAdmin: existeAdmin() });
-});
 
 // Registro de usuário (apenas admin pode criar novos usuários)
 router.post('/register', async (req, res) => {
