@@ -1,11 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-const USERS_DB = path.join(__dirname, '../src/db_users.json');
+
+// Caminho absoluto seguro para produção e dev
+const USERS_DB = path.resolve(__dirname, '../src/db_users.json');
 
 function existeAdmin() {
-	if (!fs.existsSync(USERS_DB)) return false;
+	if (!fs.existsSync(USERS_DB)) {
+		console.log('[adminCheck] db_users.json não encontrado:', USERS_DB);
+		return false;
+	}
 	const users = JSON.parse(fs.readFileSync(USERS_DB));
-	return users.some(u => u.type === 'admin');
+	console.log('[adminCheck] Usuários encontrados:', users);
+	const temAdmin = users.some(u => (u.type && u.type.toLowerCase() === 'admin'));
+	console.log('[adminCheck] Existe admin?', temAdmin);
+	return temAdmin;
 }
 
 module.exports = { existeAdmin };

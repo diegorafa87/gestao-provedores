@@ -10,7 +10,7 @@ const path = require('path');
 const User = require('../../models/User');
 const { generateToken } = require('../../utils/auth');
 
-const USERS_DB = path.join(__dirname, '../db_users.json');
+const USERS_DB = path.resolve(__dirname, '../db_users.json');
 
 function readUsers() {
   if (!fs.existsSync(USERS_DB)) return [];
