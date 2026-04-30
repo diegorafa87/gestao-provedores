@@ -1,3 +1,5 @@
+import AdminLogin from './components/AdminLogin';
+import { useState } from 'react';
 import PaginaAcompanhamentoPostes from './pages/AcompanhamentoPostesPage';
 import CompartilhamentoPostesPage from './pages/CompartilhamentoPostesPage';
 import CertidoesPage from './pages/CertidoesPage';
@@ -25,6 +27,7 @@ import PaginaAcompanhamentoRelatorioEconomico from './pages/AcompanhamentoRelato
 import PaginaAcompanhamentoSTFC from './pages/AcompanhamentoSTFCPage';
 
 const AppRouter = () => {
+  const [admin, setAdmin] = useState(null);
   // Busca clienteSelecionado do localStorage
   let clienteInfo = null;
   try {
@@ -44,6 +47,11 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
+        {/* Rota de login do admin */}
+        <Route path="/admin-login" element={<AdminLogin onLogin={setAdmin} />} />
+
+        {/* Exemplo de rota protegida para admin */}
+        <Route path="/admin-area" element={admin ? <div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div> : <AdminLogin onLogin={setAdmin} />} />
         <Route path="/" element={<App />} />
         <Route path="/cliente/:id" element={<DetalheCliente />} />
         <Route path="/scm/cadastro" element={<PaginaCadastroSCM />} />
