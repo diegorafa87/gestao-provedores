@@ -1,22 +1,10 @@
-// Conexão MongoDB centralizada
-const connectDB = require('./config/mongo');
-require('dotenv').config();
-connectDB();
-// Entry point do backend
-const express = require('express');
-const cors = require('cors');
-const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
 
-// Entry point do backend
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-// Conexão MongoDB centralizada
-const connectDB = require('./config/database');
+const connectDB = require('../config/mongo');
 const app = express();
 
-
-// Conecta ao MongoDB
 connectDB();
 
 app.use(cors({
