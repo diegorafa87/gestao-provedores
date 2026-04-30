@@ -259,7 +259,7 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
                 // Busca idCliente da URL ou do localStorage
                 let id = params.get('id');
                 if (!id) {
-                  const match = location.pathname.match(/cliente\/(\d+)/);
+                  const match = location.pathname.match(/cliente\/(\w+)/);
                   if (match && match[1]) id = match[1];
                 }
                 if (!id) {
@@ -272,12 +272,12 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
                   } catch {}
                 }
                 if (id) navigate(`/editar-perfil/${id}`);
-                else alert('Nenhum cliente selecionado.');
+                else alert('Selecione um cliente na lista antes de editar o perfil.');
               }
             }}
           >
             <span style={{fontSize: 20}}>{item.icon}</span>
-            <span>{item.label}</span>
+            <span style={item.label === 'EDITAR PERFIL' && !clienteInfoPersistente?.id ? { opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' } : {}}>{item.label}</span>
             {/* Submenu */}
             {submenuAberto === item.label && submenus[item.label] && (
               <div
