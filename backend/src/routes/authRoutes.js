@@ -1,14 +1,11 @@
-const { existeAdmin } = require('../../utils/adminCheck');
-// Verifica se existe admin cadastrado
-router.get('/has-admin', (req, res) => {
-  res.json({ hasAdmin: existeAdmin() });
-});
+
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
 const User = require('../../models/User');
 const { generateToken } = require('../../utils/auth');
+const { existeAdmin } = require('../../utils/adminCheck');
 
 const USERS_DB = path.resolve(__dirname, '../db_users.json');
 
@@ -20,6 +17,20 @@ function readUsers() {
 function writeUsers(users) {
   fs.writeFileSync(USERS_DB, JSON.stringify(users, null, 2));
 }
+
+// Rota de debug para consultar o conteúdo do arquivo de usuários
+router.get('/debug/users', (req, res) => {
+  if (!fs.existsSync(USERS_DB)) {
+    return res.status(404).json({ message: 'Arquivo de usuários não encontrado', path: USERS_DB });
+  }
+  const users = JSON.parse(fs.readFileSync(USERS_DB));
+  res.json({ path: USERS_DB, users });
+});
+
+// Verifica se existe admin cadastrado
+router.get('/has-admin', (req, res) => {
+  res.json({ hasAdmin: existeAdmin() });
+});
 
 // Registro de usuário (apenas admin pode criar novos usuários)
 router.post('/register', async (req, res) => {
