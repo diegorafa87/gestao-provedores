@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const clienteController = require('../controllers/clienteController');
-const { authenticateToken } = require('../utils/auth');
+const { authenticateToken } = require('../../utils/auth');
 
 
 // Todas as rotas de clientes exigem autenticação
