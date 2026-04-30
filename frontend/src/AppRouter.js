@@ -1,5 +1,4 @@
 import AdminLogin from './components/AdminLogin';
-import { useState } from 'react';
 import PaginaAcompanhamentoPostes from './pages/AcompanhamentoPostesPage';
 import CompartilhamentoPostesPage from './pages/CompartilhamentoPostesPage';
 import CertidoesPage from './pages/CertidoesPage';
