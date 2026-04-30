@@ -12,7 +12,9 @@ router.get('/has-admin', (req, res) => {
   res.json({ hasAdmin: existeAdmin() });
 });
 
-const USERS_DB = path.join(__dirname, '../db_users.json');
+const USERS_DB = process.env.NODE_ENV === 'production'
+  ? '/tmp/db_users.json'
+  : path.join(__dirname, '../db_users.json');
 
 function readUsers() {
   if (!fs.existsSync(USERS_DB)) return [];
