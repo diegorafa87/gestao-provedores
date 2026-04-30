@@ -1,9 +1,11 @@
-const User = require('../models/User');
+const fs = require('fs');
+const path = require('path');
+const USERS_DB = path.join(__dirname, '../src/db_users.json');
 
-// Função para verificar se existe algum admin cadastrado no MongoDB
-async function existeAdmin() {
-  const admin = await User.findOne({ type: 'admin' });
-  return !!admin;
+function existeAdmin() {
+	if (!fs.existsSync(USERS_DB)) return false;
+	const users = JSON.parse(fs.readFileSync(USERS_DB));
+	return users.some(u => u.type === 'admin');
 }
 
 module.exports = { existeAdmin };

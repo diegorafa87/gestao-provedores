@@ -1,10 +1,15 @@
+const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
 
+// Entry point do backend
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('../config/mongo');
+// Conexão MongoDB centralizada
+const connectDB = require('./config/database');
 const app = express();
 
+
+// Conecta ao MongoDB
 connectDB();
 
 app.use(cors({
@@ -12,20 +17,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
-
-
 // Rotas
 const clienteRoutes = require('./routes/clienteRoutes');
 const logRoutes = require('./routes/logRoutes');
 const acaoRoutes = require('./routes/acaoRoutes');
+
 const contratoRoutes = require('./routes/contratoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
-const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
-const authRoutes = require('./routes/authRoutes');
 
 
-
-app.use('/api/auth', authRoutes);
 app.use('/api', clienteRoutes);
 app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
