@@ -13,12 +13,14 @@ app.use(cors({
 app.use(express.json());
 
 
+
 // Rotas
 const clienteRoutes = require('./routes/clienteRoutes');
 const logRoutes = require('./routes/logRoutes');
 const acaoRoutes = require('./routes/acaoRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
+const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
 const authRoutes = require('./routes/authRoutes');
 
 
