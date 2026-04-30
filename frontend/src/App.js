@@ -1,30 +1,19 @@
 import API_URL from './services/api';
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 
 import CadastroCliente from './components/CadastroCliente';
 import ListaClientes from './components/ListaClientes';
 
 function App() {
-  const navigate = useNavigate();
   const [atualizar, setAtualizar] = useState(0);
   const [consultoriaFiltro, setConsultoriaFiltro] = useState('');
   const [consultorias, setConsultorias] = useState([]);
   const [pesquisa, setPesquisa] = useState('');
   const [pesquisaConfirmada, setPesquisaConfirmada] = useState('');
 
-
-  // Redireciona para login se não autenticado
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-    }
-  }, [navigate]);
-
   // Buscar consultorias distintas dos clientes cadastrados
-  useEffect(() => {
+  React.useEffect(() => {
     fetch(`${API_URL}/api/clientes`)
       .then(r => r.json())
       .then(clientes => {
