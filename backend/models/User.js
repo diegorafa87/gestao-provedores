@@ -1,20 +1,19 @@
+const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-class User {
-  constructor({ id, username, password, type = 'consultoria' }) {
-    this.id = id;
-    this.username = username;
-    this.password = password; // hashed
-    this.type = type; // 'admin' ou 'consultoria'
-  }
+const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  type: { type: String, enum: ['admin', 'consultoria'], default: 'consultoria' }
+});
 
-  static async hashPassword(password) {
-    return await bcrypt.hash(password, 10);
-  }
+UserSchema.statics.hashPassword = async function(password) {
+  return await bcrypt.hash(password, 10);
+};
 
-  async comparePassword(password) {
-    return await bcrypt.compare(password, this.password);
-  }
-}
+UserSchema.methods.comparePassword = async function(password) {
+  return await bcrypt.compare(password, this.password);
+};
 
+const User = mongoose.model('User', UserSchema);
 module.exports = User;
