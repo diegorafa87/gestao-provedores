@@ -4,20 +4,41 @@ import React, { useState, useEffect } from 'react';
 import { submenus } from './submenus';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const itens = [
-  { label: 'SCM', icon: '📡' },
-  { label: 'TVpA', icon: '📺' },
-  { label: 'STFC', icon: '☎️' },
-  { label: 'RELATÓRIO ECONÔMICO', icon: '📊' },
-  { label: 'INFRA', icon: '🏗️' },
-  { label: 'POSTES', icon: '🪵' },
-  { label: 'GERENCIADOR', icon: '👤' },
-  { label: 'FINANCEIRO', icon: '💲' },
-  { label: 'CONTRATOS E CERTIDÕES', icon: '📄' },
-  { label: 'EDITAR PERFIL', icon: '✏️' },
-];
+
+function getItensPorTipoUsuario(tipo) {
+  if (tipo === 'admin') {
+    return [
+      { label: 'SCM', icon: '📡' },
+      { label: 'TVpA', icon: '📺' },
+      { label: 'STFC', icon: '☎️' },
+      { label: 'RELATÓRIO ECONÔMICO', icon: '📊' },
+      { label: 'INFRA', icon: '🏗️' },
+      { label: 'POSTES', icon: '🪵' },
+      { label: 'GERENCIADOR', icon: '👤' },
+      { label: 'FINANCEIRO', icon: '💲' },
+      { label: 'CONTRATOS E CERTIDÕES', icon: '📄' },
+      { label: 'EDITAR PERFIL', icon: '✏️' },
+    ];
+  } else {
+    // Consultoria: menu reduzido
+    return [
+      { label: 'SCM', icon: '📡' },
+      { label: 'TVpA', icon: '📺' },
+      { label: 'STFC', icon: '☎️' },
+      { label: 'RELATÓRIO ECONÔMICO', icon: '📊' },
+      { label: 'INFRA', icon: '🏗️' },
+      { label: 'POSTES', icon: '🪵' },
+      { label: 'EDITAR PERFIL', icon: '✏️' },
+    ];
+  }
+}
 
 const MenuLateral = ({ voltarLink, clienteInfo }) => {
+  const [tipoUsuario, setTipoUsuario] = useState('consultoria');
+  useEffect(() => {
+    const t = localStorage.getItem('userType');
+    if (t) setTipoUsuario(t);
+  }, []);
   // Estado do submenu aberto, persistido no localStorage
   const location = useLocation();
   const [submenuAberto, setSubmenuAberto] = useState(() => {
@@ -230,7 +251,7 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
       <div style={{marginBottom: 32, textAlign: 'center', marginTop: 110}}>
       </div>
       <nav style={{width: '100%'}}>
-        {itens.map(item => (
+        {getItensPorTipoUsuario(tipoUsuario).map(item => (
           <div
             key={item.label}
             style={{

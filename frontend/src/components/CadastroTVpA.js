@@ -81,7 +81,8 @@ const CadastroTVpA = ({ cnpj }) => {
         return linha[campo] || '';
       }).join(';');
     });
-    const csvContent = [header, ...rows].join('\n');
+    // Usa CRLF como quebra de linha e garante CRLF ao final
+    const csvContent = [header, ...rows].join('\r\n') + '\r\n';
     // Nome do arquivo
     let razao = '';
     let ano = '';

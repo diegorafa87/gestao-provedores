@@ -47,7 +47,7 @@ export default function EnlacesContratadosPage() {
   function gerarCSV() {
     if (!linhas || linhas.length === 0) return;
     const header = ['Ano', 'Origem', 'Destino', 'ID Enlace', 'Meio', 'CNPJ'];
-    const csvRows = [header.join(',')];
+    const csvRows = [header.join(';')];
     linhas.forEach(linha => {
       csvRows.push([
         linha.ano,
@@ -56,9 +56,10 @@ export default function EnlacesContratadosPage() {
         '"' + (linha.idEnlace || '') + '"',
         '"' + (linha.meio || '') + '"',
         '"' + (linha.cnpj || '') + '"'
-      ].join(','));
+      ].join(';'));
     });
-    const csvContent = csvRows.join('\n');
+    // Usa CRLF como quebra de linha e garante CRLF ao final
+    const csvContent = csvRows.join('\r\n') + '\r\n';
     let razao = '';
     try {
       if (clienteSelecionado && clienteSelecionado.razaoSocial) {

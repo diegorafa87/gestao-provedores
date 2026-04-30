@@ -102,7 +102,8 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
       linha.CNPJ || '',
       linha.DATA || ''
     ].join(';'));
-    const csv = [header, ...rows].join('\n');
+    // Usa CRLF como quebra de linha e garante CRLF ao final
+    const csv = [header, ...rows].join('\r\n') + '\r\n';
     // Monta nome do arquivo conforme padrão solicitado
     let nomeRazao = razaoSocial
       ? razaoSocial.normalize('NFD').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').toUpperCase()

@@ -10,19 +10,20 @@ import EnlacesContratadosPage from './pages/EnlacesContratadosPage';
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+
 import App from './App';
 import DetalheCliente from './pages/DetalheCliente';
 import EditarPerfil from './pages/EditarPerfil';
 import PaginaCadastroSCM from './pages/CadastroSCMPage';
-
 import PaginaCadastroTVpA from './pages/PaginaCadastroTVpA';
 import PaginaAcompanhamentoTVpA from './pages/AcompanhamentoTVpAPage';
-
 import PaginaCadastroSTFC from './pages/CadastroSTFCPage';
 import RelatorioPrimeiroSemestre from './pages/RelatorioPrimeiroSemestre';
 import RelatorioSegundoSemestre from './pages/RelatorioSegundoSemestre';
 import PaginaAcompanhamentoRelatorioEconomico from './pages/AcompanhamentoRelatorioEconomicoPage';
 import PaginaAcompanhamentoSTFC from './pages/AcompanhamentoSTFCPage';
+import Login from './components/Login';
+import AdminSetup from './components/AdminSetup';
 
 const AppRouter = () => {
   // Busca clienteSelecionado do localStorage
@@ -44,6 +45,8 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/setup-admin" element={<AdminSetup />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<App />} />
         <Route path="/cliente/:id" element={<DetalheCliente />} />
         <Route path="/scm/cadastro" element={<PaginaCadastroSCM />} />

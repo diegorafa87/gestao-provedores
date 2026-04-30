@@ -159,7 +159,8 @@ export default function EnlacesPropriosPage() {
           linha.SRID || ''
         ].join(';');
       });
-      const csvContent = [header, ...rows].join('\n');
+      // Usa CRLF como quebra de linha e garante CRLF ao final
+      const csvContent = [header, ...rows].join('\r\n') + '\r\n';
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
