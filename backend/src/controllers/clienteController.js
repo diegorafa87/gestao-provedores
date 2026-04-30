@@ -10,9 +10,11 @@ exports.cadastrarCliente = async (req, res) => {
     if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
       return res.status(400).json({ error: 'Preencha todos os campos!' });
     }
-    // Verifica duplicidade de CNPJ
-    const existe = await Cliente.findOne({ cnpj });
-    if (existe) return res.status(409).json({ error: 'CNPJ já cadastrado!' });
+    // Verifica duplicidade de CNPJ ou Razão Social
+    const existeCnpj = await Cliente.findOne({ cnpj });
+    if (existeCnpj) return res.status(409).json({ error: 'CNPJ já cadastrado!' });
+    const existeRazao = await Cliente.findOne({ razaoSocial: { $regex: `^${razaoSocial}$`, $options: 'i' } });
+    if (existeRazao) return res.status(409).json({ error: 'Razão Social já cadastrada!' });
     const novoCliente = await Cliente.create({ razaoSocial, cnpj, email, telefone, consultoria });
     registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, consultoria });
     res.status(201).json(novoCliente);

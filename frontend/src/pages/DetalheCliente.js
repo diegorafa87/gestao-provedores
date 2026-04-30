@@ -49,8 +49,10 @@ const DetalheCliente = () => {
         setCliente(data);
         // Salva cliente no localStorage para persistência entre rotas
         try {
+          // Garante que o campo id está presente (pode ser _id do MongoDB)
+          const id = data.id || data._id;
           localStorage.setItem('clienteSelecionado', JSON.stringify({
-            id: data.id,
+            id,
             razaoSocial: data.razaoSocial,
             cnpj: data.cnpj
           }));
