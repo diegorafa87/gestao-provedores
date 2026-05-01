@@ -49,6 +49,8 @@ const AppRouter = () => {
       <Routes>
         {/* Rota de login do admin */}
         <Route path="/admin-login" element={<AdminLogin />} />
+        {/* Redirecionamento automático para login se não autenticado ao acessar qualquer rota desconhecida */}
+        <Route path="*" element={<PrivateRoute><App /></PrivateRoute>} />
 
         {/* Todas as outras rotas protegidas individualmente */}
         <Route path="/admin-area" element={<PrivateRoute><div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div></PrivateRoute>} />
