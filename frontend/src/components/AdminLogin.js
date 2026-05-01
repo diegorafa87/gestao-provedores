@@ -50,9 +50,10 @@ const AdminLogin = ({ onLogin }) => {
           value={senha}
           onChange={e => setSenha(e.target.value)}
           required
+          autoComplete="current-password"
           style={{fontSize:'1.1rem',padding:'0.7rem',borderRadius:6,border:'1.5px solid #1976d2'}}
         />
-        {erro && <div style={{color:'red',marginBottom:8}}>{erro}</div>}
+        <div style={{color:'red',marginBottom:8,minHeight:24}}>{erro}</div>
         <button type="submit" disabled={loading} style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:8,padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',marginTop:8}}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
