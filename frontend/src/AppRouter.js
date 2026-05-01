@@ -1,3 +1,4 @@
+import CadastroRapidoCliente from './components/CadastroRapidoCliente';
 import AdminLogin from './components/AdminLogin';
 import PaginaAcompanhamentoPostes from './pages/AcompanhamentoPostesPage';
 import CompartilhamentoPostesPage from './pages/CompartilhamentoPostesPage';
@@ -47,6 +48,8 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
+        {/* Rota pública para cadastro rápido de cliente */}
+        <Route path="/cadastro-cliente" element={<CadastroRapidoCliente />} />
         {/* Rota de login do admin */}
         <Route path="/admin-login" element={<AdminLogin />} />
         {/* Redirecionamento automático para login se não autenticado ao acessar qualquer rota desconhecida */}
