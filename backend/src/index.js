@@ -1,4 +1,6 @@
+
 const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 // Entry point do backend
 require('dotenv').config();
@@ -27,6 +29,7 @@ const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
 
 app.use('/api', clienteRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);

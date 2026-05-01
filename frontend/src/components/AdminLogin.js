@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { getUserConsultoria } from '../services/user';
 
 const AdminLogin = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -16,13 +18,12 @@ const AdminLogin = ({ onLogin }) => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      // Aqui você pode checar se o usuário é admin (exemplo: email fixo ou claim)
-      if (userCredential.user.email === 'diegorafa87@gmail.com') {
-        onLogin && onLogin(userCredential.user);
-        navigate('/'); // Redireciona para a página principal após login
-      } else {
-        setErro('Acesso restrito ao administrador.');
-      }
+      // Buscar consultoria do usuário
+      const consultoria = await getUserConsultoria(userCredential.user.email);
+      localStorage.setItem('consultoriaUsuario', consultoria);
+      localStorage.setItem('emailUsuario', userCredential.user.email);
+      onLogin && onLogin(userCredential.user);
+      navigate('/'); // Redireciona para a página principal após login
     } catch (err) {
       setErro('E-mail ou senha inválidos.');
       if (err && err.message) {

@@ -7,20 +7,27 @@ import ListaClientes from './components/ListaClientes';
 
 function App() {
   const [atualizar, setAtualizar] = useState(0);
-  const [consultoriaFiltro, setConsultoriaFiltro] = useState('');
-  const [consultorias, setConsultorias] = useState([]);
   const [pesquisa, setPesquisa] = useState('');
   const [pesquisaConfirmada, setPesquisaConfirmada] = useState('');
+  const [consultorias, setConsultorias] = useState([]);
+  const [consultoriaFiltro, setConsultoriaFiltro] = useState('');
 
-  // Buscar consultorias distintas dos clientes cadastrados
+  // Consultoria do usuário logado
+  const consultoriaUsuario = localStorage.getItem('consultoriaUsuario') || '';
+  const emailUsuario = localStorage.getItem('emailUsuario') || '';
+  const isAdmin = emailUsuario === 'diegorafa87@gmail.com';
+
+  // Buscar consultorias distintas dos clientes cadastrados (apenas para admin)
   React.useEffect(() => {
-    fetch(`${API_URL}/api/clientes`)
-      .then(r => r.json())
-      .then(clientes => {
-        const unicos = [...new Set(clientes.map(c => c.consultoria).filter(Boolean))];
-        setConsultorias(unicos);
-      });
-  }, [atualizar]);
+    if (isAdmin) {
+      fetch(`${API_URL}/api/clientes`)
+        .then(r => r.json())
+        .then(clientes => {
+          const unicos = [...new Set(clientes.map(c => c.consultoria).filter(Boolean))];
+          setConsultorias(unicos);
+        });
+    }
+  }, [atualizar, isAdmin]);
 
   // Função para confirmar pesquisa
   const confirmarPesquisa = () => {
@@ -33,6 +40,9 @@ function App() {
     setPesquisa('');
     setPesquisaConfirmada('');
   };
+
+  // Filtro a ser passado para ListaClientes
+  const filtroFinal = isAdmin ? consultoriaFiltro : consultoriaUsuario;
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
@@ -57,26 +67,28 @@ function App() {
         </button>
       </div>
 
-      {/* Botões de filtro de consultoria */}
-      <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
-        <button
-          onClick={() => handleFiltroConsultoria('')}
-          style={{ background: consultoriaFiltro === '' ? '#153a6b' : '#eee', color: consultoriaFiltro === '' ? '#fff' : '#153a6b', border: 'none', borderRadius: 4, padding: '0.5rem 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
-        >
-          Todas
-        </button>
-        {consultorias.map(c => (
+      {/* Botões de filtro de consultoria - apenas para admin */}
+      {isAdmin && (
+        <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
           <button
-            key={c}
-            onClick={() => handleFiltroConsultoria(c)}
-            style={{ background: consultoriaFiltro === c ? '#153a6b' : '#eee', color: consultoriaFiltro === c ? '#fff' : '#153a6b', border: 'none', borderRadius: 4, padding: '0.5rem 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
+            onClick={() => handleFiltroConsultoria('')}
+            style={{ background: consultoriaFiltro === '' ? '#153a6b' : '#eee', color: consultoriaFiltro === '' ? '#fff' : '#153a6b', border: 'none', borderRadius: 4, padding: '0.5rem 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
           >
-            {c}
+            Todas
           </button>
-        ))}
-      </div>
+          {consultorias.map(c => (
+            <button
+              key={c}
+              onClick={() => handleFiltroConsultoria(c)}
+              style={{ background: consultoriaFiltro === c ? '#153a6b' : '#eee', color: consultoriaFiltro === c ? '#fff' : '#153a6b', border: 'none', borderRadius: 4, padding: '0.5rem 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <ListaClientes atualizar={atualizar} consultoriaFiltro={consultoriaFiltro} pesquisa={pesquisaConfirmada} />
+      <ListaClientes atualizar={atualizar} consultoriaFiltro={filtroFinal} pesquisa={pesquisaConfirmada} />
     </div>
   );
 }

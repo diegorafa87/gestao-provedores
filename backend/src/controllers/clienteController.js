@@ -25,7 +25,12 @@ exports.cadastrarCliente = async (req, res) => {
 
 exports.listarClientes = async (req, res) => {
   try {
-    const clientes = await Cliente.find();
+    const { consultoria } = req.query;
+    let filtro = {};
+    if (consultoria) {
+      filtro.consultoria = consultoria;
+    }
+    const clientes = await Cliente.find(filtro);
     res.json(clientes);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao listar clientes', details: err.message });
