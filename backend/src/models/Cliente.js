@@ -7,6 +7,7 @@ const ClienteSchema = new mongoose.Schema({
   telefone: { type: String, required: true },
   consultoria: { type: String, required: true },
   status: { type: String, enum: ['NOVO','ATIVO','CORRIGIR','SUSPENSO'], default: 'NOVO' },
+  observacao: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Cliente', ClienteSchema);

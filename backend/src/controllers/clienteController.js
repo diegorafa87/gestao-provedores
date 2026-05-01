@@ -1,3 +1,16 @@
+// Atualizar apenas a observação do cliente
+exports.atualizarObservacao = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { observacao } = req.body;
+    const cliente = await Cliente.findByIdAndUpdate(id, { observacao }, { new: true });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    registrarLog && registrarLog('ATUALIZAR_OBSERVACAO', cliente.cnpj, { id, observacao });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar observação', details: err.message });
+  }
+};
 
 
 
