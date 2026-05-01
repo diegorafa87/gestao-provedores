@@ -22,6 +22,12 @@ const AdminLogin = ({ onLogin }) => {
       }
     } catch (err) {
       setErro('E-mail ou senha inválidos.');
+      if (err && err.message) {
+        setErro(prev => prev + ' [' + err.message + ']');
+        // Também loga no console para debug
+        // eslint-disable-next-line no-console
+        console.error('Erro Firebase:', err);
+      }
     }
     setLoading(false);
   };
