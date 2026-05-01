@@ -1,11 +1,15 @@
 import API_URL from './services/api';
 
 import React, { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase';
+import { useNavigate } from 'react-router-dom';
 
 import CadastroCliente from './components/CadastroCliente';
 import ListaClientes from './components/ListaClientes';
 
 function App() {
+  const navigate = useNavigate();
   const [atualizar, setAtualizar] = useState(0);
   const [pesquisa, setPesquisa] = useState('');
   const [pesquisaConfirmada, setPesquisaConfirmada] = useState('');
@@ -44,8 +48,17 @@ function App() {
   // Filtro a ser passado para ListaClientes
   const filtroFinal = isAdmin ? consultoriaFiltro : consultoriaUsuario;
 
+  // Função de logout
+  const handleLogout = async () => {
+    await signOut(auth);
+    localStorage.removeItem('consultoriaUsuario');
+    localStorage.removeItem('emailUsuario');
+    navigate('/admin-login');
+  };
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', position: 'relative' }}>
+      <button onClick={handleLogout} style={{position:'absolute',top:24,right:24,background:'#d32f2f',color:'#fff',border:'none',borderRadius:6,padding:'0.5rem 1.2rem',fontWeight:'bold',fontSize:16,cursor:'pointer',zIndex:2}}>Sair</button>
       <h1 style={{ textAlign: 'center', color: '#153a6b' }}>DOC PROVEDOR</h1>
       <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />
 

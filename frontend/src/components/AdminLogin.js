@@ -45,6 +45,7 @@ const AdminLogin = ({ onLogin }) => {
 
   return (
     <div style={{maxWidth:400,margin:'4rem auto',background:'#fff',borderRadius:12,padding:'2.5rem 2rem',boxShadow:'0 2px 12px #0002'}}>
+      <h1 style={{textAlign:'center',color:'#153a6b',marginBottom:8,fontSize:'2rem'}}>Doc Provedor</h1>
       <h2 style={{textAlign:'center',color:'#1976d2',marginBottom:24}}>Login</h2>
       <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:18}}>
         <input
