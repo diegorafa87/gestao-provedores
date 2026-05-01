@@ -19,7 +19,15 @@ const AdminLogin = ({ onLogin }) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       // Buscar consultoria do usuário
-      const consultoria = await getUserConsultoria(userCredential.user.email);
+      let consultoria = '';
+      try {
+        consultoria = await getUserConsultoria(userCredential.user.email);
+        if (!consultoria) throw new Error('Usuário sem consultoria cadastrada.');
+      } catch (errConsultoria) {
+        setErro('Seu usuário não está vinculado a nenhuma consultoria. Fale com o administrador.');
+        setLoading(false);
+        return;
+      }
       localStorage.setItem('consultoriaUsuario', consultoria);
       localStorage.setItem('emailUsuario', userCredential.user.email);
       onLogin && onLogin(userCredential.user);
@@ -28,7 +36,6 @@ const AdminLogin = ({ onLogin }) => {
       setErro('E-mail ou senha inválidos.');
       if (err && err.message) {
         setErro(prev => prev + ' [' + err.message + ']');
-        // Também loga no console para debug
         // eslint-disable-next-line no-console
         console.error('Erro Firebase:', err);
       }
@@ -38,7 +45,7 @@ const AdminLogin = ({ onLogin }) => {
 
   return (
     <div style={{maxWidth:400,margin:'4rem auto',background:'#fff',borderRadius:12,padding:'2.5rem 2rem',boxShadow:'0 2px 12px #0002'}}>
-      <h2 style={{textAlign:'center',color:'#1976d2',marginBottom:24}}>Login Administrador</h2>
+      <h2 style={{textAlign:'center',color:'#1976d2',marginBottom:24}}>Login</h2>
       <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:18}}>
         <input
           type="email"
