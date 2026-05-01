@@ -50,34 +50,28 @@ const AppRouter = () => {
         {/* Rota de login do admin */}
         <Route path="/admin-login" element={<AdminLogin onLogin={setAdmin} />} />
 
-        {/* Todas as outras rotas protegidas */}
-        <Route path="/*" element={
-          <PrivateRoute>
-            <Routes>
-              <Route path="/admin-area" element={admin ? <div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div> : <AdminLogin onLogin={setAdmin} />} />
-              <Route path="/" element={<App />} />
-              <Route path="/cliente/:id" element={<DetalheCliente />} />
-              <Route path="/scm/cadastro" element={<PaginaCadastroSCM />} />
-              <Route path="/editar-perfil/:id" element={<EditarPerfil />} />
-              <Route path="/tvpa/cadastro" element={<PaginaCadastroTVpA />} />
-              <Route path="/tvpa/acompanhamento" element={<PaginaAcompanhamentoTVpA />} />
-              <Route path="/stfc/cadastro" element={<PaginaCadastroSTFC />} />
-              <Route path="/stfc/acompanhamento" element={<PaginaAcompanhamentoSTFC />} />
-              <Route path="/relatorio-economico/primeiro-semestre" element={<RelatorioPrimeiroSemestre />} />
-              <Route path="/relatorio-economico/segundo-semestre" element={<RelatorioSegundoSemestre />} />
-              <Route path="/relatorio-economico/acompanhamento" element={<PaginaAcompanhamentoRelatorioEconomico />} />
-              <Route path="/infra/estacoes" element={<EstacoesPage clienteInfo={clienteInfo} />} />
-              <Route path="/infra/enlaces-proprios" element={<EnlacesPropriosPage />} />
-              <Route path="/infra/enlaces-contratados" element={<EnlacesContratadosPage />} />
-              <Route path="/infra/acompanhamento" element={<PaginaAcompanhamentoInfra razaoSocial={clienteInfo?.props?.children?.[0]?.props?.children || ''} />} />
-              <Route path="/postes/acompanhamento" element={<PaginaAcompanhamentoPostes />} />
-              <Route path="/gerenciador/acesso" element={<SubmenuAcessoCampos />} />
-              <Route path="/contratos-e-certidoes/contratos" element={<ContratosPage />} />
-              <Route path="/contratos-e-certidoes/certidoes" element={<CertidoesPage />} />
-              <Route path="/postes/compartilhamento" element={<CompartilhamentoPostesPage />} />
-            </Routes>
-          </PrivateRoute>
-        } />
+        {/* Todas as outras rotas protegidas individualmente */}
+        <Route path="/admin-area" element={<PrivateRoute>{admin ? <div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div> : <AdminLogin onLogin={setAdmin} />}</PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute><App /></PrivateRoute>} />
+        <Route path="/cliente/:id" element={<PrivateRoute><DetalheCliente /></PrivateRoute>} />
+        <Route path="/scm/cadastro" element={<PrivateRoute><PaginaCadastroSCM /></PrivateRoute>} />
+        <Route path="/editar-perfil/:id" element={<PrivateRoute><EditarPerfil /></PrivateRoute>} />
+        <Route path="/tvpa/cadastro" element={<PrivateRoute><PaginaCadastroTVpA /></PrivateRoute>} />
+        <Route path="/tvpa/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoTVpA /></PrivateRoute>} />
+        <Route path="/stfc/cadastro" element={<PrivateRoute><PaginaCadastroSTFC /></PrivateRoute>} />
+        <Route path="/stfc/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoSTFC /></PrivateRoute>} />
+        <Route path="/relatorio-economico/primeiro-semestre" element={<PrivateRoute><RelatorioPrimeiroSemestre /></PrivateRoute>} />
+        <Route path="/relatorio-economico/segundo-semestre" element={<PrivateRoute><RelatorioSegundoSemestre /></PrivateRoute>} />
+        <Route path="/relatorio-economico/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoRelatorioEconomico /></PrivateRoute>} />
+        <Route path="/infra/estacoes" element={<PrivateRoute><EstacoesPage clienteInfo={clienteInfo} /></PrivateRoute>} />
+        <Route path="/infra/enlaces-proprios" element={<PrivateRoute><EnlacesPropriosPage /></PrivateRoute>} />
+        <Route path="/infra/enlaces-contratados" element={<PrivateRoute><EnlacesContratadosPage /></PrivateRoute>} />
+        <Route path="/infra/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoInfra razaoSocial={clienteInfo?.props?.children?.[0]?.props?.children || ''} /></PrivateRoute>} />
+        <Route path="/postes/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoPostes /></PrivateRoute>} />
+        <Route path="/gerenciador/acesso" element={<PrivateRoute><SubmenuAcessoCampos /></PrivateRoute>} />
+        <Route path="/contratos-e-certidoes/contratos" element={<PrivateRoute><ContratosPage /></PrivateRoute>} />
+        <Route path="/contratos-e-certidoes/certidoes" element={<PrivateRoute><CertidoesPage /></PrivateRoute>} />
+        <Route path="/postes/compartilhamento" element={<PrivateRoute><CompartilhamentoPostesPage /></PrivateRoute>} />
       </Routes>
     </Router>
   );
