@@ -10,7 +10,7 @@ exports.getUserConsultoria = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-const User = require('../models/User');
+const User = require('../../models/User');
 
 // Cria ou atualiza usuário com consultoria
 exports.setUserConsultoria = async (req, res) => {
