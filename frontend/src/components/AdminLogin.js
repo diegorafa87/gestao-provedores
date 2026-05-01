@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 
 const AdminLogin = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
@@ -15,8 +17,9 @@ const AdminLogin = ({ onLogin }) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       // Aqui você pode checar se o usuário é admin (exemplo: email fixo ou claim)
-        if (userCredential.user.email === 'diegorafa87@gmail.com') {
+      if (userCredential.user.email === 'diegorafa87@gmail.com') {
         onLogin && onLogin(userCredential.user);
+        navigate('/'); // Redireciona para a página principal após login
       } else {
         setErro('Acesso restrito ao administrador.');
       }

@@ -27,7 +27,7 @@ import PaginaAcompanhamentoRelatorioEconomico from './pages/AcompanhamentoRelato
 import PaginaAcompanhamentoSTFC from './pages/AcompanhamentoSTFCPage';
 
 const AppRouter = () => {
-  const [admin, setAdmin] = useState(null);
+  // Removido o estado admin, pois a autenticação é controlada pelo Firebase
   // Busca clienteSelecionado do localStorage
   let clienteInfo = null;
   try {
@@ -48,10 +48,10 @@ const AppRouter = () => {
     <Router>
       <Routes>
         {/* Rota de login do admin */}
-        <Route path="/admin-login" element={<AdminLogin onLogin={setAdmin} />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
 
         {/* Todas as outras rotas protegidas individualmente */}
-        <Route path="/admin-area" element={<PrivateRoute>{admin ? <div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div> : <AdminLogin onLogin={setAdmin} />}</PrivateRoute>} />
+        <Route path="/admin-area" element={<PrivateRoute><div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div></PrivateRoute>} />
         <Route path="/" element={<PrivateRoute><App /></PrivateRoute>} />
         <Route path="/cliente/:id" element={<PrivateRoute><DetalheCliente /></PrivateRoute>} />
         <Route path="/scm/cadastro" element={<PrivateRoute><PaginaCadastroSCM /></PrivateRoute>} />
