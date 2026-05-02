@@ -4,13 +4,13 @@ const multer = require('multer');
 const upload = multer();
 const { uploadToR2 } = require('../../utils/r2Upload');
 
-// Endpoint para upload de PDF do acompanhamento SCM
+// Endpoint para upload de PDF do acompanhamento de Postes
 router.post('/upload', upload.single('pdf'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-    const { buffer, mimetype } = req.file;
-    // Permite que o frontend envie o nome do arquivo desejado via campo 'key' no FormData
-    const key = req.body.key || `scm/${Date.now()}_${req.file.originalname}`;
+    const { originalname, buffer, mimetype } = req.file;
+    // Exemplo de chave: postes/2026/razaosocial_nomearquivo.pdf
+    const key = `postes/${Date.now()}_${originalname}`;
     const url = await uploadToR2(buffer, key, mimetype);
     // Aqui você pode salvar a URL no banco, se desejar
     res.json({ success: true, url });
