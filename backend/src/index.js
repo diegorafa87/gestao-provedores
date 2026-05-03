@@ -1,6 +1,6 @@
 
 const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
-const acompanhamentoPostesUploadRoutes = require('./routes/acompanhamentoPostesUploadRoutes');
+// const acompanhamentoPostesUploadRoutes = require('./routes/acompanhamentoPostesUploadRoutes');
 const userRoutes = require('./routes/userRoutes');
 
 // Entry point do backend
@@ -28,7 +28,7 @@ const acaoRoutes = require('./routes/acaoRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
-const acompanhamentoSCMUploadRoutes = require('./routes/acompanhamentoSCMUploadRoutes');
+// const acompanhamentoSCMUploadRoutes = require('./routes/acompanhamentoSCMUploadRoutes');
 
 
 app.use('/api', clienteRoutes);
@@ -37,9 +37,9 @@ app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);
 app.use('/api/acompanhamento-scm', acompanhamentoSCMRoutes);
-app.use('/api/acompanhamento-scm', acompanhamentoSCMUploadRoutes);
+// app.use('/api/acompanhamento-scm', acompanhamentoSCMUploadRoutes);
 app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
-app.use('/api/acompanhamento-postes', acompanhamentoPostesUploadRoutes);
+// app.use('/api/acompanhamento-postes', acompanhamentoPostesUploadRoutes);
 
 // Rota raiz amigável
 app.get('/', (req, res) => {
