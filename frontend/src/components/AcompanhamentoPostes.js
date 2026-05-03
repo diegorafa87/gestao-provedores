@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+import API_URL from '../services/api';
+import React, { useState, useEffect, useRef } from 'react';
 import { IconEye, IconEyeOff, IconPower, IconPowerOn } from './IconsAcompanhamento';
 import { IconDownload } from './IconsHistorico';
 
@@ -17,19 +19,30 @@ const initialData = () => {
 };
 
 
-import { useRef } from 'react';
+
+
 
 export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
-  const [dados, setDados] = useState(initialData());
+  // Chave para persistir os checks por CNPJ
+  const chaveChecks = cnpj ? `checks_POSTES_${cnpj}` : 'checks_POSTES';
+  // Carrega os checks do localStorage, se houver
+  const [dados, setDados] = useState(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      // Garante que todos os anos existem
+      const base = initialData();
+      ANOS.forEach(ano => {
+        base[ano].checked = !!checksSalvos[ano];
+      });
+      return base;
+    }
+    return initialData();
+  });
   const inputContratoRef = useRef();
   const [camposContrato, setCamposContrato] = useState(null);
 
-  // Função placeholder para upload do contrato
-  const handleContratoUpload = (e) => {
-    // Implemente a lógica de upload se necessário
-    // Por enquanto, apenas evita erro de referência
-  };
-
+  // As chaves e estados precisam ser declarados antes de qualquer uso
   const chaveDesligados = cnpj ? `anosDesligados_POSTES_${cnpj}` : 'anosDesligados_POSTES';
   const chaveOcultos = cnpj ? `anosOcultos_POSTES_${cnpj}` : 'anosOcultos_POSTES';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -41,29 +54,88 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
     return salvo ? JSON.parse(salvo) : {};
   });
 
+  // Salva no backend sempre que muda
   useEffect(() => {
-    localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
-  }, [anosDesligados, chaveDesligados]);
-  useEffect(() => {
-    localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
-  }, [anosOcultos, chaveOcultos]);
+    if (!cnpj) return;
+    fetch(`${API_URL}/api/acompanhamento-postes/${cnpj}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anosDesligados, anosOcultos })
+    }).catch(() => {
+      // fallback localStorage
+      localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
+      localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
+    });
+    // eslint-disable-next-line
+  }, [anosDesligados, anosOcultos, cnpj]);
 
+  // Carrega do backend ao montar
   useEffect(() => {
-    const salvoDesligados = localStorage.getItem(chaveDesligados);
-    if (salvoDesligados) setAnosDesligados(JSON.parse(salvoDesligados));
-    const salvoOcultos = localStorage.getItem(chaveOcultos);
-    if (salvoOcultos) setAnosOcultos(JSON.parse(salvoOcultos));
-  }, [chaveDesligados, chaveOcultos]);
+    if (!cnpj) return;
+    fetch(`${API_URL}/api/acompanhamento-postes/${cnpj}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.anosDesligados) setAnosDesligados(data.anosDesligados);
+        if (data.anosOcultos) setAnosOcultos(data.anosOcultos);
+      })
+      .catch(() => {
+        // fallback localStorage
+        const salvoDesligados = localStorage.getItem(chaveDesligados);
+        if (salvoDesligados) setAnosDesligados(JSON.parse(salvoDesligados));
+        const salvoOcultos = localStorage.getItem(chaveOcultos);
+        if (salvoOcultos) setAnosOcultos(JSON.parse(salvoOcultos));
+      });
+    // eslint-disable-next-line
+  }, [cnpj]);
+
+  // Função placeholder para upload do contrato
+  const handleContratoUpload = (e) => {
+    // Implemente a lógica de upload se necessário
+    // Por enquanto, apenas evita erro de referência
+  };
+
 
   const handleCheck = (ano) => {
-    setDados(prev => ({
-      ...prev,
-      [ano]: {
-        ...prev[ano],
-        checked: !prev[ano].checked
-      }
-    }));
+    setDados(prev => {
+      const novo = {
+        ...prev,
+        [ano]: {
+          ...prev[ano],
+          checked: !prev[ano].checked
+        }
+      };
+      // Salva no localStorage
+      const checksToSave = {};
+      ANOS.forEach(a => { checksToSave[a] = novo[a].checked; });
+      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      return novo;
+    });
   };
+
+  // Garante que ao trocar de cliente/cnpj, recarrega os checks corretos
+  React.useEffect(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      setDados(prev => {
+        const base = initialData();
+        ANOS.forEach(ano => {
+          base[ano].checked = !!checksSalvos[ano];
+        });
+        // Mantém arquivos já carregados, se houver
+        ANOS.forEach(ano => {
+          if (prev[ano].file) {
+            base[ano].file = prev[ano].file;
+            base[ano].fileUrl = prev[ano].fileUrl;
+          }
+        });
+        return base;
+      });
+    } else {
+      setDados(initialData());
+    }
+    // eslint-disable-next-line
+  }, [chaveChecks]);
 
   const handleFileChange = (ano, e) => {
     const file = e.target.files[0];
@@ -80,7 +152,7 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
           fileUrl: url
         }
       }));
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,7 +171,7 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
       link.href = fileUrl;
       link.download = file.name;
       link.click();
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,11 +198,7 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
             <div key={ano} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#888', fontWeight: 600, fontSize: 18 }}>{ano} (oculto)</span>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: false };
-                  localStorage.setItem('anosOcultos_POSTES', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: false }))}
                 style={{ background: '#fff', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Exibir ano"
               >
@@ -156,22 +224,14 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
                 <span style={{ marginLeft: 8, color: '#d32f2f', fontWeight: 700, fontSize: 22 }}>⏻</span>
               )}
               <button
-                onClick={() => setAnosDesligados(prev => {
-                  const novo = { ...prev, [ano]: !prev[ano] };
-                  localStorage.setItem('anosDesligados_POSTES', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
                 style={{ marginLeft: 16, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title={desligado ? 'Reativar ano' : 'Desligar ano'}
               >
                 {desligado ? <IconPowerOn /> : <IconPower />}
               </button>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: true };
-                  localStorage.setItem('anosOcultos_POSTES', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: true }))}
                 style={{ marginLeft: 8, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Ocultar ano"
               >

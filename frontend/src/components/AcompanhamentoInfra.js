@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { IconEye, IconEyeOff, IconPower, IconPowerOn } from './IconsAcompanhamento';
 
@@ -26,7 +27,23 @@ const initialData = () => {
 
 
 export default function AcompanhamentoInfra({ razaoSocial, cnpj }) {
-  const [dados, setDados] = useState(initialData());
+  // Chave para persistir os checks por CNPJ
+  const chaveChecks = cnpj ? `checks_INFRA_${cnpj}` : 'checks_INFRA';
+  // Carrega os checks do localStorage, se houver
+  const [dados, setDados] = useState(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      const base = initialData();
+      ANOS.forEach(ano => {
+        ITENS.forEach(item => {
+          base[ano][item].checked = !!(checksSalvos[ano] && checksSalvos[ano][item]);
+        });
+      });
+      return base;
+    }
+    return initialData();
+  });
   const chaveDesligados = cnpj ? `anosDesligados_INFRA_${cnpj}` : 'anosDesligados_INFRA';
   const chaveOcultos = cnpj ? `anosOcultos_INFRA_${cnpj}` : 'anosOcultos_INFRA';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -53,17 +70,52 @@ export default function AcompanhamentoInfra({ razaoSocial, cnpj }) {
   }, [anosOcultos, chaveOcultos]);
 
   const handleCheck = (ano, item) => {
-    setDados(prev => ({
-      ...prev,
-      [ano]: {
-        ...prev[ano],
-        [item]: {
-          ...prev[ano][item],
-          checked: !prev[ano][item].checked
+    setDados(prev => {
+      const novo = {
+        ...prev,
+        [ano]: {
+          ...prev[ano],
+          [item]: {
+            ...prev[ano][item],
+            checked: !prev[ano][item].checked
+          }
         }
-      }
-    }));
+      };
+      // Salva no localStorage
+      const checksToSave = {};
+      ANOS.forEach(a => {
+        checksToSave[a] = {};
+        ITENS.forEach(i => { checksToSave[a][i] = novo[a][i].checked; });
+      });
+      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      return novo;
+    });
   };
+
+  // Garante que ao trocar de cliente/cnpj, recarrega os checks corretos
+  React.useEffect(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      setDados(prev => {
+        const base = initialData();
+        ANOS.forEach(ano => {
+          ITENS.forEach(item => {
+            base[ano][item].checked = !!(checksSalvos[ano] && checksSalvos[ano][item]);
+            // Mantém arquivos já carregados, se houver
+            if (prev[ano][item].file) {
+              base[ano][item].file = prev[ano][item].file;
+              base[ano][item].fileUrl = prev[ano][item].fileUrl;
+            }
+          });
+        });
+        return base;
+      });
+    } else {
+      setDados(initialData());
+    }
+    // eslint-disable-next-line
+  }, [chaveChecks]);
 
   const handleFileChange = (ano, item, e) => {
     const file = e.target.files[0];
@@ -85,7 +137,7 @@ export default function AcompanhamentoInfra({ razaoSocial, cnpj }) {
         }
       }));
       // Log da ação de upload
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,7 +157,7 @@ export default function AcompanhamentoInfra({ razaoSocial, cnpj }) {
       link.download = file.name;
       link.click();
       // Log da ação de download
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import MenuLateral from '../components/MenuLateral';
@@ -29,7 +30,7 @@ const DetalheCliente = () => {
     setLoading(true);
     setErro(null);
     console.log('Buscando cliente para id:', id);
-    fetch(`http://localhost:5000/api/clientes/${id}`)
+    fetch(`${API_URL}/api/clientes/${id}`)
       .then(async resp => {
         console.log('Status da resposta:', resp.status);
         let data = null;
@@ -48,8 +49,10 @@ const DetalheCliente = () => {
         setCliente(data);
         // Salva cliente no localStorage para persistência entre rotas
         try {
+          // Garante que o campo id está presente (pode ser _id do MongoDB)
+          const id = data.id || data._id;
           localStorage.setItem('clienteSelecionado', JSON.stringify({
-            id: data.id,
+            id,
             razaoSocial: data.razaoSocial,
             cnpj: data.cnpj
           }));
@@ -76,7 +79,7 @@ const DetalheCliente = () => {
 
   const handleSalvar = async e => {
     e.preventDefault();
-    const resp = await fetch(`http://localhost:5000/api/clientes/${id}`, {
+    const resp = await fetch(`${API_URL}/api/clientes/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
@@ -126,8 +129,21 @@ const DetalheCliente = () => {
             <div style={{fontSize:'1.05rem'}}><b>CNPJ</b><br/>{cliente.cnpj}</div>
             <div style={{fontSize:'1.05rem'}}><b>Status</b><br/><span style={{background:statusCores[cliente.status],color:'#fff',borderRadius:'12px',padding:'0.2rem 1rem',fontWeight:600,fontSize:'0.95rem'}}>{statusNomes[cliente.status]}</span></div>
           </div>
-          <div style={{fontSize:'1.05rem',marginBottom:4}}><b>E-mail:</b> {cliente.email}</div>
-          <div style={{fontSize:'1.05rem',marginBottom:4}}><b>Telefone:</b> {cliente.telefone}</div>
+          {/* Link e-mail */}
+          <div style={{fontSize:'1.05rem',marginBottom:4}}>
+            <b>E-mail:</b> <a href={`mailto:${cliente.email}`} style={{color:'#1976d2',textDecoration:'underline'}}>{cliente.email}</a>
+          </div>
+          {/* Link WhatsApp */}
+          <div style={{fontSize:'1.05rem',marginBottom:4}}>
+            <b>Telefone:</b> <a
+              href={`https://wa.me/55${(cliente.telefone||'').replace(/\D/g,'')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{color:'#388e3c',textDecoration:'underline'}}
+            >
+              {cliente.telefone}
+            </a>
+          </div>
           <div style={{fontSize:'1.05rem',marginBottom:4}}><b>Consultoria:</b> {cliente.consultoria}</div>
           <button onClick={()=>setEditando(true)} style={{marginTop:16,background:'#1976d2',color:'#fff',border:'2px solid #1976d2',borderRadius:'6px',padding:'0.5rem 2rem',fontWeight:'bold',fontSize:'1rem',cursor:'pointer',transition:'background 0.2s'}}>Editar</button>
         </div>

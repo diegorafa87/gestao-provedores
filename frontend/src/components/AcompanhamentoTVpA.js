@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { IconEye, IconEyeOff, IconPower, IconPowerOn } from './IconsAcompanhamento';
 
@@ -14,24 +15,45 @@ const initialData = () => {
     MESES.forEach(mes => {
       data[ano][mes] = {
         checked: false,
-        file: null,
-        fileUrl: '',
+        pdfLink: '',
       };
+
+    // Função para atualizar o link do PDF
+    const handlePdfLinkChange = (ano, mes, e) => {
+      const novoValor = e.target.value;
+      setDados(prev => ({
+        ...prev,
+        [ano]: {
+          ...prev[ano],
+          [mes]: {
+            ...prev[ano][mes],
+            pdfLink: novoValor
+          }
+        }
+      }));
+    };
     });
   });
   return data;
 };
 
 
+
 export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
-  // Usa o cnpj como chave para persistir os dados de cada cliente
-  const chaveStorage = cnpj ? `acompanhamentoTVpA_${cnpj}` : null;
+  // Chave para persistir os checks por CNPJ
+  const chaveChecks = cnpj ? `checks_TVPA_${cnpj}` : 'checks_TVPA';
+  // Carrega os checks do localStorage, se houver
   const [dados, setDados] = useState(() => {
-    if (chaveStorage) {
-      try {
-        const salvo = localStorage.getItem(chaveStorage);
-        if (salvo) return JSON.parse(salvo);
-      } catch {}
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      const base = initialData();
+      ANOS.forEach(ano => {
+        MESES.forEach(mes => {
+          base[ano][mes].checked = !!(checksSalvos[ano] && checksSalvos[ano][mes]);
+        });
+      });
+      return base;
     }
     return initialData();
   });
@@ -72,12 +94,41 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
           }
         }
       };
-      if (chaveStorage) {
-        try { localStorage.setItem(chaveStorage, JSON.stringify(novo)); } catch {}
-      }
+      // Salva no localStorage
+      const checksToSave = {};
+      ANOS.forEach(a => {
+        checksToSave[a] = {};
+        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
+      });
+      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
       return novo;
     });
   };
+
+  // Garante que ao trocar de cliente/cnpj, recarrega os checks corretos
+  React.useEffect(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      setDados(prev => {
+        const base = initialData();
+        ANOS.forEach(ano => {
+          MESES.forEach(mes => {
+            base[ano][mes].checked = !!(checksSalvos[ano] && checksSalvos[ano][mes]);
+            // Mantém arquivos já carregados, se houver
+            if (prev[ano][mes].file) {
+              base[ano][mes].file = prev[ano][mes].file;
+              base[ano][mes].fileUrl = prev[ano][mes].fileUrl;
+            }
+          });
+        });
+        return base;
+      });
+    } else {
+      setDados(initialData());
+    }
+    // eslint-disable-next-line
+  }, [chaveChecks]);
 
   const handleFileChange = (ano, mes, e) => {
     const file = e.target.files[0];
@@ -105,7 +156,7 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
         return novo;
       });
       // Log da ação de upload
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +176,7 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
       link.download = file.name;
       link.click();
       // Log da ação de download
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,11 +200,7 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
             <div key={ano} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#888', fontWeight: 600, fontSize: 18 }}>{ano} (oculto)</span>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: false };
-                  localStorage.setItem('anosOcultos_TVPA', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: false }))}
                 style={{ background: '#fff', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Exibir ano"
               >
@@ -182,22 +229,14 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
                 <span style={{ marginLeft: 8, color: '#d32f2f', fontWeight: 700, fontSize: 22 }}>⏻</span>
               )}
               <button
-                onClick={() => setAnosDesligados(prev => {
-                  const novo = { ...prev, [ano]: !prev[ano] };
-                  localStorage.setItem('anosDesligados_TVPA', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
                 style={{ marginLeft: 16, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title={desligado ? 'Reativar ano' : 'Desligar ano'}
               >
                 {desligado ? <IconPowerOn /> : <IconPower />}
               </button>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: true };
-                  localStorage.setItem('anosOcultos_TVPA', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: true }))}
                 style={{ marginLeft: 8, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Ocultar ano"
               >
@@ -212,15 +251,24 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
                     {mes}
                   </label>
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-                    <input type="file" accept="application/pdf" onChange={e => handleFileChange(ano, mes, e)} disabled={desligado} />
-                    {dados[ano][mes].file && (
-                      <span style={{fontSize:13, color:'#1976d2', fontWeight:500}}>{dados[ano][mes].file.name}</span>
-                    )}
+                    <input
+                      type="text"
+                      placeholder="Cole o link do PDF aqui"
+                      value={dados[ano][mes].pdfLink || ''}
+                      onChange={e => handlePdfLinkChange(ano, mes, e)}
+                      disabled={desligado}
+                      style={{width:'100%'}}
+                    />
                   </div>
-                  {dados[ano][mes].file && (
-                    <button onClick={() => handleDownload(ano, mes)} style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }} disabled={desligado}>
-                      Download
-                    </button>
+                  {dados[ano][mes].pdfLink && (
+                    <a
+                      href={dados[ano][mes].pdfLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
+                    >
+                      Baixar PDF
+                    </a>
                   )}
                 </div>
               ))}

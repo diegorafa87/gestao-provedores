@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useEffect, useRef, useState } from 'react';
 import { IconDownload } from '../components/IconsHistorico';
 import { salvarHistoricoPostesNoStorage, carregarHistoricoPostesDoStorage } from '../utils/localStorageHistoricoPostes';
@@ -14,7 +15,7 @@ export default function CompartilhamentoPostesPage() {
     if (!file) return;
     const formData = new FormData();
     formData.append('contrato', file);
-    const resp = await fetch('http://localhost:5000/api/contrato/postes/upload', {
+    const resp = await fetch(`${API_URL}/api/contrato/postes/upload`, {
       method: 'POST',
       body: formData
     });
@@ -96,6 +97,89 @@ export default function CompartilhamentoPostesPage() {
       />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 0' }}>
         <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 32, maxWidth: 500, width: '100%' }}>
+                    {/* Botão de exportação CSV */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                      <button
+                        type="button"
+                        style={{
+                          background: '#388e3c',
+                          color: '#fff',
+                          fontWeight: 700,
+                          border: 'none',
+                          borderRadius: 4,
+                          padding: '10px 28px',
+                          fontSize: 16,
+                          cursor: 'pointer',
+                          boxShadow: '0 1px 4px #0002',
+                          marginRight: 12
+                        }}
+                        onClick={() => {
+                          // Cabeçalho fixo
+                          const header = [
+                            'CNPJ OUTORGADA',
+                            'CNPJ OUTORGADA ORIGINAL',
+                            'NÚMERO PROCESSO HOMOLOGAÇÃO',
+                            'CNPJ DETENTORA INFRA',
+                            'DESCRITIVO CONTRATO',
+                            'DATA ASSINATURA',
+                            'DATA VALIDADE',
+                            'QTD PONTOS',
+                            'VALOR PONTO',
+                            'ÍNDICE REAJUSTE',
+                            'DATA BASE REAJUSTE',
+                            'CONTROVÉRSIA JUDICIAL',
+                            'OBSERVAÇÕES'
+                          ];
+                          const rows = historicoLinhas.map(linha => [
+                            linha.cnpjOutorgada,
+                            linha.cnpjOutorgadaOriginal,
+                            linha.numProcessoHomologacao,
+                            linha.cnpjDetentoraInfra,
+                            linha.coDescritivoContratoInfra,
+                            linha.dtAssinaturaContratoInfra,
+                            linha.dtValidadeFinalContratoInfra,
+                            linha.qtPontosFixacaoInfra,
+                            linha.vrPontoFixacaoInfra,
+                            linha.indiceReajusteContratoInfra,
+                            linha.dtBaseReajusteContratoInfra,
+                            linha.icControversiaJudAdm,
+                            linha.observacoes
+                          ].map(v => v == null ? '' : String(v)).join(';'));
+                          // Gera CSV sem linha em branco final
+                          const csvContent = [header.join(';'), ...rows].join('\r\n');
+                          // Nome do arquivo
+                          let razao = '';
+                          try {
+                            const salvo = localStorage.getItem('clienteSelecionado');
+                            if (salvo) {
+                              const obj = JSON.parse(salvo);
+                              razao = (obj.razaoSocial || '').replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                            }
+                          } catch {}
+                          const data = new Date();
+                          const nomeArquivo = `COMP_POSTES_${razao}_${data.getFullYear()}${String(data.getMonth()+1).padStart(2,'0')}${String(data.getDate()).padStart(2,'0')}.csv`;
+                          // Salva no histórico
+                          setHistoricoArquivos(prev => {
+                            const novo = [
+                              { nome: nomeArquivo, conteudo: csvContent, data: data.toLocaleString() },
+                              ...prev
+                            ];
+                            salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+                            return novo;
+                          });
+                          // Download automático
+                          const blob = new Blob([csvContent], { type: 'text/csv' });
+                          const link = document.createElement('a');
+                          link.href = URL.createObjectURL(blob);
+                          link.download = nomeArquivo;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                      >
+                        Exportar CSV
+                      </button>
+                    </div>
           <div style={{marginBottom:24, textAlign:'center'}}>
             <button onClick={() => inputContratoRef.current && inputContratoRef.current.click()} style={{background:'#1976d2',color:'#fff',padding:'10px 24px',border:'none',borderRadius:6,fontWeight:700,fontSize:16,cursor:'pointer',marginBottom:8}}>Upload Contrato de Postes (PDF)</button>
             <input type="file" accept="application/pdf" ref={inputContratoRef} style={{display:'none'}} onChange={handleContratoUpload} />

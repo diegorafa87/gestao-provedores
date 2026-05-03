@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { IconEye, IconEyeOff, IconPower, IconPowerOn } from './IconsAcompanhamento';
 
@@ -24,7 +25,23 @@ const initialData = () => {
 
 
 export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
-  const [dados, setDados] = useState(initialData());
+  // Chave para persistir os checks por CNPJ
+  const chaveChecks = cnpj ? `checks_STFC_${cnpj}` : 'checks_STFC';
+  // Carrega os checks do localStorage, se houver
+  const [dados, setDados] = useState(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      const base = initialData();
+      ANOS.forEach(ano => {
+        MESES.forEach(mes => {
+          base[ano][mes].checked = !!(checksSalvos[ano] && checksSalvos[ano][mes]);
+        });
+      });
+      return base;
+    }
+    return initialData();
+  });
   const chaveDesligados = cnpj ? `anosDesligados_STFC_${cnpj}` : 'anosDesligados_STFC';
   const chaveOcultos = cnpj ? `anosOcultos_STFC_${cnpj}` : 'anosOcultos_STFC';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -51,17 +68,52 @@ export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
   }, [chaveDesligados, chaveOcultos]);
 
   const handleCheck = (ano, mes) => {
-    setDados(prev => ({
-      ...prev,
-      [ano]: {
-        ...prev[ano],
-        [mes]: {
-          ...prev[ano][mes],
-          checked: !prev[ano][mes].checked
+    setDados(prev => {
+      const novo = {
+        ...prev,
+        [ano]: {
+          ...prev[ano],
+          [mes]: {
+            ...prev[ano][mes],
+            checked: !prev[ano][mes].checked
+          }
         }
-      }
-    }));
+      };
+      // Salva no localStorage
+      const checksToSave = {};
+      ANOS.forEach(a => {
+        checksToSave[a] = {};
+        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
+      });
+      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      return novo;
+    });
   };
+
+  // Garante que ao trocar de cliente/cnpj, recarrega os checks corretos
+  React.useEffect(() => {
+    const salvo = localStorage.getItem(chaveChecks);
+    if (salvo) {
+      const checksSalvos = JSON.parse(salvo);
+      setDados(prev => {
+        const base = initialData();
+        ANOS.forEach(ano => {
+          MESES.forEach(mes => {
+            base[ano][mes].checked = !!(checksSalvos[ano] && checksSalvos[ano][mes]);
+            // Mantém arquivos já carregados, se houver
+            if (prev[ano][mes].file) {
+              base[ano][mes].file = prev[ano][mes].file;
+              base[ano][mes].fileUrl = prev[ano][mes].fileUrl;
+            }
+          });
+        });
+        return base;
+      });
+    } else {
+      setDados(initialData());
+    }
+    // eslint-disable-next-line
+  }, [chaveChecks]);
 
   const handleFileChange = (ano, mes, e) => {
     const file = e.target.files[0];
@@ -83,7 +135,7 @@ export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
         }
       }));
       // Log da ação de upload
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,7 +155,7 @@ export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
       link.download = file.name;
       link.click();
       // Log da ação de download
-      fetch('http://localhost:5000/api/acao', {
+        fetch(`${API_URL}/api/acao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -127,11 +179,7 @@ export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
             <div key={ano} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#888', fontWeight: 600, fontSize: 18 }}>{ano} (oculto)</span>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: false };
-                  localStorage.setItem('anosOcultos_STFC', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: false }))}
                 style={{ background: '#fff', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Exibir ano"
               >
@@ -160,22 +208,14 @@ export default function AcompanhamentoSTFC({ razaoSocial, cnpj }) {
                 <span style={{ marginLeft: 8, color: '#d32f2f', fontWeight: 700, fontSize: 22 }}>⏻</span>
               )}
               <button
-                onClick={() => setAnosDesligados(prev => {
-                  const novo = { ...prev, [ano]: !prev[ano] };
-                  localStorage.setItem('anosDesligados_STFC', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
                 style={{ marginLeft: 16, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title={desligado ? 'Reativar ano' : 'Desligar ano'}
               >
                 {desligado ? <IconPowerOn /> : <IconPower />}
               </button>
               <button
-                onClick={() => setAnosOcultos(prev => {
-                  const novo = { ...prev, [ano]: true };
-                  localStorage.setItem('anosOcultos_STFC', JSON.stringify(novo));
-                  return novo;
-                })}
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: true }))}
                 style={{ marginLeft: 8, background: 'none', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
                 title="Ocultar ano"
               >

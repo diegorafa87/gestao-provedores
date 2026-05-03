@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 
@@ -80,7 +81,8 @@ const CadastroTVpA = ({ cnpj }) => {
         return linha[campo] || '';
       }).join(';');
     });
-    const csvContent = [header, ...rows].join('\n');
+    // Usa CRLF como quebra de linha e garante CRLF ao final
+    const csvContent = [header, ...rows].join('\r\n') + '\r\n';
     // Nome do arquivo
     let razao = '';
     let ano = '';
@@ -107,7 +109,7 @@ const CadastroTVpA = ({ cnpj }) => {
     localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
     // Não limpa as linhas após gerar o CSV
     // Log da ação no backend
-    fetch('http://localhost:5000/api/acao', {
+      fetch(`${API_URL}/api/acao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

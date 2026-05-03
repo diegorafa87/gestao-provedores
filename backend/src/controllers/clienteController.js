@@ -1,95 +1,110 @@
-const fs = require('fs');
-const path = require('path');
-const dbPath = path.join(__dirname, '../db.json');
-
-function lerClientes() {
+// Atualizar apenas a observação do cliente
+exports.atualizarObservacao = async (req, res) => {
   try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    console.log('[DEBUG] Lendo clientes de', dbPath, 'Conteúdo:', data);
-    return JSON.parse(data);
-  } catch (e) {
-    console.log('[DEBUG] Erro ao ler clientes:', e);
-    return [];
+    const { id } = req.params;
+    const { observacao } = req.body;
+    const cliente = await Cliente.findByIdAndUpdate(id, { observacao }, { new: true });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    registrarLog && registrarLog('ATUALIZAR_OBSERVACAO', cliente.cnpj, { id, observacao });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar observação', details: err.message });
   }
-}
-function salvarClientes(clientes) {
-  fs.writeFileSync(dbPath, JSON.stringify(clientes, null, 2));
-  console.log('[DEBUG] Salvando clientes em', dbPath, 'Conteúdo:', JSON.stringify(clientes, null, 2));
-}
+};
+
 
 
 const Cliente = require('../models/Cliente');
 const { registrarLog } = require('./logController');
 
-exports.cadastrarCliente = (req, res) => {
-  const { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
-  if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
-    return res.status(400).json({ error: 'Preencha todos os campos!' });
+exports.cadastrarCliente = async (req, res) => {
+  try {
+    const { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
+    if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
+      return res.status(400).json({ error: 'Preencha todos os campos!' });
+    }
+    // Verifica duplicidade de CNPJ ou Razão Social
+    const existeCnpj = await Cliente.findOne({ cnpj });
+    if (existeCnpj) return res.status(409).json({ error: 'CNPJ já cadastrado!' });
+    const existeRazao = await Cliente.findOne({ razaoSocial: { $regex: `^${razaoSocial}$`, $options: 'i' } });
+    if (existeRazao) return res.status(409).json({ error: 'Razão Social já cadastrada!' });
+    const novoCliente = await Cliente.create({ razaoSocial, cnpj, email, telefone, consultoria });
+    registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, consultoria });
+    res.status(201).json(novoCliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao cadastrar cliente', details: err.message });
   }
-  const clientes = lerClientes();
-  const novoCliente = new Cliente({ razaoSocial, cnpj, email, telefone, consultoria });
-  clientes.push(novoCliente);
-  salvarClientes(clientes);
-  registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, consultoria });
-  res.status(201).json(novoCliente);
 };
 
-exports.listarClientes = (req, res) => {
-  const clientes = lerClientes();
-  console.log('[DEBUG] IDs disponíveis:', clientes.map(c => c.id));
-  res.json(clientes);
-};
-
-exports.atualizarStatus = (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const clientes = lerClientes();
-  const cliente = clientes.find(c => c.id === id);
-  if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
-  if (!['NOVO','ATIVO','CORRIGIR','SUSPENSO'].includes(status)) {
-    return res.status(400).json({ error: 'Status inválido' });
+exports.listarClientes = async (req, res) => {
+  try {
+    const { consultoria } = req.query;
+    let filtro = {};
+    if (consultoria) {
+      filtro.consultoria = consultoria;
+    }
+    const clientes = await Cliente.find(filtro);
+    res.json(clientes);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar clientes', details: err.message });
   }
-  cliente.status = status;
-  salvarClientes(clientes);
-  registrarLog('ATUALIZAR_STATUS', cliente.cnpj, { id, status });
-  res.json(cliente);
 };
 
-exports.detalharCliente = (req, res) => {
-  const { id } = req.params;
-  const clientes = lerClientes();
-  console.log('[DEBUG] Buscando cliente ID:', id, '| IDs disponíveis:', clientes.map(c => c.id));
-  const cliente = clientes.find(c => c.id === id);
-  if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
-  res.json(cliente);
-};
-
-exports.excluirCliente = (req, res) => {
-  const { id } = req.params;
-  let clientes = lerClientes();
-  const clienteIndex = clientes.findIndex(c => c.id === id);
-  if (clienteIndex === -1) return res.status(404).json({ error: 'Cliente não encontrado' });
-  clientes.splice(clienteIndex, 1);
-  salvarClientes(clientes);
-  registrarLog('EXCLUIR_CLIENTE', id, {});
-  res.json({ success: true });
-};
-
-exports.editarCliente = (req, res) => {
-  const { id } = req.params;
-  const { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
-  let clientes = lerClientes();
-  const cliente = clientes.find(c => c.id === id);
-  if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
-  if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
-    return res.status(400).json({ error: 'Preencha todos os campos!' });
+exports.atualizarStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['NOVO','ATIVO','CORRIGIR','SUSPENSO'].includes(status)) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
+    // Impede que o status volte para NOVO após o cadastro
+    if (status === 'NOVO') {
+      return res.status(400).json({ error: 'Status NOVO só pode ser atribuído no cadastro do cliente.' });
+    }
+    const cliente = await Cliente.findByIdAndUpdate(id, { status }, { new: true });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    registrarLog('ATUALIZAR_STATUS', cliente.cnpj, { id, status });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao atualizar status', details: err.message });
   }
-  cliente.razaoSocial = razaoSocial;
-  cliente.cnpj = cnpj;
-  cliente.email = email;
-  cliente.telefone = telefone;
-  cliente.consultoria = consultoria;
-  salvarClientes(clientes);
-  registrarLog('EDITAR_CLIENTE', cnpj, { id, razaoSocial, email, telefone, consultoria });
-  res.json(cliente);
+};
+
+exports.detalharCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cliente = await Cliente.findById(id);
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao detalhar cliente', details: err.message });
+  }
+};
+
+exports.excluirCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cliente = await Cliente.findByIdAndDelete(id);
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    registrarLog('EXCLUIR_CLIENTE', id, {});
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao excluir cliente', details: err.message });
+  }
+};
+
+exports.editarCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
+    if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
+      return res.status(400).json({ error: 'Preencha todos os campos!' });
+    }
+    const cliente = await Cliente.findByIdAndUpdate(id, { razaoSocial, cnpj, email, telefone, consultoria }, { new: true });
+    if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
+    registrarLog('EDITAR_CLIENTE', cnpj, { id, razaoSocial, email, telefone, consultoria });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao editar cliente', details: err.message });
+  }
 };

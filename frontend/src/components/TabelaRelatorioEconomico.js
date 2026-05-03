@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 // ...restante do código permanece igual...
 import React, { useState } from 'react';
 
@@ -101,7 +102,8 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
       linha.CNPJ || '',
       linha.DATA || ''
     ].join(';'));
-    const csv = [header, ...rows].join('\n');
+    // Usa CRLF como quebra de linha e garante CRLF ao final
+    const csv = [header, ...rows].join('\r\n') + '\r\n';
     // Monta nome do arquivo conforme padrão solicitado
     let nomeRazao = razaoSocial
       ? razaoSocial.normalize('NFD').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').toUpperCase()
@@ -126,7 +128,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
     setHistoricoCSV(novoHistorico);
     localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
     // Log da ação no backend
-    fetch('http://localhost:5000/api/acao', {
+      fetch(`${API_URL}/api/acao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

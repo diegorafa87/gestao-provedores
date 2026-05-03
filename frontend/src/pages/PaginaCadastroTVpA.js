@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 
 import React, { useEffect, useState } from 'react';
 import NovoRelatorioTVpA from './CadastroTVpAPage';
@@ -12,7 +13,7 @@ const PaginaCadastroTVpA = () => {
     const params = new URLSearchParams(location.search);
     const cnpj = params.get('cnpj');
     if (cnpj) {
-      fetch(`http://localhost:5000/api/clientes?cnpj=${cnpj}`)
+      fetch(`${API_URL}/api/clientes?cnpj=${cnpj}`)
         .then(async resp => {
           if (!resp.ok) return;
           const data = await resp.json();

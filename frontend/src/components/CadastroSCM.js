@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 
@@ -32,10 +33,12 @@ const ordemCSV = [
 ];
 
 
+
+// Função para gerar CSV com separador vírgula, CRLF e sem linha em branco final
 function toCSV(obj) {
   const header = ordemCSV.join(';');
-  const row = ordemCSV.map(c => obj[c] || '').join(';');
-  return `${header}\n${row}`;
+  const row = ordemCSV.map(c => obj[c] || '').join(',');
+  return `${header}\r\n${row}`;
 }
 
 
@@ -100,11 +103,24 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
   const handleGerarCSV = () => {
     if (linhas.length === 0) return;
     const header = ordemCSV.join(';');
-    // Insere o CNPJ do cliente em cada linha, sem pontuação
-    const cnpjLimpo = (cnpj || '').replace(/[\.\/-]/g, '');
-    const linhasComCnpj = linhas.map(linha => ({ ...linha, CNPJ: cnpjLimpo }));
+    // Insere o CNPJ do cliente em cada linha, apenas números
+    // CNPJ: só números, 14 dígitos com zeros à esquerda
+    const cnpjLimpo = (cnpj || '').replace(/\D/g, '').padStart(14, '0');
+    const linhasComCnpj = linhas.map(linha => {
+      // VELOCIDADE: só vírgula, sem ponto
+      let velocidade = (linha.VELOCIDADE || '').replace(/\./g, '');
+      // Remove espaços extras dos campos
+      const obj = {};
+      ordemCSV.forEach(campo => {
+        obj[campo] = (linha[campo] || '').toString().trim();
+      });
+      obj.CNPJ = cnpjLimpo;
+      obj.VELOCIDADE = velocidade;
+      return obj;
+    });
+    // Gera linhas CSV com separador ponto e vírgula e CRLF, sem linha em branco final
     const rows = linhasComCnpj.map(linha => ordemCSV.map(c => linha[c] || '').join(';'));
-    const csvContent = [header, ...rows].join('\n');
+    let csvContent = [header, ...rows].join('\r\n');
     setCsv(csvContent);
     // Nome do arquivo: SCM_RAZAOSOCIAL_ANO_MES.csv
     let ano = linhasComCnpj[0]?.ANO || '';
@@ -129,7 +145,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
     // Não limpa as linhas após gerar o CSV
     // Log da ação no backend
-    fetch('http://localhost:5000/api/acao', {
+    fetch(`${API_URL}/api/acao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -142,10 +158,12 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
   // Atualiza o localStorage ao excluir do histórico
   const handleExcluirHistorico = idx => {
-    const novo = historico.filter((_, i) => i !== idx);
-    setHistorico(novo);
-    // Usa a mesma chave dinâmica do localStorage usada para salvar
-    localStorage.setItem(historicoKey, JSON.stringify(novo));
+    if (window.confirm('Tem certeza que deseja excluir este arquivo CSV do histórico? Essa ação não poderá ser desfeita.')) {
+      const novo = historico.filter((_, i) => i !== idx);
+      setHistorico(novo);
+      // Usa a mesma chave dinâmica do localStorage usada para salvar
+      localStorage.setItem(historicoKey, JSON.stringify(novo));
+    }
   };
 
 
@@ -346,7 +364,17 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
-                      const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });
+                      // Força BOM UTF-8, separador vírgula, CRLF e sem linha em branco final
+                      const BOM = '\uFEFF';
+                      let conteudo = item.conteudo.replace(/^\s+/, '');
+                      // Garante que a primeira linha é o cabeçalho correto e com vírgula
+                      const header = 'CNPJ;ANO;MES;COD_IBGE;TIPO_CLIENTE;TIPO_ATENDIMENTO;TIPO_MEIO;TIPO_PRODUTO;TIPO_TECNOLOGIA;VELOCIDADE;ACESSOS';
+                      let linhas = conteudo.split(/\r?\n/);
+                      linhas[0] = header;
+                      conteudo = linhas.join('\r\n') + '\r\n'; // Garante CRLF ao final
+                      // Força CRLF em todas as linhas (caso haja algum \n isolado)
+                      conteudo = conteudo.replace(/([^\r])\n/g, '$1\r\n');
+                      const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
                       link.href = URL.createObjectURL(blob);
                       link.setAttribute('download', item.nome);

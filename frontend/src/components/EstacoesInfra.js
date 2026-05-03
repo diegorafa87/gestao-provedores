@@ -535,7 +535,8 @@ export default function EstacoesInfra() {
                 ].join(';');
               })
             ];
-            const csvContent = csvRows.join('\n');
+            // Usa CRLF como quebra de linha e garante CRLF ao final
+            const csvContent = csvRows.join('\r\n') + '\r\n';
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');

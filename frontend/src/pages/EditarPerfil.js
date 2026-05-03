@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import MenuLateral from '../components/MenuLateral';
@@ -25,7 +26,7 @@ const EditarPerfil = () => {
   useEffect(() => {
     setLoading(true);
     setErro(null);
-    fetch(`http://localhost:5000/api/clientes/${id}`)
+    fetch(`${API_URL}/api/clientes/${id}`)
       .then(async resp => {
         let data = null;
         try {
@@ -59,7 +60,7 @@ const EditarPerfil = () => {
 
   const handleSalvar = async e => {
     e.preventDefault();
-    const resp = await fetch(`http://localhost:5000/api/clientes/${id}`, {
+    const resp = await fetch(`${API_URL}/api/clientes/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)

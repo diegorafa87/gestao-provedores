@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import CadastroSCM from '../components/CadastroSCM';
 import AcompanhamentoSCM from '../components/AcompanhamentoSCM';
@@ -26,7 +27,7 @@ const PaginaCadastroSCM = () => {
     const params = new URLSearchParams(location.search);
     const id = params.get('id');
     if (id) {
-      fetch(`http://localhost:5000/api/clientes/${id}`)
+      fetch(`${API_URL}/api/clientes/${id}`)
         .then(async resp => {
           if (!resp.ok) return;
           const data = await resp.json();
@@ -73,9 +74,7 @@ const PaginaCadastroSCM = () => {
         {aba === 'acompanhamento' ? (
           <AcompanhamentoSCM razaoSocial={razaoSocial} cnpj={cnpj} />
         ) : (
-          <div style={{marginTop:'20px'}}>
-            <CadastroSCM cnpj={cnpj} razaoSocial={razaoSocial} />
-          </div>
+          <CadastroSCM cnpj={cnpj} razaoSocial={razaoSocial} />
         )}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import API_URL from '../services/api';
 import React, { useState } from 'react';
 
 function formatCNPJ(value) {
@@ -36,7 +37,7 @@ const CadastroCliente = ({ onClienteCadastrado }) => {
     e.preventDefault();
     setMensagem('');
     try {
-      const resp = await fetch('http://localhost:5000/api/clientes', {
+          const resp = await fetch(`${API_URL}/api/clientes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)

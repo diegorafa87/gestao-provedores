@@ -1,3 +1,5 @@
+import CadastroRapidoCliente from './components/CadastroRapidoCliente';
+import AdminLogin from './components/AdminLogin';
 import PaginaAcompanhamentoPostes from './pages/AcompanhamentoPostesPage';
 import CompartilhamentoPostesPage from './pages/CompartilhamentoPostesPage';
 import CertidoesPage from './pages/CertidoesPage';
@@ -9,6 +11,7 @@ import EnlacesPropriosPage from './pages/EnlacesPropriosPage';
 import EnlacesContratadosPage from './pages/EnlacesContratadosPage';
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import PrivateRoute from './components/PrivateRoute';
 
 import App from './App';
 import DetalheCliente from './pages/DetalheCliente';
@@ -25,6 +28,7 @@ import PaginaAcompanhamentoRelatorioEconomico from './pages/AcompanhamentoRelato
 import PaginaAcompanhamentoSTFC from './pages/AcompanhamentoSTFCPage';
 
 const AppRouter = () => {
+  // Removido o estado admin, pois a autenticação é controlada pelo Firebase
   // Busca clienteSelecionado do localStorage
   let clienteInfo = null;
   try {
@@ -44,26 +48,35 @@ const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/cliente/:id" element={<DetalheCliente />} />
-        <Route path="/scm/cadastro" element={<PaginaCadastroSCM />} />
-        <Route path="/editar-perfil/:id" element={<EditarPerfil />} />
-        <Route path="/tvpa/cadastro" element={<PaginaCadastroTVpA />} />
-        <Route path="/tvpa/acompanhamento" element={<PaginaAcompanhamentoTVpA />} />
-        <Route path="/stfc/cadastro" element={<PaginaCadastroSTFC />} />
-        <Route path="/stfc/acompanhamento" element={<PaginaAcompanhamentoSTFC />} />
-        <Route path="/relatorio-economico/primeiro-semestre" element={<RelatorioPrimeiroSemestre />} />
-        <Route path="/relatorio-economico/segundo-semestre" element={<RelatorioSegundoSemestre />} />
-        <Route path="/relatorio-economico/acompanhamento" element={<PaginaAcompanhamentoRelatorioEconomico />} />
-        <Route path="/infra/estacoes" element={<EstacoesPage clienteInfo={clienteInfo} />} />
-        <Route path="/infra/enlaces-proprios" element={<EnlacesPropriosPage />} />
-        <Route path="/infra/enlaces-contratados" element={<EnlacesContratadosPage />} />
-        <Route path="/infra/acompanhamento" element={<PaginaAcompanhamentoInfra razaoSocial={clienteInfo?.props?.children?.[0]?.props?.children || ''} />} />
-        <Route path="/postes/acompanhamento" element={<PaginaAcompanhamentoPostes />} />
-        <Route path="/gerenciador/acesso" element={<SubmenuAcessoCampos />} />
-        <Route path="/contratos-e-certidoes/contratos" element={<ContratosPage />} />
-        <Route path="/contratos-e-certidoes/certidoes" element={<CertidoesPage />} />
-        <Route path="/postes/compartilhamento" element={<CompartilhamentoPostesPage />} />
+        {/* Rota pública para cadastro rápido de cliente */}
+        <Route path="/cadastro-cliente" element={<CadastroRapidoCliente />} />
+        {/* Rota de login do admin */}
+        <Route path="/admin-login" element={<AdminLogin />} />
+        {/* Redirecionamento automático para login se não autenticado ao acessar qualquer rota desconhecida */}
+        <Route path="*" element={<PrivateRoute><App /></PrivateRoute>} />
+
+        {/* Todas as outras rotas protegidas individualmente */}
+        <Route path="/admin-area" element={<PrivateRoute><div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div></PrivateRoute>} />
+        <Route path="/" element={<PrivateRoute><App /></PrivateRoute>} />
+        <Route path="/cliente/:id" element={<PrivateRoute><DetalheCliente /></PrivateRoute>} />
+        <Route path="/scm/cadastro" element={<PrivateRoute><PaginaCadastroSCM /></PrivateRoute>} />
+        <Route path="/editar-perfil/:id" element={<PrivateRoute><EditarPerfil /></PrivateRoute>} />
+        <Route path="/tvpa/cadastro" element={<PrivateRoute><PaginaCadastroTVpA /></PrivateRoute>} />
+        <Route path="/tvpa/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoTVpA /></PrivateRoute>} />
+        <Route path="/stfc/cadastro" element={<PrivateRoute><PaginaCadastroSTFC /></PrivateRoute>} />
+        <Route path="/stfc/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoSTFC /></PrivateRoute>} />
+        <Route path="/relatorio-economico/primeiro-semestre" element={<PrivateRoute><RelatorioPrimeiroSemestre /></PrivateRoute>} />
+        <Route path="/relatorio-economico/segundo-semestre" element={<PrivateRoute><RelatorioSegundoSemestre /></PrivateRoute>} />
+        <Route path="/relatorio-economico/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoRelatorioEconomico /></PrivateRoute>} />
+        <Route path="/infra/estacoes" element={<PrivateRoute><EstacoesPage clienteInfo={clienteInfo} /></PrivateRoute>} />
+        <Route path="/infra/enlaces-proprios" element={<PrivateRoute><EnlacesPropriosPage /></PrivateRoute>} />
+        <Route path="/infra/enlaces-contratados" element={<PrivateRoute><EnlacesContratadosPage /></PrivateRoute>} />
+        <Route path="/infra/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoInfra razaoSocial={clienteInfo?.props?.children?.[0]?.props?.children || ''} /></PrivateRoute>} />
+        <Route path="/postes/acompanhamento" element={<PrivateRoute><PaginaAcompanhamentoPostes /></PrivateRoute>} />
+        <Route path="/gerenciador/acesso" element={<PrivateRoute><SubmenuAcessoCampos /></PrivateRoute>} />
+        <Route path="/contratos-e-certidoes/contratos" element={<PrivateRoute><ContratosPage /></PrivateRoute>} />
+        <Route path="/contratos-e-certidoes/certidoes" element={<PrivateRoute><CertidoesPage /></PrivateRoute>} />
+        <Route path="/postes/compartilhamento" element={<PrivateRoute><CompartilhamentoPostesPage /></PrivateRoute>} />
       </Routes>
     </Router>
   );

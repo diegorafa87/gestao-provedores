@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: backend-gestao-provedores
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/index.js
+    rootDir: backend
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: PORT
+        sync: false
