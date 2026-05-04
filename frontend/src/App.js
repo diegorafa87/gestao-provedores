@@ -46,7 +46,10 @@ function App() {
   };
 
   // Filtro a ser passado para ListaClientes
-  const filtroFinal = isAdmin ? consultoriaFiltro : consultoriaUsuario;
+  let filtroFinal = isAdmin ? consultoriaFiltro : consultoriaUsuario;
+  if (emailUsuario === 'dijanjogador123@gmail.com') {
+    filtroFinal = 'CAINARA';
+  }
 
   // Função de logout
   const handleLogout = async () => {
@@ -81,7 +84,7 @@ function App() {
       </div>
 
       {/* Botões de filtro de consultoria - apenas para admin */}
-      {isAdmin && (
+      {isAdmin && emailUsuario !== 'dijanjogador123@gmail.com' && (
         <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
           <button
             onClick={() => handleFiltroConsultoria('')}

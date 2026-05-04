@@ -1,3 +1,12 @@
+// Endpoint temporário para listar todos os usuários
+exports.listAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 // Buscar consultoria do usuário pelo e-mail
 exports.getUserConsultoria = async (req, res) => {
   const { email } = req.query;
