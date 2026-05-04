@@ -17,7 +17,6 @@ export default function CompartilhamentoPostesPage() {
     formData.append('contrato', file);
     const resp = await fetch(`${API_URL}/api/contrato/postes/upload`, {
       method: 'POST',
-<<<<<<< HEAD
       body: formData
     });
     if (resp.ok) {
@@ -100,9 +99,6 @@ export default function CompartilhamentoPostesPage() {
         <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 32, maxWidth: 500, width: '100%' }}>
                     {/* Botão de exportação CSV */}
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-=======
-                    {/* Botão EXPORTAR CSV removido */}
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
                       <button
                         type="button"
                         style={{
@@ -304,9 +300,6 @@ export default function CompartilhamentoPostesPage() {
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>
-=======
-                          {/* Botão EXPORTAR CSV removido */}
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
               <span style={{ fontWeight: 700 }}>Data base de reajuste</span>
               <input
                 type="date"
