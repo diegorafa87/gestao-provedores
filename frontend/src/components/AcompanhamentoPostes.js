@@ -137,6 +137,7 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
     // eslint-disable-next-line
   }, [chaveChecks]);
 
+<<<<<<< HEAD
   // Upload para Cloudflare R2, igual SCM
   const handleFileChange = async (ano, e) => {
     const file = e.target.files[0];
@@ -179,6 +180,33 @@ export default function AcompanhamentoPostes({ razaoSocial, cnpj }) {
         detalhes: { nomeArquivo, ano }
       })
     });
+=======
+  const handleFileChange = (ano, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const nomeLimpo = (razaoSocial || "").normalize('NFD').replace(/[^\w\s]/gi, '').replace(/\s+/g, '_').toUpperCase();
+      const nomeArquivo = `COMP_POSTES_${nomeLimpo}_${ano}_COMPARTILHAMENTO.pdf`;
+      const novoFile = new File([file], nomeArquivo, { type: file.type });
+      const url = URL.createObjectURL(novoFile);
+      setDados(prev => ({
+        ...prev,
+        [ano]: {
+          ...prev[ano],
+          file: novoFile,
+          fileUrl: url
+        }
+      }));
+        fetch(`${API_URL}/api/acao`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acao: 'UPLOAD_PDF_POSTES',
+          usuario: razaoSocial || 'desconhecido',
+          detalhes: { nomeArquivo, ano }
+        })
+      });
+    }
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
   };
 
   const handleDownload = (ano) => {

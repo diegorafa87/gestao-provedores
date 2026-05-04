@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+<<<<<<< HEAD
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+=======
+import { signInWithEmailAndPassword } from 'firebase/auth';
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 import { auth } from '../firebase';
 import { getUserConsultoria } from '../services/user';
 
@@ -25,9 +29,12 @@ const AdminLogin = ({ onLogin }) => {
         if (!consultoria) throw new Error('Usuário sem consultoria cadastrada.');
       } catch (errConsultoria) {
         setErro('Seu usuário não está vinculado a nenhuma consultoria. Fale com o administrador.');
+<<<<<<< HEAD
         await signOut(auth);
         localStorage.removeItem('consultoriaUsuario');
         localStorage.removeItem('emailUsuario');
+=======
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
         setLoading(false);
         return;
       }

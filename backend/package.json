@@ -11,7 +11,10 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+<<<<<<< HEAD
     "dotenv": "^17.4.2",
+=======
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.1",

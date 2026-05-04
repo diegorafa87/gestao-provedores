@@ -1,5 +1,9 @@
 
 const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
+<<<<<<< HEAD
+=======
+// const acompanhamentoPostesUploadRoutes = require('./routes/acompanhamentoPostesUploadRoutes');
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 const userRoutes = require('./routes/userRoutes');
 
 // Entry point do backend
@@ -15,10 +19,14 @@ const app = express();
 connectDB();
 
 app.use(cors({
+<<<<<<< HEAD
   origin: [
     'https://provedordoc-2.onrender.com',
     'http://localhost:3000'
   ]
+=======
+  origin: 'https://provedordoc-2.onrender.com'
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 }));
 app.use(express.json());
 
@@ -30,6 +38,10 @@ const acaoRoutes = require('./routes/acaoRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
+<<<<<<< HEAD
+=======
+// const acompanhamentoSCMUploadRoutes = require('./routes/acompanhamentoSCMUploadRoutes');
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 
 
 app.use('/api', clienteRoutes);
@@ -38,7 +50,13 @@ app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);
 app.use('/api/acompanhamento-scm', acompanhamentoSCMRoutes);
+<<<<<<< HEAD
 app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
+=======
+// app.use('/api/acompanhamento-scm', acompanhamentoSCMUploadRoutes);
+app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
+// app.use('/api/acompanhamento-postes', acompanhamentoPostesUploadRoutes);
+>>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 
 // Rota raiz amigável
 app.get('/', (req, res) => {
