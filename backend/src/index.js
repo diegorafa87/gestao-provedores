@@ -15,7 +15,10 @@ const app = express();
 connectDB();
 
 app.use(cors({
-  origin: 'https://provedordoc-2.onrender.com'
+  origin: [
+    'https://provedordoc-2.onrender.com',
+    'http://localhost:3000'
+  ]
 }));
 app.use(express.json());
 

@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 require('dotenv').config();
 
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/seu_banco';
+const MONGO_URL = process.env.MONGODB_URI || 'mongodb://localhost:27017/provedores';
 
 async function criarUsuario() {
   await mongoose.connect(MONGO_URL);
