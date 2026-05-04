@@ -15,29 +15,9 @@ const initialData = () => {
     MESES.forEach(mes => {
       data[ano][mes] = {
         checked: false,
-<<<<<<< HEAD
         file: null,
         fileUrl: '',
       };
-=======
-        pdfLink: '',
-      };
-
-    // Função para atualizar o link do PDF
-    const handlePdfLinkChange = (ano, mes, e) => {
-      const novoValor = e.target.value;
-      setDados(prev => ({
-        ...prev,
-        [ano]: {
-          ...prev[ano],
-          [mes]: {
-            ...prev[ano][mes],
-            pdfLink: novoValor
-          }
-        }
-      }));
-    };
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
     });
   });
   return data;
@@ -257,7 +237,6 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
                     {mes}
                   </label>
                   <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-<<<<<<< HEAD
                     <input type="file" accept="application/pdf" onChange={e => handleFileChange(ano, mes, e)} disabled={desligado} />
                     {dados[ano][mes].file && (
                       <span style={{fontSize:13, color:'#1976d2', fontWeight:500}}>{dados[ano][mes].file.name}</span>
@@ -267,26 +246,6 @@ export default function AcompanhamentoTVpA({ razaoSocial, cnpj }) {
                     <button onClick={() => handleDownload(ano, mes)} style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }} disabled={desligado}>
                       Download
                     </button>
-=======
-                    <input
-                      type="text"
-                      placeholder="Cole o link do PDF aqui"
-                      value={dados[ano][mes].pdfLink || ''}
-                      onChange={e => handlePdfLinkChange(ano, mes, e)}
-                      disabled={desligado}
-                      style={{width:'100%'}}
-                    />
-                  </div>
-                  {dados[ano][mes].pdfLink && (
-                    <a
-                      href={dados[ano][mes].pdfLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-block' }}
-                    >
-                      Baixar PDF
-                    </a>
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
                   )}
                 </div>
               ))}
