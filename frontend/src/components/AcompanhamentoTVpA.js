@@ -131,9 +131,31 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     return <div>Selecione um cliente para visualizar os dados de TVpA.</div>;
   }
 
+  // Verifica se todos os anos estão ocultos
+  const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
+
   return (
     <div style={{ padding: 24 }}>
       <h2>Acompanhamento de TVpA</h2>
+      {todosOcultos && (
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <button
+            onClick={() => setAnosOcultos({})}
+            style={{
+              background: '#1976d2',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '10px 24px',
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px #0001'
+            }}
+          >
+            Desocultar todos os anos
+          </button>
+        </div>
+      )}
       {ANOS.map(ano => (
         <div key={ano} style={{
           border: '2px solid #1976d2',
