@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024];
 const MESES = [
@@ -54,6 +55,48 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     return base;
   });
 
+  // Estados para anos desligados e ocultos
+  const chaveDesligados = cnpj ? `anosDesligados_TVPA_${cnpj}` : 'anosDesligados_TVPA';
+  const chaveOcultos = cnpj ? `anosOcultos_TVPA_${cnpj}` : 'anosOcultos_TVPA';
+  const [anosDesligados, setAnosDesligados] = useState(() => {
+    const salvo = localStorage.getItem(chaveDesligados);
+    return salvo ? JSON.parse(salvo) : {};
+  });
+  const [anosOcultos, setAnosOcultos] = useState(() => {
+    const salvo = localStorage.getItem(chaveOcultos);
+    return salvo ? JSON.parse(salvo) : {};
+  });
+
+  // Atualiza localStorage ao mudar anosDesligados/anosOcultos
+  useEffect(() => {
+    localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
+    localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
+  }, [anosDesligados, anosOcultos]);
+
+  // Checa se todos os meses do ano estão marcados
+  const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
+
+  // Marcar/desmarcar todos os meses de um ano
+  const handleCheckAno = (ano) => {
+    const marcar = !todosMesesChecados(ano);
+    setDados(prev => {
+      const novo = { ...prev };
+      novo[ano] = { ...novo[ano] };
+      MESES.forEach(mes => {
+        novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
+      });
+      // Salva no localStorage
+      const checksToSave = {};
+      ANOS.forEach(a => {
+        checksToSave[a] = {};
+        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
+      });
+      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      return novo;
+    });
+  };
+
+  // Marcar/desmarcar mês individual
   const handleCheck = (ano, mes) => {
     setDados(prev => {
       const novo = { ...prev };
@@ -96,11 +139,36 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           border: '2px solid #1976d2',
           borderRadius: 10,
           marginBottom: 32,
-          background: '#f7faff',
+          background: anosDesligados[ano] ? '#f5f5f5' : '#f7faff',
           boxShadow: '0 2px 8px #0001',
-          padding: 20
+          padding: 20,
+          opacity: anosDesligados[ano] ? 0.5 : 1,
+          display: anosOcultos[ano] ? 'none' : 'block'
         }}>
-          <div style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16, color: '#1976d2' }}>Ano: {ano}</div>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+            <input
+              type="checkbox"
+              checked={todosMesesChecados(ano)}
+              onChange={() => handleCheckAno(ano)}
+              style={{ marginRight: 10, width: 20, height: 20 }}
+              disabled={anosDesligados[ano]}
+            />
+            <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
+            <button
+              onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
+              title={anosDesligados[ano] ? 'Ligar ano' : 'Desligar ano'}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 8 }}
+            >
+              {anosDesligados[ano] ? <IconPowerOn color="#1976d2" /> : <IconPower color="#1976d2" />}
+            </button>
+            <button
+              onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: !prev[ano] }))}
+              title={anosOcultos[ano] ? 'Exibir ano' : 'Ocultar ano'}
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+            >
+              {anosOcultos[ano] ? <IconEyeOff color="#1976d2" /> : <IconEye color="#1976d2" />}
+            </button>
+          </div>
           {MESES.map(mes => (
             <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
               <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
@@ -109,6 +177,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                   type="checkbox"
                   checked={dados[ano][mes].checked}
                   onChange={() => handleCheck(ano, mes)}
+                  disabled={anosDesligados[ano]}
                 />{' '}
                 Comprovante Coleta TVpA ({mes})
               </label>
@@ -117,7 +186,8 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                 value={dados[ano][mes].link}
                 onChange={e => handleLinkChange(ano, mes, e.target.value)}
                 placeholder="Comprovante (link Cloudflare)"
-                style={{ width: 260 }}
+                style={{ width: 400, maxWidth: '100%' }}
+                disabled={anosDesligados[ano]}
               />
               {dados[ano][mes].link && (
                 <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
