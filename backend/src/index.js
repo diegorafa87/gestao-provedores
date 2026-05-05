@@ -1,9 +1,5 @@
 
 const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
-<<<<<<< HEAD
-=======
-// const acompanhamentoPostesUploadRoutes = require('./routes/acompanhamentoPostesUploadRoutes');
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 const userRoutes = require('./routes/userRoutes');
 
 // Entry point do backend
@@ -19,14 +15,10 @@ const app = express();
 connectDB();
 
 app.use(cors({
-<<<<<<< HEAD
   origin: [
     'https://provedordoc-2.onrender.com',
     'http://localhost:3000'
   ]
-=======
-  origin: 'https://provedordoc-2.onrender.com'
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 }));
 app.use(express.json());
 
