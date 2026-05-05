@@ -28,12 +28,8 @@ const logRoutes = require('./routes/logRoutes');
 const acaoRoutes = require('./routes/acaoRoutes');
 
 const contratoRoutes = require('./routes/contratoRoutes');
-const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
-<<<<<<< HEAD
-=======
-// const acompanhamentoSCMUploadRoutes = require('./routes/acompanhamentoSCMUploadRoutes');
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
+const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
 
 app.use('/api', clienteRoutes);
@@ -42,13 +38,7 @@ app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);
 app.use('/api/acompanhamento-scm', acompanhamentoSCMRoutes);
-<<<<<<< HEAD
 app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
-=======
-// app.use('/api/acompanhamento-scm', acompanhamentoSCMUploadRoutes);
-app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
-// app.use('/api/acompanhamento-postes', acompanhamentoPostesUploadRoutes);
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
 
 // Rota raiz amigável
 app.get('/', (req, res) => {
