@@ -1,9 +1,5 @@
 const express = require('express');
 const router = express.Router();
-<<<<<<< HEAD
-
-// Aqui você pode adicionar outras rotas relacionadas a contratos, sem upload de arquivos.
-=======
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -18,7 +14,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-
 // Utilitário de extração
 const { extrairCamposContratoPostes } = require('../utils/pdfPostes');
 
@@ -32,6 +27,7 @@ router.post('/contrato/postes/upload', upload.single('contrato'), async (req, re
     res.status(500).json({ error: 'Falha ao extrair campos do PDF', details: e.message });
   }
 });
->>>>>>> 6f6854514f1e0dd3e13bbb58206a5c169147061c
+
+// Aqui você pode adicionar outras rotas relacionadas a contratos, sem upload de arquivos.
 
 module.exports = router;
