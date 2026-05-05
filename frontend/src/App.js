@@ -61,6 +61,10 @@ function App() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', position: 'relative' }}>
+      {/* Usuário logado no canto superior esquerdo */}
+      <div style={{ position: 'absolute', top: 16, left: 24, color: '#153a6b', fontWeight: 'bold', fontSize: 15, zIndex: 2 }}>
+        Usuário: {emailUsuario}
+      </div>
       <button onClick={handleLogout} style={{position:'absolute',top:24,right:24,background:'#d32f2f',color:'#fff',border:'none',borderRadius:6,padding:'0.5rem 1.2rem',fontWeight:'bold',fontSize:16,cursor:'pointer',zIndex:2}}>Sair</button>
       <h1 style={{ textAlign: 'center', color: '#153a6b' }}>DOC PROVEDOR</h1>
       <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />

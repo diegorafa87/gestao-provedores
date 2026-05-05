@@ -1,5 +1,10 @@
 
+
 import React, { useState, useEffect } from 'react';
+// Função utilitária para obter o usuário logado
+function getUsuarioLogado() {
+  return localStorage.getItem('emailUsuario') || '';
+}
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
@@ -78,7 +83,11 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, position: 'relative' }}>
+      {/* Usuário logado no canto superior esquerdo */}
+      <div style={{ position: 'absolute', top: 8, left: 16, color: '#153a6b', fontWeight: 'bold', fontSize: 15, zIndex: 2 }}>
+        Usuário: {getUsuarioLogado()}
+      </div>
       <h2>Acompanhamento de Postes</h2>
       {ANOS.map(ano => (
         <div key={ano} style={{ marginBottom: 24, border: '1px solid #ccc', padding: 16, borderRadius: 8 }}>

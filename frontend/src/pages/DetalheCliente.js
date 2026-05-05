@@ -96,10 +96,17 @@ const DetalheCliente = () => {
   if (erro) return <p style={{color:'red'}}>{erro}</p>;
   if (!cliente) return null;
 
+  // Função utilitária para obter o usuário logado
+  const getUsuarioLogado = () => localStorage.getItem('emailUsuario') || '';
+
   return (
-    <div style={{display:'flex'}}>
+    <div style={{display:'flex', position: 'relative'}}>
+      {/* Usuário logado acima do botão voltar */}
+      <div style={{ position: 'absolute', top: 16, left: 32, color: '#153a6b', fontWeight: 'bold', fontSize: 15, zIndex: 2 }}>
+        Usuário: {getUsuarioLogado()}
+      </div>
       <MenuLateral
-        voltarLink={<Link to="/" style={{textDecoration:'none',color:'#1976d2',fontWeight:'bold',fontSize:'1.1rem',display:'block',marginBottom:'1.5rem',marginTop:'1rem'}}>&larr; Voltar</Link>}
+        voltarLink={<Link to="/" style={{textDecoration:'none',color:'#1976d2',fontWeight:'bold',fontSize:'1.1rem',display:'block',marginBottom:'1.5rem',marginTop:'2.5rem'}}>&larr; Voltar</Link>}
         clienteInfo={
           <div style={{marginBottom: 16, textAlign: 'center'}}>
             <div style={{fontWeight:700, fontSize: '1.1rem', color: '#fff'}}>{cliente.razaoSocial}</div>
