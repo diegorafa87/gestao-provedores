@@ -51,6 +51,7 @@ const AdminLogin = ({ onLogin }) => {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
+          autoComplete="username"
           style={{fontSize:'1.1rem',padding:'0.7rem',borderRadius:6,border:'1.5px solid #1976d2'}}
         />
         <input
