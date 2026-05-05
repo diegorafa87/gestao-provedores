@@ -344,9 +344,13 @@ export default function EnlacesPropriosPage() {
           )}
         </div>
         {/* Histórico de arquivos gerados FORA do container do formulário */}
-        {historico.length > 0 && (
-          <div style={{marginTop:32, background:'#fff', borderRadius:12, boxShadow:'0 2px 8px #0001', padding:32, maxWidth:900, width:'100%'}}>
-            <h3>Histórico de arquivos gerados</h3>
+        <div style={{marginTop:32, background:'#fff', borderRadius:12, boxShadow:'0 2px 8px #0001', padding:32, maxWidth:900, width:'100%'}}>
+          <h3>Histórico de arquivos gerados</h3>
+          {historico.length === 0 ? (
+            <div style={{ color: '#888', fontStyle: 'italic', fontSize: 14, padding: 8, background: '#f9f9f9', borderRadius: 6 }}>
+              Nenhum arquivo gerado ainda.
+            </div>
+          ) : (
             <table style={{width:'100%',background:'#f4f4f4',borderRadius:6,padding:8}}>
               <thead>
                 <tr>
@@ -382,8 +386,8 @@ export default function EnlacesPropriosPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
