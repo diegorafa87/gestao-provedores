@@ -183,6 +183,7 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
       paddingTop: 12,
       zIndex: 10
     }}>
+
       <div style={{
         position: 'fixed',
         top: 0,
@@ -200,6 +201,10 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
         justifyContent: 'center',
         paddingBottom: 8
       }}>
+        {/* Usuário logado acima do botão voltar */}
+        <div style={{width:'100%', color:'#fff', fontWeight:'bold', fontSize:13, textAlign:'left', padding:'10px 0 0 16px', letterSpacing:0.2}}>
+          Usuário: {localStorage.getItem('emailUsuario') || '-'}
+        </div>
         <div style={{width:'100%', display:'flex', justifyContent:'flex-start', alignItems:'center', padding:'8px 0 0 12px'}}>
           {voltarLink}
         </div>
