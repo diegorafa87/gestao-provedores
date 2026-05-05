@@ -225,4 +225,4 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
     </div>
   );
 }
-                      <span style={{fontSize:13, color:'#1976d2', fontWeight:500}}>{dados[ano][item].file.name}</span>
+
