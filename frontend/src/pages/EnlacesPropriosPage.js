@@ -161,14 +161,7 @@ export default function EnlacesPropriosPage() {
       });
       // Usa CRLF como quebra de linha e garante CRLF ao final
       const csvContent = [header, ...rows].join('\r\n') + '\r\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', nomeArquivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Salva histórico
+    // Salva histórico (NÃO FAZ DOWNLOAD DIRETO)
     const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
     setHistorico(novoHistorico);
     localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
@@ -378,9 +371,11 @@ export default function EnlacesPropriosPage() {
                         document.body.removeChild(link);
                       }} style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',marginRight:8,cursor:'pointer'}}>Baixar</button>
                       <button onClick={() => {
-                        const novoHistorico = historico.filter((_, i) => i !== idx);
-                        setHistorico(novoHistorico);
-                        localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+                        if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                          const novoHistorico = historico.filter((_, i) => i !== idx);
+                          setHistorico(novoHistorico);
+                          localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+                        }
                       }} style={{background:'#d32f2f',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',cursor:'pointer'}}>Excluir</button>
                     </td>
                   </tr>

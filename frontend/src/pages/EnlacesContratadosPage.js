@@ -314,11 +314,13 @@ export default function EnlacesContratadosPage() {
                       <button
                         style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
                         onClick={() => {
-                          setHistoricoArquivos(prev => {
-                            const novo = prev.filter((_, i) => i !== idx);
-                            salvarHistoricoNoStorage(novo, clienteSelecionado.cnpj);
-                            return novo;
-                          });
+                          if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                            setHistoricoArquivos(prev => {
+                              const novo = prev.filter((_, i) => i !== idx);
+                              salvarHistoricoNoStorage(novo, clienteSelecionado.cnpj);
+                              return novo;
+                            });
+                          }
                         }}
                       >
                         Excluir
