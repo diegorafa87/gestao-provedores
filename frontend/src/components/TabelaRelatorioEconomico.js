@@ -320,7 +320,11 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
                   <a href={item.url} download={item.nome || 'relatorio_economico.csv'} target="_blank" rel="noopener noreferrer">
                     <button style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'0.3rem 1.2rem',fontWeight:'bold',cursor:'pointer'}}>Download</button>
                   </a>
-                  <button onClick={() => handleExcluirHistorico(idx)} style={{background:'#d32f2f',color:'#fff',border:'none',borderRadius:4,padding:'0.3rem 1.2rem',fontWeight:'bold',cursor:'pointer'}}>Excluir</button>
+                  <button onClick={() => {
+                    if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                      handleExcluirHistorico(idx);
+                    }
+                  }} style={{background:'#d32f2f',color:'#fff',border:'none',borderRadius:4,padding:'0.3rem 1.2rem',fontWeight:'bold',cursor:'pointer'}}>Excluir</button>
                 </li>
               ))
             )}
