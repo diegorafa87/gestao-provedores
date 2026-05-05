@@ -1,18 +1,6 @@
 
 
 import React, { useState, useEffect } from 'react';
-// Função utilitária para obter o usuário logado
-function getUsuarioLogado() {
-  return localStorage.getItem('emailUsuario') || '';
-}
-
-const API_URL = process.env.REACT_APP_API_URL || '';
-const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
-const CHECKS = [
-  'Comprovante Coleta Postes',
-];
-const chaveChecks = 'checks_postes';
-import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
