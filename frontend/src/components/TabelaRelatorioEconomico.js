@@ -111,16 +111,9 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
     let nomeAno = ano || (datasPadrao && datasPadrao[0] ? (datasPadrao[0].split('/')[2] || '') : 'ANO');
     let sem = (semestre || '').toString().replace(/[^12]/g, '').replace(/^$/, '1');
     let nomeArquivo = `REL_ECON_${nomeRazao}_${nomeAno}_SEM${sem}.csv`;
-    // Download automático
+    // Salvar histórico (download só pelo histórico)
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', nomeArquivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // Salvar histórico com URL de download
     const novoHistorico = [
       { data: new Date().toLocaleString(), conteudo: csv, nome: nomeArquivo, url },
       ...historicoCSV
@@ -314,11 +307,13 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
         )}
 
         {/* Histórico de exportações CSV */}
-        {historicoCSV.length > 0 && (
-          <div style={{marginTop:32}}>
-            <h3>Histórico de Arquivos Gerados</h3>
-            <ul style={{listStyle:'none',padding:0}}>
-              {historicoCSV.map((item, idx) => (
+        <div style={{marginTop:32}}>
+          <h3>Histórico de Arquivos Gerados</h3>
+          <ul style={{listStyle:'none',padding:0}}>
+            {historicoCSV.length === 0 ? (
+              <li style={{color:'#888',textAlign:'center',padding:'16px 0'}}>Nenhum arquivo gerado ainda.</li>
+            ) : (
+              historicoCSV.map((item, idx) => (
                 <li key={idx} style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
                   <span style={{fontSize:14,color:'#555',fontFamily:'monospace'}}>{item.nome || 'relatorio_economico.csv'}</span>
                   <span style={{fontSize:14,color:'#333'}}>{item.data}</span>
@@ -327,10 +322,10 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
                   </a>
                   <button onClick={() => handleExcluirHistorico(idx)} style={{background:'#d32f2f',color:'#fff',border:'none',borderRadius:4,padding:'0.3rem 1.2rem',fontWeight:'bold',cursor:'pointer'}}>Excluir</button>
                 </li>
-              ))}
-            </ul>
-          </div>
-        )}
+              ))
+            )}
+          </ul>
+        </div>
     </div>
   );
 }
