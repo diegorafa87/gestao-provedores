@@ -276,7 +276,11 @@ const CadastroTVpA = ({ cnpj }) => {
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Baixar arquivo" aria-label="Baixar arquivo">
                       <IconDownload />
                     </button>
-                    <button onClick={() => handleExcluirHistorico(idx)} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
+                    <button onClick={() => {
+                      if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                        handleExcluirHistorico(idx);
+                      }
+                    }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
                       <IconTrash />
                     </button>
                   </td>
