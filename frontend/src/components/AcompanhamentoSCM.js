@@ -209,8 +209,12 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                     disabled={anosDesligados[ano]}
                   />
                   {dados[ano][mes].link && (
-                    <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
-                      Visualizar
+                    <a
+                      href={dados[ano][mes].link}
+                      download
+                      style={{ marginLeft: 8, fontSize: 12 }}
+                    >
+                      Download
                     </a>
                   )}
                 </div>
