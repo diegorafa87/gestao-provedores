@@ -202,10 +202,10 @@ const MenuLateral = ({ voltarLink, clienteInfo }) => {
         paddingBottom: 8
       }}>
         {/* Usuário logado acima do botão voltar */}
-        <div style={{width:'100%', color:'#fff', fontWeight:'bold', fontSize:13, textAlign:'left', padding:'10px 0 0 16px', letterSpacing:0.2}}>
+        <div style={{width:'100%', color:'#fff', fontWeight:'bold', fontSize:13, textAlign:'left', padding:'6px 0 0 16px', letterSpacing:0.2}}>
           Usuário: {localStorage.getItem('emailUsuario') || '-'}
         </div>
-        <div style={{width:'100%', display:'flex', justifyContent:'flex-start', alignItems:'center', padding:'8px 0 0 12px'}}>
+        <div style={{width:'100%', display:'flex', justifyContent:'flex-start', alignItems:'center', padding:'2px 0 0 12px'}}>
           {voltarLink}
         </div>
         <div style={{marginTop: 4, fontWeight: 600, fontSize: 15}}>Bem vindo!</div>
