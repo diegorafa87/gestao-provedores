@@ -305,10 +305,14 @@ export default function CompartilhamentoPostesPage() {
           )}
         </div>
         {/* Histórico de arquivos gerados (fora do card, igual Estações) */}
-        {historicoArquivos.length > 0 && (
-          <div style={{margin:'32px auto 0', maxWidth:900, width:'100%'}}>
-            <div style={{ background: '#e3f2fd', border: '2px solid #1976d2', borderRadius: 12, padding: 24 }}>
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>Histórico de arquivos gerados:</div>
+        <div style={{margin:'32px auto 0', maxWidth:900, width:'100%'}}>
+          <div style={{ background: '#e3f2fd', border: '2px solid #1976d2', borderRadius: 12, padding: 24 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>Histórico de arquivos gerados:</div>
+            {historicoArquivos.length === 0 ? (
+              <div style={{ color: '#888', fontStyle: 'italic', fontSize: 14, padding: 8, background: '#f9f9f9', borderRadius: 6 }}>
+                Nenhum arquivo gerado ainda.
+              </div>
+            ) : (
               <ul style={{ fontFamily: 'monospace', fontSize: 14, paddingLeft: 20 }}>
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
@@ -334,11 +338,13 @@ export default function CompartilhamentoPostesPage() {
                     <button
                       style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
                       onClick={() => {
-                        setHistoricoArquivos(h => {
-                          const novo = h.filter((_, i) => i !== idx);
-                          salvarHistoricoPostesNoStorage(novo, cnpjCliente);
-                          return novo;
-                        });
+                        if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                          setHistoricoArquivos(h => {
+                            const novo = h.filter((_, i) => i !== idx);
+                            salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+                            return novo;
+                          });
+                        }
                       }}
                     >
                       Excluir
@@ -346,9 +352,9 @@ export default function CompartilhamentoPostesPage() {
                   </li>
                 ))}
               </ul>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
