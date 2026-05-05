@@ -1,70 +1,51 @@
+
 import React, { useState, useEffect } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 const ANOS = [2021, 2022, 2023, 2024];
-const chaveChecks = 'checks_postes';
-const chaveDesligados = 'anos_desligados_postes';
-const chaveOcultos = 'anos_ocultos_postes';
+const CHECKS = [
+  'Contrato vigente',
+  'Relatório anual enviado',
+  'Comprovante de pagamento',
+  'Projeto atualizado',
+  'Licença ambiental',
+];
+const chaveChecks = 'checks_tvpa';
+const chaveLinks = 'links_tvpa';
 
 function initialData() {
   const data = {};
   ANOS.forEach(ano => {
     data[ano] = {
-      checked: false,
-      file: null,
-      fileUrl: '',
+      checks: CHECKS.map(() => false),
+      link: '',
     };
   });
   return data;
 }
 
-export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
+
+export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
-  const [anosDesligados, setAnosDesligados] = useState([]);
-  const [anosOcultos, setAnosOcultos] = useState([]);
-
-  useEffect(() => {
-    if (!cnpj) return;
-    fetch(`${API_URL}/api/acompanhamento-postes/${cnpj}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.anosDesligados) setAnosDesligados(data.anosDesligados);
-        if (data.anosOcultos) setAnosOcultos(data.anosOcultos);
-      })
-      .catch(() => {
-        const salvoDesligados = localStorage.getItem(chaveDesligados);
-        if (salvoDesligados) setAnosDesligados(JSON.parse(salvoDesligados));
-        const salvoOcultos = localStorage.getItem(chaveOcultos);
-        if (salvoOcultos) setAnosOcultos(JSON.parse(salvoOcultos));
-      });
-  }, [cnpj]);
-
-  useEffect(() => {
-    if (!cnpj) return;
-    fetch(`${API_URL}/api/acompanhamento-postes/${cnpj}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ anosDesligados, anosOcultos })
-    });
-    localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
-    localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
-  }, [anosDesligados, anosOcultos, cnpj]);
 
   useEffect(() => {
     const salvo = localStorage.getItem(chaveChecks);
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
+    const salvoLinks = localStorage.getItem(chaveLinks);
+    if (salvo || salvoLinks) {
       setDados(prev => {
         const base = initialData();
-        ANOS.forEach(ano => {
-          base[ano].checked = !!checksSalvos[ano];
-        });
-        ANOS.forEach(ano => {
-          if (prev[ano].file) {
-            base[ano].file = prev[ano].file;
-            base[ano].fileUrl = prev[ano].fileUrl;
-          }
-        });
+        if (salvo) {
+          const checksSalvos = JSON.parse(salvo);
+          ANOS.forEach(ano => {
+            if (checksSalvos[ano]) base[ano].checks = checksSalvos[ano];
+          });
+        }
+        if (salvoLinks) {
+          const linksSalvos = JSON.parse(salvoLinks);
+          ANOS.forEach(ano => {
+            if (linksSalvos[ano]) base[ano].link = linksSalvos[ano];
+          });
+        }
         return base;
       });
     } else {
@@ -72,82 +53,69 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
     }
   }, [cnpj]);
 
-  const handleCheck = (ano) => {
+  const handleCheck = (ano, idx) => {
     setDados(prev => {
-      const novo = {
-        ...prev,
-        [ano]: {
-          ...prev[ano],
-          checked: !prev[ano].checked
-        }
-      };
+      const novo = { ...prev };
+      novo[ano].checks[idx] = !novo[ano].checks[idx];
+      // Salva no localStorage
       const checksToSave = {};
-      ANOS.forEach(a => { checksToSave[a] = novo[a].checked; });
+      ANOS.forEach(a => { checksToSave[a] = novo[a].checks; });
       localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
-      return novo;
+      return { ...novo };
     });
   };
 
-  const handleFileChange = (ano, file) => {
-    if (!file) return;
-    setDados(prev => ({
-      ...prev,
-      [ano]: {
-        ...prev[ano],
-        file: file,
-        fileUrl: URL.createObjectURL(file)
-      }
-    }));
-    fetch(`${API_URL}/api/acao`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        acao: 'UPLOAD_PDF_POSTES',
-        usuario: razaoSocial || 'desconhecido',
-        detalhes: { nomeArquivo: file.name, ano }
-      })
+  const handleLinkChange = (ano, value) => {
+    setDados(prev => {
+      const novo = { ...prev };
+      novo[ano].link = value;
+      // Salva no localStorage
+      const linksToSave = {};
+      ANOS.forEach(a => { linksToSave[a] = novo[a].link; });
+      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      return { ...novo };
     });
-  };
-
-  const handleDownload = (ano) => {
-    const fileUrl = dados[ano].fileUrl;
-    if (fileUrl) {
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = `Postes_${ano}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
   };
 
   if (!razaoSocial) {
-    return <div>Selecione um cliente para visualizar os dados de postes.</div>;
+    return <div>Selecione um cliente para visualizar os dados de TVpA.</div>;
   }
 
   return (
     <div style={{ padding: 24 }}>
-      <h2>Acompanhamento de Postes</h2>
+      <h2>Acompanhamento de TVpA</h2>
       {ANOS.map(ano => (
-        <div key={ano} style={{ marginBottom: 16, border: '1px solid #ccc', padding: 12, borderRadius: 8 }}>
-          <label>
-            <input
-              type="checkbox"
-              checked={dados[ano].checked}
-              onChange={() => handleCheck(ano)}
-            />{' '}
-            {ano} - PDF:{' '}
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={e => handleFileChange(ano, e.target.files[0])}
-            />
-            {dados[ano].fileUrl && (
-              <button type="button" onClick={() => handleDownload(ano)} style={{ marginLeft: 8 }}>
-                Baixar PDF
-              </button>
+        <div key={ano} style={{ marginBottom: 24, border: '1px solid #ccc', padding: 16, borderRadius: 8 }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 8 }}>{ano}</div>
+          <div style={{ marginBottom: 8 }}>
+            {CHECKS.map((label, idx) => (
+              <label key={idx} style={{ display: 'block', marginBottom: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={dados[ano].checks[idx]}
+                  onChange={() => handleCheck(ano, idx)}
+                />{' '}
+                {label}
+              </label>
+            ))}
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <label>
+              Link do PDF (Cloudflare):{' '}
+              <input
+                type="text"
+                value={dados[ano].link}
+                onChange={e => handleLinkChange(ano, e.target.value)}
+                placeholder="Cole aqui o link do PDF no Cloudflare"
+                style={{ width: 320 }}
+              />
+            </label>
+            {dados[ano].link && (
+              <a href={dados[ano].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 12 }}>
+                Visualizar PDF
+              </a>
             )}
-          </label>
+          </div>
         </div>
       ))}
     </div>
