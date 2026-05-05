@@ -165,7 +165,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           boxShadow: '0 2px 8px #0001',
           padding: 20,
           opacity: anosDesligados[ano] ? 0.5 : 1,
-          display: anosOcultos[ano] ? 'none' : 'block'
+          // Sempre exibe o título do ano, oculta só o conteúdo
         }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
             <input
@@ -191,33 +191,37 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
               {anosOcultos[ano] ? <IconEyeOff color="#1976d2" /> : <IconEye color="#1976d2" />}
             </button>
           </div>
-          {MESES.map(mes => (
-            <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
-              <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
-              <label style={{ display: 'block', marginBottom: 4 }}>
-                <input
-                  type="checkbox"
-                  checked={dados[ano][mes].checked}
-                  onChange={() => handleCheck(ano, mes)}
-                  disabled={anosDesligados[ano]}
-                />{' '}
-                Comprovante Coleta TVpA ({mes})
-              </label>
-              <input
-                type="text"
-                value={dados[ano][mes].link}
-                onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                placeholder="Comprovante (link Cloudflare)"
-                style={{ width: 400, maxWidth: '100%' }}
-                disabled={anosDesligados[ano]}
-              />
-              {dados[ano][mes].link && (
-                <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
-                  Visualizar
-                </a>
-              )}
-            </div>
-          ))}
+          {!anosOcultos[ano] && (
+            <>
+              {MESES.map(mes => (
+                <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>
+                    <input
+                      type="checkbox"
+                      checked={dados[ano][mes].checked}
+                      onChange={() => handleCheck(ano, mes)}
+                      disabled={anosDesligados[ano]}
+                    />{' '}
+                    Comprovante Coleta TVpA ({mes})
+                  </label>
+                  <input
+                    type="text"
+                    value={dados[ano][mes].link}
+                    onChange={e => handleLinkChange(ano, mes, e.target.value)}
+                    placeholder="Comprovante (link Cloudflare)"
+                    style={{ width: 400, maxWidth: '100%' }}
+                    disabled={anosDesligados[ano]}
+                  />
+                  {dados[ano][mes].link && (
+                    <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
+                      Visualizar
+                    </a>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
         </div>
       ))}
     </div>
