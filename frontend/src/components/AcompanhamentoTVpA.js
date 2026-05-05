@@ -91,48 +91,43 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   return (
     <div style={{ padding: 24 }}>
       <h2>Acompanhamento de TVpA</h2>
-      <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 600 }}>
-        <thead>
-          <tr>
-            <th style={{ border: '1px solid #ccc', padding: 6, width: 60 }}>Ano</th>
-            <th style={{ border: '1px solid #ccc', padding: 6 }}>Meses</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ANOS.map(ano => (
-            <tr key={ano}>
-              <td style={{ border: '1px solid #ccc', padding: 6, fontWeight: 'bold', verticalAlign: 'top' }}>{ano}</td>
-              <td style={{ border: '1px solid #ccc', padding: 6 }}>
-                {MESES.map(mes => (
-                  <div key={mes} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
-                    <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
-                    <label style={{ display: 'block', marginBottom: 4 }}>
-                      <input
-                        type="checkbox"
-                        checked={dados[ano][mes].checked}
-                        onChange={() => handleCheck(ano, mes)}
-                      />{' '}
-                      Conformidade
-                    </label>
-                    <input
-                      type="text"
-                      value={dados[ano][mes].link}
-                      onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                      placeholder="Comprovante (link Cloudflare)"
-                      style={{ width: 220 }}
-                    />
-                    {dados[ano][mes].link && (
-                      <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
-                        Visualizar
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </td>
-            </tr>
+      {ANOS.map(ano => (
+        <div key={ano} style={{
+          border: '2px solid #1976d2',
+          borderRadius: 10,
+          marginBottom: 32,
+          background: '#f7faff',
+          boxShadow: '0 2px 8px #0001',
+          padding: 20
+        }}>
+          <div style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16, color: '#1976d2' }}>Ano: {ano}</div>
+          {MESES.map(mes => (
+            <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
+              <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
+              <label style={{ display: 'block', marginBottom: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={dados[ano][mes].checked}
+                  onChange={() => handleCheck(ano, mes)}
+                />{' '}
+                Comprovante Coleta TVpA ({mes})
+              </label>
+              <input
+                type="text"
+                value={dados[ano][mes].link}
+                onChange={e => handleLinkChange(ano, mes, e.target.value)}
+                placeholder="Comprovante (link Cloudflare)"
+                style={{ width: 260 }}
+              />
+              {dados[ano][mes].link && (
+                <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
+                  Visualizar
+                </a>
+              )}
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      ))}
     </div>
   );
 }
