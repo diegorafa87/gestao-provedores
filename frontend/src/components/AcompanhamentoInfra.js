@@ -1,30 +1,3 @@
-import API_URL from '../services/api';
-import React, { useState, useEffect } from 'react';
-import { IconEye, IconEyeOff, IconPower, IconPowerOn } from './IconsAcompanhamento';
-
-const ANOS = [2026, 2025, 2024];
-const ITENS = [
-  'Estações',
-  'Enlaces Próprios',
-  'Enlaces Contratados'
-];
-
-const initialData = () => {
-  const data = {};
-  ANOS.forEach(ano => {
-    data[ano] = {};
-    ITENS.forEach(item => {
-      data[ano][item] = {
-        checked: false,
-        file: null,
-        fileUrl: '',
-      };
-    });
-  });
-  return data;
-};
-
-
 
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
