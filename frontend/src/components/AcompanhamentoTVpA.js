@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 
-const ANOS = [2021, 2022, 2023, 2024];
+const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'

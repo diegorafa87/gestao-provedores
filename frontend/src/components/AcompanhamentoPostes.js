@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from 'react';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
-const ANOS = [2021, 2022, 2023, 2024];
+const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const CHECKS = [
-  'Contrato Processado na Coleta Anatel',
+  'Comprovante Coleta Postes',
 ];
 const chaveChecks = 'checks_postes';
 const chaveLinks = 'links_postes';
