@@ -537,17 +537,7 @@ export default function EstacoesInfra() {
             ];
             // Usa CRLF como quebra de linha e garante CRLF ao final
             const csvContent = csvRows.join('\r\n') + '\r\n';
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'estacoes.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-
-            // Salvar histórico no localStorage
+            // Salvar histórico no localStorage (NÃO FAZ DOWNLOAD DIRETO)
             const data = new Date();
             // Recuperar razão social do cliente selecionado
             let razaoSocial = '';
@@ -603,9 +593,11 @@ export default function EstacoesInfra() {
                   style={{background:'#e53935', color:'#fff', border:'none', borderRadius:3, padding:'2px 10px', fontSize:13, cursor:'pointer'}}
                   title="Excluir este CSV do histórico"
                   onClick={() => {
-                    const novoHistorico = csvHistorico.filter((_, i) => i !== idx);
-                    setCsvHistorico(novoHistorico);
-                    localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
+                    if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                      const novoHistorico = csvHistorico.filter((_, i) => i !== idx);
+                      setCsvHistorico(novoHistorico);
+                      localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
+                    }
                   }}
                 >Excluir</button>
               </li>
