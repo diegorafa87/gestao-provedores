@@ -4,11 +4,7 @@ import React, { useState, useEffect } from 'react';
 const API_URL = process.env.REACT_APP_API_URL || '';
 const ANOS = [2021, 2022, 2023, 2024];
 const CHECKS = [
-  'Contrato vigente',
-  'Relatório anual enviado',
-  'Comprovante de pagamento',
-  'Projeto atualizado',
-  'Licença ambiental',
+  'Contrato Processado na Coleta Anatel',
 ];
 const chaveChecks = 'checks_postes';
 const chaveLinks = 'links_postes';
@@ -101,7 +97,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
           </div>
           <div style={{ marginBottom: 8 }}>
             <label>
-              Link do PDF (Cloudflare):{' '}
+              Comprovante:{' '}
               <input
                 type="text"
                 value={dados[ano].link}
