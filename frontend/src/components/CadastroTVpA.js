@@ -96,14 +96,7 @@ const CadastroTVpA = ({ cnpj }) => {
     ano = linhas[0].ANO || '';
     mes = linhas[0].MES || '';
     const nomeArquivo = `TVpA_${razao}_${ano}_${mes}.csv`;
-    // Download automático
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', nomeArquivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Não faz download automático. O download será feito apenas pelo histórico.
     const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
     setHistorico(novoHistorico);
     localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
