@@ -214,3 +214,5 @@ const initialData = () => {
     </div>
   );
 }
+
+export default AcompanhamentoSTFC;
