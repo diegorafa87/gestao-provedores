@@ -232,19 +232,21 @@ const CadastroSTFC = ({ cnpj }) => {
         )}
       </div>
       {/* Histórico de arquivos gerados */}
-      {historico.length > 0 && (
-        <div style={{marginTop:32}}>
-          <h3>Histórico de arquivos gerados</h3>
-          <table style={{width:'100%',background:'#f4f4f4',borderRadius:6,padding:8}}>
-            <thead>
-              <tr>
-                <th style={{textAlign:'left',padding:'4px 8px'}}>Nome do Arquivo</th>
-                <th style={{textAlign:'left',padding:'4px 8px'}}>Data</th>
-                <th style={{textAlign:'center',padding:'4px 8px'}}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historico.map((item, idx) => (
+      <div style={{marginTop:32}}>
+        <h3>Histórico de arquivos gerados</h3>
+        <table style={{width:'100%',background:'#f4f4f4',borderRadius:6,padding:8}}>
+          <thead>
+            <tr>
+              <th style={{textAlign:'left',padding:'4px 8px'}}>Nome do Arquivo</th>
+              <th style={{textAlign:'left',padding:'4px 8px'}}>Data</th>
+              <th style={{textAlign:'center',padding:'4px 8px'}}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historico.length === 0 ? (
+              <tr><td colSpan={3} style={{textAlign:'center',color:'#888',padding:'16px 0'}}>Nenhum arquivo gerado ainda.</td></tr>
+            ) : (
+              historico.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{item.nome}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
@@ -277,11 +279,11 @@ const CadastroSTFC = ({ cnpj }) => {
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 };
