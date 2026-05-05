@@ -91,43 +91,44 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   return (
     <div style={{ padding: 24 }}>
       <h2>Acompanhamento de TVpA</h2>
-      <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <table style={{ borderCollapse: 'collapse', width: '100%', maxWidth: 600 }}>
         <thead>
           <tr>
-            <th style={{ border: '1px solid #ccc', padding: 6 }}>Ano</th>
-            {MESES.map(mes => (
-              <th key={mes} style={{ border: '1px solid #ccc', padding: 6 }}>{mes}</th>
-            ))}
+            <th style={{ border: '1px solid #ccc', padding: 6, width: 60 }}>Ano</th>
+            <th style={{ border: '1px solid #ccc', padding: 6 }}>Meses</th>
           </tr>
         </thead>
         <tbody>
           {ANOS.map(ano => (
             <tr key={ano}>
-              <td style={{ border: '1px solid #ccc', padding: 6, fontWeight: 'bold' }}>{ano}</td>
-              {MESES.map(mes => (
-                <td key={mes} style={{ border: '1px solid #ccc', padding: 6, minWidth: 180 }}>
-                  <label style={{ display: 'block', marginBottom: 4 }}>
+              <td style={{ border: '1px solid #ccc', padding: 6, fontWeight: 'bold', verticalAlign: 'top' }}>{ano}</td>
+              <td style={{ border: '1px solid #ccc', padding: 6 }}>
+                {MESES.map(mes => (
+                  <div key={mes} style={{ marginBottom: 16, borderBottom: '1px solid #eee', paddingBottom: 8 }}>
+                    <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
+                    <label style={{ display: 'block', marginBottom: 4 }}>
+                      <input
+                        type="checkbox"
+                        checked={dados[ano][mes].checked}
+                        onChange={() => handleCheck(ano, mes)}
+                      />{' '}
+                      Conformidade
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={dados[ano][mes].checked}
-                      onChange={() => handleCheck(ano, mes)}
-                    />{' '}
-                    Conformidade
-                  </label>
-                  <input
-                    type="text"
-                    value={dados[ano][mes].link}
-                    onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                    placeholder="Comprovante (link Cloudflare)"
-                    style={{ width: 140 }}
-                  />
-                  {dados[ano][mes].link && (
-                    <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
-                      Visualizar
-                    </a>
-                  )}
-                </td>
-              ))}
+                      type="text"
+                      value={dados[ano][mes].link}
+                      onChange={e => handleLinkChange(ano, mes, e.target.value)}
+                      placeholder="Comprovante (link Cloudflare)"
+                      style={{ width: 220 }}
+                    />
+                    {dados[ano][mes].link && (
+                      <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
+                        Visualizar
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </td>
             </tr>
           ))}
         </tbody>
