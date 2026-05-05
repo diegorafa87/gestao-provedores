@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
+import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -212,9 +212,10 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                     <a
                       href={dados[ano][mes].link}
                       download
-                      style={{ marginLeft: 8, fontSize: 12 }}
+                      style={{ marginLeft: 8, fontSize: 18, verticalAlign: 'middle', display: 'inline-block' }}
+                      title="Baixar comprovante"
                     >
-                      Download
+                      <IconDownload size={22} color="#1976d2" />
                     </a>
                   )}
                 </div>

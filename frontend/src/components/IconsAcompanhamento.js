@@ -1,3 +1,10 @@
+export const IconDownload = ({ size = 20, color = '#1976d2', title = 'Download' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }} title={title}>
+    <path d="M12 4v12" stroke={color} strokeWidth="2"/>
+    <path d="M6 14l6 6 6-6" stroke={color} strokeWidth="2" fill="none"/>
+    <rect x="4" y="20" width="16" height="2" rx="1" fill={color} />
+  </svg>
+);
 // Ícones SVG para uso nos botões
 export const IconEye = ({ size = 20, color = '#888', title = 'Ocultar ano' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: 'middle' }} title={title}>
