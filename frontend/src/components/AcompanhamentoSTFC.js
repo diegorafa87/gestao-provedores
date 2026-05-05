@@ -11,68 +11,12 @@ const MESES = [
 const initialData = () => {
   const data = {};
   ANOS.forEach(ano => {
-      {ANOS.map(ano => {
-        const todosMesesMarcados = MESES.every(mes => dados[ano][mes].checked);
-        const desligado = anosDesligados[ano];
-        const oculto = anosOcultos[ano];
-        if (oculto) {
-          return (
-            <div key={ano} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#888', fontWeight: 600, fontSize: 18 }}>{ano} (oculto)</span>
-              <button
-                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: false }))}
-                style={{ background: '#fff', border: 'none', padding: 6, borderRadius: 6, cursor: 'pointer' }}
-                title="Exibir ano"
-              >
-                <IconEyeOff color="#1976d2" />
-              </button>
-            </div>
-          );
-        }
-        return (
-          <div key={ano} style={{
-            border: `2px solid ${todosMesesMarcados ? '#43a047' : '#1976d2'}`,
-            borderRadius: 10,
-            marginBottom: 32,
-            background: desligado ? '#f5f5f5' : '#f7faff',
-            boxShadow: '0 2px 8px #0001',
-            padding: 20,
-            opacity: desligado ? 0.5 : 1,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-              <input
-                type="checkbox"
-                checked={todosMesesMarcados}
-                onChange={() => handleCheckAno(ano)}
-                style={{ marginRight: 10, width: 20, height: 20 }}
-                disabled={desligado}
-              />
-              <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
-              <button
-                onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
-                title={desligado ? 'Ligar ano' : 'Desligar ano'}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 8 }}
-              >
-                {desligado ? <IconPowerOn color="#1976d2" /> : <IconPower color="#1976d2" />}
-              </button>
-              <button
-                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: !prev[ano] }))}
-                title={oculto ? 'Exibir ano' : 'Ocultar ano'}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                {oculto ? <IconEyeOff color="#1976d2" /> : <IconEye color="#1976d2" />}
-              </button>
-            </div>
-            {!oculto && (
-              <>
-                {/* ...restante do conteúdo do ano... */}
-              </>
-            )}
-          </div>
-        );
-    const salvo = localStorage.getItem(chaveOcultos);
-    return salvo ? JSON.parse(salvo) : {};
+    data[ano] = {};
+    MESES.forEach(mes => {
+      data[ano][mes] = { checked: false, file: null, fileUrl: null };
+    });
   });
+  return data;
 
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
