@@ -156,9 +156,9 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           </button>
         </div>
       )}
-      {ANOS.map(ano => (
+      {[...ANOS].sort((a, b) => b - a).map(ano => (
         <div key={ano} style={{
-          border: '2px solid #1976d2',
+          border: `2px solid ${todosMesesChecados(ano) ? '#43a047' : '#1976d2'}`,
           borderRadius: 10,
           marginBottom: 32,
           background: anosDesligados[ano] ? '#f5f5f5' : '#f7faff',
@@ -195,7 +195,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
             <>
               {MESES.map(mes => (
                 <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 2 }}>{mes}</div>
+                  <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : undefined }}>{mes}</div>
                   <label style={{ display: 'block', marginBottom: 4 }}>
                     <input
                       type="checkbox"
