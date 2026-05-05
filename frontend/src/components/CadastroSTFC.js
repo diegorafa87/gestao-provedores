@@ -117,15 +117,7 @@ const CadastroSTFC = ({ cnpj }) => {
     let ano = linhas[0]?.ANO || '';
     let mes = linhas[0]?.MES || '';
     const nomeArquivo = `STFC_${nomeRazao}_${ano}_${mes}.csv`;
-    // Força BOM UTF-8
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', nomeArquivo);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Não faz download automático. O download será feito apenas pelo histórico.
     const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
     setHistorico(novoHistorico);
     localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
