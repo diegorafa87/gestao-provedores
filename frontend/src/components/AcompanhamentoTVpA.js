@@ -293,14 +293,5 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                 }
               };
 
-              if (!razaoSocial) {
-                return <div>Selecione um cliente para visualizar os dados de TVpA.</div>;
-              }
-              if (loading) {
-                return <div>Carregando dados do acompanhamento TVpA...</div>;
-              }
-
-              const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
-
   // ...existing code...
-  // Removido código duplicado/solto após o fechamento da função principal.
+  // Fim do componente. Não deve haver nada após o fechamento da função.
