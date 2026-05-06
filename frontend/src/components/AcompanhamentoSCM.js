@@ -84,87 +84,54 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
 
+
   // Marcar/desmarcar todos os meses de um ano
-  const handleCheckAno = async (ano) => {
-    if (salvando) return;
+  const handleCheckAno = (ano) => {
     const marcar = !todosMesesChecados(ano);
-    setSalvando(true);
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano] };
       MESES.forEach(mes => {
         novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
       });
+      salvarChecksLinks(novo);
       return novo;
     });
-    try {
-      await salvarChecksLinksAtualizado(ano, marcar, null);
-      setErro(null);
-    } catch {
-      setErro('Erro ao salvar alterações.');
-    }
-    setSalvando(false);
   };
 
   // Marcar/desmarcar mês individual
-  const handleCheck = async (ano, mes) => {
-    if (salvando) return;
-    setSalvando(true);
+  const handleCheck = (ano, mes) => {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], checked: !novo[ano][mes].checked } };
+      salvarChecksLinks(novo);
       return novo;
     });
-    try {
-      await salvarChecksLinksAtualizado(ano, null, mes);
-      setErro(null);
-    } catch {
-      setErro('Erro ao salvar alterações.');
-    }
-    setSalvando(false);
   };
 
-  const handleLinkChange = async (ano, mes, value) => {
-    if (salvando) return;
-    setSalvando(true);
+  const handleLinkChange = (ano, mes, value) => {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], link: value } };
+      salvarChecksLinks(novo);
       return novo;
     });
-    try {
-      await salvarChecksLinksAtualizado(ano, null, mes, value);
-      setErro(null);
-    } catch {
-      setErro('Erro ao salvar alterações.');
-    }
-    setSalvando(false);
   };
 
-  // Função para salvar no backend (aguarda resposta)
-  async function salvarChecksLinksAtualizado(ano, marcar, mes, novoLink) {
-    // Monta checks e links para salvar
+  // Função para salvar no backend (igual ao Postes)
+  function salvarChecksLinks(novoDados) {
     const checksToSave = {};
     const linksToSave = {};
-    ANOS.forEach(a => {
-      checksToSave[a] = {};
-      linksToSave[a] = {};
-      MESES.forEach(m => {
-        checksToSave[a][m] = dados[a][m].checked;
-        linksToSave[a][m] = dados[a][m].link;
+    ANOS.forEach(ano => {
+      checksToSave[ano] = {};
+      linksToSave[ano] = {};
+      MESES.forEach(mes => {
+        checksToSave[ano][mes] = novoDados[ano][mes].checked;
+        linksToSave[ano][mes] = novoDados[ano][mes].link;
       });
     });
-    // Atualiza o campo alterado
-    if (marcar !== null && ano) {
-      MESES.forEach(m => { checksToSave[ano][m] = marcar; });
-    }
-    if (mes && ano && novoLink !== undefined) {
-      linksToSave[ano][mes] = novoLink;
-    } else if (mes && ano) {
-      checksToSave[ano][mes] = !checksToSave[ano][mes];
-    }
     if (cnpj) {
-      await saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
+      saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }
 
