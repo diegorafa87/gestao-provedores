@@ -47,7 +47,16 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
             }
           });
         }
-        setDados(base);
+        // Só atualiza se for diferente do estado atual
+        setDados(prev => {
+          const igual = JSON.stringify(prev) === JSON.stringify(base);
+          if (!igual) {
+            // Log para depuração
+            console.log('Atualizando dados do backend POSTES', base);
+            return base;
+          }
+          return prev;
+        });
       })
       .catch(() => setDados(initialData()));
   }, [cnpj]);
@@ -127,6 +136,8 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
       });
     });
     if (cnpj) {
+      // Log para depuração
+      console.log('Salvando no backend POSTES', { checks: checksToSave, links: linksToSave });
       saveAcompanhamento('POSTES', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }

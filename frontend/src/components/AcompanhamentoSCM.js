@@ -53,7 +53,16 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             }
           });
         }
-        setDados(base);
+        // Só atualiza se for diferente do estado atual
+        setDados(prev => {
+          const igual = JSON.stringify(prev) === JSON.stringify(base);
+          if (!igual) {
+            // Log para depuração
+            console.log('Atualizando dados do backend', base);
+            return base;
+          }
+          return prev;
+        });
         setErro(null);
       })
       .catch(() => {
@@ -131,6 +140,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       });
     });
     if (cnpj) {
+      // Log para depuração
+      console.log('Salvando no backend', { checks: checksToSave, links: linksToSave });
       saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }
