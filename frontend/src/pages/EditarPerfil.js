@@ -73,11 +73,11 @@ const EditarPerfil = () => {
     }
   };
 
+
+  const [editando, setEditando] = useState(false);
   if (loading) return <p>Carregando detalhes...</p>;
   if (erro) return <p style={{color:'red'}}>{erro}</p>;
   if (!cliente) return null;
-
-  const [editando, setEditando] = useState(false);
 
   return (
     <div style={{display:'flex'}}>
