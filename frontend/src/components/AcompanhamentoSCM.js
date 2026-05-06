@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
+import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
@@ -54,9 +53,12 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             }
           });
         }
+        // Só atualiza se for diferente do estado atual
         setDados(prev => {
           const igual = JSON.stringify(prev) === JSON.stringify(base);
           if (!igual) {
+            // Log para depuração
+            console.log('Atualizando dados do backend', base);
             return base;
           }
           return prev;
@@ -70,7 +72,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       .finally(() => setLoading(false));
   }, [cnpj]);
 
-  // Estados para anos desligados e ocultos (independentes do TVpA)
+  // Estados para anos desligados e ocultos
   const chaveDesligados = cnpj ? `anosDesligados_SCM_${cnpj}` : 'anosDesligados_SCM';
   const chaveOcultos = cnpj ? `anosOcultos_SCM_${cnpj}` : 'anosOcultos_SCM';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -90,6 +92,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
 
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
+
 
   // Marcar/desmarcar todos os meses de um ano
   const handleCheckAno = (ano) => {
@@ -124,7 +127,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
     });
   };
 
-  // Função para salvar no backend
+  // Função para salvar no backend (igual ao Postes)
   function salvarChecksLinks(novoDados) {
     const checksToSave = {};
     const linksToSave = {};
@@ -137,6 +140,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       });
     });
     if (cnpj) {
+      // Log para depuração
+      console.log('Salvando no backend', { checks: checksToSave, links: linksToSave });
       saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }
@@ -152,8 +157,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>Acompanhamento SCM</h2>
+    <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
+      <h2 style={{ fontSize: 24, marginBottom: 20 }}>Acompanhamento SCM</h2>
       {todosOcultos && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <button
@@ -166,78 +171,96 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
               padding: '10px 24px',
               fontSize: 16,
               cursor: 'pointer',
-              boxShadow: '0 2px 8px #0001'
+              boxShadow: '0 2px 8px #0001',
+              width: '100%',
+              maxWidth: 350
             }}
           >
             Desocultar todos os anos
           </button>
         </div>
       )}
-      {[...ANOS].sort((a, b) => b - a).map(ano => (
-        <div key={ano} style={{
-          border: `2px solid ${todosMesesChecados(ano) ? '#43a047' : '#1976d2'}`,
-          borderRadius: 10,
-          marginBottom: 32,
-          background: anosDesligados[ano] ? '#f5f5f5' : '#f7faff',
-          boxShadow: '0 2px 8px #0001',
-          padding: 20,
-          opacity: anosDesligados[ano] ? 0.5 : 1,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-            <input
-              type="checkbox"
-              checked={todosMesesChecados(ano)}
-              onChange={() => handleCheckAno(ano)}
-              style={{ marginRight: 10, width: 20, height: 20 }}
-              disabled={anosDesligados[ano] || salvando}
-            />
-            <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
-            <button
-              onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
-              title={anosDesligados[ano] ? 'Ligar ano' : 'Desligar ano'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 8 }}
-            >
-              {anosDesligados[ano] ? <IconPowerOn color="#1976d2" /> : <IconPower color="#1976d2" />}
-            </button>
-            <button
-              onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: !prev[ano] }))}
-              title={anosOcultos[ano] ? 'Exibir ano' : 'Ocultar ano'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-            >
-              {anosOcultos[ano] ? <IconEyeOff color="#1976d2" /> : <IconEye color="#1976d2" />}
-            </button>
-          </div>
-          {!anosOcultos[ano] && (
-            <React.Fragment>
-              {MESES.map(mes => (
-                <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: 17, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : '#222' }}>{mes}</div>
-                  <label style={{ display: 'block', marginBottom: 4 }} htmlFor={`scm-check-${ano}-${mes}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {[...ANOS].sort((a, b) => b - a).map(ano => (
+          <div key={ano} style={{
+            border: `2px solid ${todosMesesChecados(ano) ? '#43a047' : '#1976d2'}`,
+            borderRadius: 10,
+            marginBottom: 0,
+            background: anosDesligados[ano] ? '#f5f5f5' : '#f7faff',
+            boxShadow: '0 2px 8px #0001',
+            padding: 20,
+            opacity: anosDesligados[ano] ? 0.5 : 1,
+            width: '100%',
+            minWidth: 0
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={todosMesesChecados(ano)}
+                onChange={() => handleCheckAno(ano)}
+                style={{ marginRight: 10, width: 20, height: 20 }}
+                disabled={anosDesligados[ano] || salvando}
+              />
+              <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
+              <button
+                onClick={() => setAnosDesligados(prev => ({ ...prev, [ano]: !prev[ano] }))}
+                title={anosDesligados[ano] ? 'Ligar ano' : 'Desligar ano'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', marginRight: 8 }}
+              >
+                {anosDesligados[ano] ? <IconPowerOn color="#1976d2" /> : <IconPower color="#1976d2" />}
+              </button>
+              <button
+                onClick={() => setAnosOcultos(prev => ({ ...prev, [ano]: !prev[ano] }))}
+                title={anosOcultos[ano] ? 'Exibir ano' : 'Ocultar ano'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {anosOcultos[ano] ? <IconEyeOff color="#1976d2" /> : <IconEye color="#1976d2" />}
+              </button>
+            </div>
+            {!anosOcultos[ano] && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                {MESES.map(mes => (
+                  <div key={mes} style={{
+                    flex: '1 1 260px',
+                    minWidth: 220,
+                    maxWidth: 350,
+                    marginBottom: 18,
+                    borderBottom: '1px solid #e3e3e3',
+                    paddingBottom: 10
+                  }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 17, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : '#222' }}>{mes}</div>
+                    <label style={{ display: 'block', marginBottom: 4 }} htmlFor={`scm-check-${ano}-${mes}`}>
+                      <input
+                        type="checkbox"
+                        id={`scm-check-${ano}-${mes}`}
+                        name={`scm-check-${ano}-${mes}`}
+                        checked={dados[ano][mes].checked}
+                        onChange={() => handleCheck(ano, mes)}
+                        disabled={anosDesligados[ano] || salvando}
+                        style={{ marginRight: 8 }}
+                      />
+                      <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Check</span>
+                    </label>
                     <input
-                      type="checkbox"
-                      id={`scm-check-${ano}-${mes}`}
-                      name={`scm-check-${ano}-${mes}`}
-                      checked={dados[ano][mes].checked}
-                      onChange={() => handleCheck(ano, mes)}
+                      type="text"
+                      value={dados[ano][mes].link}
+                      onChange={e => handleLinkChange(ano, mes, e.target.value)}
+                      placeholder="Link do documento"
+                      style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
                       disabled={anosDesligados[ano] || salvando}
-                      style={{ marginRight: 8 }}
                     />
-                    <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Check</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={dados[ano][mes].link}
-                    onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                    placeholder="Link do documento"
-                    style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
-                    disabled={anosDesligados[ano] || salvando}
-                  />
-                </div>
-              ))}
-            </React.Fragment>
-          )}
-        </div>
-      ))}
+                    {dados[ano][mes].link && (
+                      <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
+                        Visualizar
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>

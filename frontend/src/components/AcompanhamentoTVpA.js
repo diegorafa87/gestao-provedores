@@ -171,18 +171,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   return (
     <div style={{ padding: 24 }}>
       <h2>Acompanhamento de TVpA</h2>
-      {/* Histórico de geração de CSV TVpA */}
-      <div style={{ marginBottom: 32 }}>
-        <h3>Histórico de geração de CSV</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {logsTVPA.length === 0 && <li style={{ color: '#888' }}>Nenhum CSV gerado ainda.</li>}
-          {logsTVPA.map((log, idx) => (
-            <li key={idx} style={{ marginBottom: 6, fontSize: 15 }}>
-              <span style={{ color: '#1976d2', fontWeight: 500 }}>{new Date(log.data).toLocaleString('pt-BR')}</span>: CSV <b>{log.detalhes?.nomeArquivo}</b> gerado para ano {log.detalhes?.ano}, mês {log.detalhes?.mes}
-            </li>
-          ))}
-        </ul>
-      </div>
+      {/* Histórico removido conforme solicitado */}
       {todosOcultos && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <button
@@ -499,4 +488,3 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                   ))}
                 </div>
               );
-            }
