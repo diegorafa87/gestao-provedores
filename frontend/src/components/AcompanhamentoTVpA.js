@@ -26,7 +26,7 @@ function initialData() {
 }
 
 
-
+export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -249,3 +249,4 @@ function initialData() {
       ))}
     </div>
   );
+}
