@@ -24,9 +24,14 @@ function initialData() {
 
 export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
+  const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
+
   // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
     if (!cnpj) return;
+    setLoading(true);
     getAcompanhamento('SCM', cnpj)
       .then(res => {
         const base = initialData();
@@ -49,8 +54,13 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
           });
         }
         setDados(base);
+        setErro(null);
       })
-      .catch(() => setDados(initialData()));
+      .catch(() => {
+        setDados(initialData());
+        setErro('Erro ao carregar dados do acompanhamento.');
+      })
+      .finally(() => setLoading(false));
   }, [cnpj]);
 
   // Estados para anos desligados e ocultos
@@ -75,59 +85,94 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
 
   // Marcar/desmarcar todos os meses de um ano
-  const handleCheckAno = (ano) => {
+  const handleCheckAno = async (ano) => {
+    if (salvando) return;
     const marcar = !todosMesesChecados(ano);
+    setSalvando(true);
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano] };
       MESES.forEach(mes => {
         novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
       });
-      // Salva no backend
-      salvarChecksLinks(novo);
       return novo;
     });
+    try {
+      await salvarChecksLinksAtualizado(ano, marcar, null);
+      setErro(null);
+    } catch {
+      setErro('Erro ao salvar alterações.');
+    }
+    setSalvando(false);
   };
 
   // Marcar/desmarcar mês individual
-  const handleCheck = (ano, mes) => {
+  const handleCheck = async (ano, mes) => {
+    if (salvando) return;
+    setSalvando(true);
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], checked: !novo[ano][mes].checked } };
-      salvarChecksLinks(novo);
       return novo;
     });
+    try {
+      await salvarChecksLinksAtualizado(ano, null, mes);
+      setErro(null);
+    } catch {
+      setErro('Erro ao salvar alterações.');
+    }
+    setSalvando(false);
   };
 
-  const handleLinkChange = (ano, mes, value) => {
+  const handleLinkChange = async (ano, mes, value) => {
+    if (salvando) return;
+    setSalvando(true);
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], link: value } };
-      salvarChecksLinks(novo);
       return novo;
     });
+    try {
+      await salvarChecksLinksAtualizado(ano, null, mes, value);
+      setErro(null);
+    } catch {
+      setErro('Erro ao salvar alterações.');
+    }
+    setSalvando(false);
   };
 
-  // Função para salvar no backend
-  function salvarChecksLinks(novoDados) {
+  // Função para salvar no backend (aguarda resposta)
+  async function salvarChecksLinksAtualizado(ano, marcar, mes, novoLink) {
     // Monta checks e links para salvar
     const checksToSave = {};
     const linksToSave = {};
-    ANOS.forEach(ano => {
-      checksToSave[ano] = {};
-      linksToSave[ano] = {};
-      MESES.forEach(mes => {
-        checksToSave[ano][mes] = novoDados[ano][mes].checked;
-        linksToSave[ano][mes] = novoDados[ano][mes].link;
+    ANOS.forEach(a => {
+      checksToSave[a] = {};
+      linksToSave[a] = {};
+      MESES.forEach(m => {
+        checksToSave[a][m] = dados[a][m].checked;
+        linksToSave[a][m] = dados[a][m].link;
       });
     });
+    // Atualiza o campo alterado
+    if (marcar !== null && ano) {
+      MESES.forEach(m => { checksToSave[ano][m] = marcar; });
+    }
+    if (mes && ano && novoLink !== undefined) {
+      linksToSave[ano][mes] = novoLink;
+    } else if (mes && ano) {
+      checksToSave[ano][mes] = !checksToSave[ano][mes];
+    }
     if (cnpj) {
-      saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
+      await saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }
 
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados de SCM.</div>;
+  }
+  if (loading) {
+    return <div>Carregando dados do acompanhamento...</div>;
   }
 
   // Verifica se todos os anos estão ocultos
@@ -171,7 +216,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
               checked={todosMesesChecados(ano)}
               onChange={() => handleCheckAno(ano)}
               style={{ marginRight: 10, width: 20, height: 20 }}
-              disabled={anosDesligados[ano]}
+              disabled={anosDesligados[ano] || salvando}
             />
             <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
             <button
@@ -190,7 +235,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             </button>
           </div>
           {!anosOcultos[ano] && (
-            <>
+            <React.Fragment>
               {MESES.map(mes => (
                 <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
                   <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : undefined }}>{mes}</div>
@@ -201,36 +246,27 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       name={`scm-check-${ano}-${mes}`}
                       checked={dados[ano][mes].checked}
                       onChange={() => handleCheck(ano, mes)}
-                      disabled={anosDesligados[ano]}
-                    />{' '}
-                    Comprovante Coleta SCM ({mes})
+                      disabled={anosDesligados[ano] || salvando}
+                      style={{ marginRight: 8 }}
+                    />
+                    <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Check</span>
                   </label>
                   <input
                     type="text"
-                    id={`scm-link-${ano}-${mes}`}
-                    name={`scm-link-${ano}-${mes}`}
                     value={dados[ano][mes].link}
                     onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                    placeholder="Comprovante (link Cloudflare)"
-                    style={{ width: 400, maxWidth: '100%' }}
-                    disabled={anosDesligados[ano]}
+                    placeholder="Link do documento"
+                    style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
+                    disabled={anosDesligados[ano] || salvando}
                   />
-                  {dados[ano][mes].link && (
-                    <a
-                      href={dados[ano][mes].link}
-                      download
-                      style={{ marginLeft: 8, fontSize: 18, verticalAlign: 'middle', display: 'inline-block' }}
-                      title="Baixar comprovante"
-                    >
-                      <IconDownload size={22} color="#1976d2" />
-                    </a>
-                  )}
                 </div>
               ))}
-            </>
+            </React.Fragment>
           )}
         </div>
       ))}
+      {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
+      {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
   );
 }
