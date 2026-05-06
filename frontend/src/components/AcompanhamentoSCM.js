@@ -218,12 +218,10 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
               </button>
             </div>
             {!anosOcultos[ano] && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {MESES.map(mes => (
                   <div key={mes} style={{
-                    flex: '1 1 260px',
-                    minWidth: 220,
-                    maxWidth: 350,
+                    width: '100%',
                     marginBottom: 18,
                     borderBottom: '1px solid #e3e3e3',
                     paddingBottom: 10
