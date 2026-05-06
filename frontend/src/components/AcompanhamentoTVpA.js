@@ -261,49 +261,6 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     </div>
   );
 }
-              }, [cnpj]);
-
-              useEffect(() => {
-                if (!cnpj) return;
-                const cnpjLimpo = cnpj.replace(/\D/g, '');
-                getLogs()
-                  .then(todosLogs => {
-                    const logsFiltrados = todosLogs.filter(
-                      log => log.acao === 'GERAR_CSV_TVPA' && (log.usuario.replace(/\D/g, '') === cnpjLimpo)
-                    );
-                    setLogsTVPA(logsFiltrados);
-                  })
-                  .catch(() => setLogsTVPA([]));
-              }, [cnpj]);
-
-              useEffect(() => {
-                localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
-                localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
-              }, [anosDesligados, anosOcultos]);
-
-              const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
-
-              const handleCheckAno = (ano) => {
-                const marcar = !todosMesesChecados(ano);
-                setDados(prev => {
-                  const novo = { ...prev };
-                  novo[ano] = { ...novo[ano] };
-                  MESES.forEach(mes => {
-                    novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
-                  });
-                  salvarNoBackend(novo);
-                  return novo;
-                });
-              };
-
-              const handleCheck = (ano, mes) => {
-                setDados(prev => {
-                  const novo = { ...prev };
-                  novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], checked: !novo[ano][mes].checked } };
-                  salvarNoBackend(novo);
-                  return novo;
-                });
-              };
 
               const handleLinkChange = (ano, mes, value) => {
                 setDados(prev => {
