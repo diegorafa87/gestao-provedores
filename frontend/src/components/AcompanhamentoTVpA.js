@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import { getLogs } from '../services/logs';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -27,14 +28,11 @@ function initialData() {
 }
 
 // Função utilitária para histórico inicial
-function initialHistorico() {
-  return [];
-}
 
 
-export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
+
   const [dados, setDados] = useState(initialData());
-  const [historico, setHistorico] = useState(initialHistorico());
+  const [logsTVPA, setLogsTVPA] = useState([]);
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -77,15 +75,28 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           });
         }
         setDados(base);
-        setHistorico(res.historico || initialHistorico());
         setErro(null);
       })
       .catch(() => {
         setDados(initialData());
-        setHistorico(initialHistorico());
         setErro('Erro ao carregar dados do acompanhamento.');
       })
       .finally(() => setLoading(false));
+  }, [cnpj]);
+
+  // Carregar logs de geração de CSV TVpA
+  useEffect(() => {
+    if (!cnpj) return;
+    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    getLogs()
+      .then(todosLogs => {
+        // Filtra logs de geração de CSV TVpA para o CNPJ do cliente
+        const logsFiltrados = todosLogs.filter(
+          log => log.acao === 'GERAR_CSV_TVPA' && (log.usuario.replace(/\D/g, '') === cnpjLimpo)
+        );
+        setLogsTVPA(logsFiltrados);
+      })
+      .catch(() => setLogsTVPA([]));
   }, [cnpj]);
 
   // Atualiza localStorage ao mudar anosDesligados/anosOcultos
@@ -97,38 +108,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
 
-  // Salvar dados no backend
-  const salvarNoBackend = async (novoDados, novoHistorico = historico) => {
-    setSalvando(true);
-    try {
-      // Monta objeto para API
-      const checks = {};
-      const links = {};
-      ANOS.forEach(ano => {
-        checks[ano] = {};
-        links[ano] = {};
-        MESES.forEach(mes => {
-          checks[ano][mes] = novoDados[ano][mes].checked;
-          links[ano][mes] = novoDados[ano][mes].link;
-        });
-      });
-      await saveAcompanhamento('TVPA', cnpj, { checks, links, historico: novoHistorico });
-      setErro(null);
-    } catch (e) {
-      setErro('Erro ao salvar dados do acompanhamento.');
-    } finally {
-      setSalvando(false);
-    }
-  };
-  // Adicionar item ao histórico
-  const adicionarHistorico = (texto) => {
-    const novoHistorico = [
-      { texto, data: new Date().toISOString() },
-      ...historico
-    ];
-    setHistorico(novoHistorico);
-    salvarNoBackend(dados, novoHistorico);
-  };
+
 
 
   // Marcar/desmarcar todos os meses de um ano
@@ -180,25 +160,14 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
       <h2>Acompanhamento de TVpA</h2>
       {erro && <div style={{ color: 'red', marginBottom: 12 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginBottom: 12 }}>Salvando alterações...</div>}
-      {/* Histórico */}
+      {/* Histórico de geração de CSV TVpA */}
       <div style={{ marginBottom: 32 }}>
-        <h3>Histórico</h3>
-        <form onSubmit={e => {
-          e.preventDefault();
-          const texto = e.target.elements.historicoTexto.value.trim();
-          if (texto) {
-            adicionarHistorico(texto);
-            e.target.reset();
-          }
-        }} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input name="historicoTexto" type="text" placeholder="Adicionar observação ao histórico..." style={{ flex: 1, padding: 6 }} />
-          <button type="submit" style={{ padding: '6px 18px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4 }}>Adicionar</button>
-        </form>
+        <h3>Histórico de geração de CSV</h3>
         <ul style={{ listStyle: 'none', padding: 0 }}>
-          {historico.length === 0 && <li style={{ color: '#888' }}>Nenhum histórico ainda.</li>}
-          {historico.map((item, idx) => (
+          {logsTVPA.length === 0 && <li style={{ color: '#888' }}>Nenhum CSV gerado ainda.</li>}
+          {logsTVPA.map((log, idx) => (
             <li key={idx} style={{ marginBottom: 6, fontSize: 15 }}>
-              <span style={{ color: '#1976d2', fontWeight: 500 }}>{new Date(item.data).toLocaleString('pt-BR')}</span>: {item.texto}
+              <span style={{ color: '#1976d2', fontWeight: 500 }}>{new Date(log.data).toLocaleString('pt-BR')}</span>: CSV <b>{log.detalhes?.nomeArquivo}</b> gerado para ano {log.detalhes?.ano}, mês {log.detalhes?.mes}
             </li>
           ))}
         </ul>
