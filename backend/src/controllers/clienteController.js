@@ -54,7 +54,11 @@ exports.atualizarStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    if (!['NOVO','ATIVO','CORRIGIR','SUSPENSO'].includes(status)) {
+      // Validação de ObjectId
+      if (!require('mongoose').Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'ID de cliente inválido' });
+      }
+      if (!['NOVO','ATIVO','CORRIGIR','SUSPENSO'].includes(status)) {
       return res.status(400).json({ error: 'Status inválido' });
     }
     // Impede que o status volte para NOVO após o cadastro
@@ -73,6 +77,10 @@ exports.atualizarStatus = async (req, res) => {
 exports.detalharCliente = async (req, res) => {
   try {
     const { id } = req.params;
+    // Validação de ObjectId
+    if (!require('mongoose').Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID de cliente inválido' });
+    }
     const cliente = await Cliente.findById(id);
     if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
     res.json(cliente);
@@ -84,6 +92,10 @@ exports.detalharCliente = async (req, res) => {
 exports.excluirCliente = async (req, res) => {
   try {
     const { id } = req.params;
+    // Validação de ObjectId
+    if (!require('mongoose').Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'ID de cliente inválido' });
+    }
     const cliente = await Cliente.findByIdAndDelete(id);
     if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
     registrarLog('EXCLUIR_CLIENTE', id, {});
@@ -97,9 +109,13 @@ exports.editarCliente = async (req, res) => {
   try {
     const { id } = req.params;
     const { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
-    if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
-      return res.status(400).json({ error: 'Preencha todos os campos!' });
-    }
+      // Validação de ObjectId
+      if (!require('mongoose').Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'ID de cliente inválido' });
+      }
+      if (!razaoSocial || !cnpj || !email || !telefone || !consultoria) {
+        return res.status(400).json({ error: 'Preencha todos os campos!' });
+      }
     const cliente = await Cliente.findByIdAndUpdate(id, { razaoSocial, cnpj, email, telefone, consultoria }, { new: true });
     if (!cliente) return res.status(404).json({ error: 'Cliente não encontrado' });
     registrarLog('EDITAR_CLIENTE', cnpj, { id, razaoSocial, email, telefone, consultoria });
