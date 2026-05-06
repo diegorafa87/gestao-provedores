@@ -261,43 +261,6 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     </div>
   );
 }
-              const [anosOcultos, setAnosOcultos] = useState(() => {
-                const salvo = localStorage.getItem(chaveOcultos);
-                return salvo ? JSON.parse(salvo) : {};
-              });
-
-              useEffect(() => {
-                if (!cnpj) return;
-                setLoading(true);
-                getAcompanhamento('TVPA', cnpj)
-                  .then(res => {
-                    const base = initialData();
-                    if (res.checks) {
-                      ANOS.forEach(ano => {
-                        if (res.checks[ano]) {
-                          MESES.forEach(mes => {
-                            if (res.checks[ano][mes] !== undefined) base[ano][mes].checked = res.checks[ano][mes];
-                          });
-                        }
-                      });
-                    }
-                    if (res.links) {
-                      ANOS.forEach(ano => {
-                        if (res.links[ano]) {
-                          MESES.forEach(mes => {
-                            if (res.links[ano][mes] !== undefined) base[ano][mes].link = res.links[ano][mes];
-                          });
-                        }
-                      });
-                    }
-                    setDados(base);
-                    setErro(null);
-                  })
-                  .catch(() => {
-                    setDados(initialData());
-                    setErro('Erro ao carregar dados do acompanhamento.');
-                  })
-                  .finally(() => setLoading(false));
               }, [cnpj]);
 
               useEffect(() => {
