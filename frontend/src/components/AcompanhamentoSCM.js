@@ -205,7 +205,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             <React.Fragment>
               {MESES.map(mes => (
                 <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : undefined }}>{mes}</div>
+                  <div style={{ fontWeight: 'bold', fontSize: 17, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : '#222' }}>{mes}</div>
                   <label style={{ display: 'block', marginBottom: 4 }} htmlFor={`scm-check-${ano}-${mes}`}>
                     <input
                       type="checkbox"
