@@ -1,6 +1,8 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
+import { getGerenciadorAcesso, saveGerenciadorAcesso } from '../services/gerenciadorAcesso';
 
 export default function SubmenuAcessoCampos() {
   // Recupera info do cliente do localStorage
@@ -17,23 +19,33 @@ export default function SubmenuAcessoCampos() {
     return null;
   }, []);
 
-  // Chave única por cliente
-  const formStorageKey = clienteSelecionado && clienteSelecionado.cnpj ? `submenuAcessoCamposForm_${clienteSelecionado.cnpj}` : 'submenuAcessoCamposForm';
 
-  // Carrega valores salvos do localStorage
-  const [valores, setValores] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(formStorageKey)) || { campo1: '', campo2: '', campo3: '' };
-    } catch { return { campo1: '', campo2: '', campo3: '' }; }
-  });
+  // Estado dos campos
+  const [valores, setValores] = useState({ campo1: '', campo2: '', campo3: '' });
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  // Salva no localStorage sempre que valores mudar OU cliente mudar
+  // Carrega do backend ao abrir ou mudar cliente
   useEffect(() => {
-    if (clienteSelecionado && clienteSelecionado.cnpj) {
-      localStorage.setItem(formStorageKey, JSON.stringify(valores));
-    }
-  }, [valores, formStorageKey, clienteSelecionado]);
+    if (!clienteSelecionado || !clienteSelecionado.cnpj) return;
+    setCarregando(true);
+    getGerenciadorAcesso(clienteSelecionado.cnpj)
+      .then(res => {
+        setValores({
+          campo1: res.link || '',
+          campo2: res.login || '',
+          campo3: res.senha || ''
+        });
+        setErro(null);
+      })
+      .catch(() => {
+        setValores({ campo1: '', campo2: '', campo3: '' });
+        setErro('Erro ao carregar dados do gerenciador.');
+      })
+      .finally(() => setCarregando(false));
+  }, [clienteSelecionado]);
 
   // Exibe info do cliente
   const clienteInfo = clienteSelecionado ? (
@@ -88,11 +100,25 @@ export default function SubmenuAcessoCampos() {
           </div>
           <button
             style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '10px 24px', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}
-            onClick={() => {
-              // Aqui você pode adicionar lógica de envio/salvamento real se necessário
-              // Não limpa mais o localStorage para manter os campos persistentes
+            disabled={salvando || carregando}
+            onClick={async () => {
+              if (!clienteSelecionado || !clienteSelecionado.cnpj) return;
+              setSalvando(true);
+              try {
+                await saveGerenciadorAcesso(clienteSelecionado.cnpj, {
+                  link: valores.campo1,
+                  login: valores.campo2,
+                  senha: valores.campo3
+                });
+                setErro(null);
+              } catch {
+                setErro('Erro ao salvar dados do gerenciador.');
+              }
+              setSalvando(false);
             }}
-          >Salvar</button>
+          >{salvando ? 'Salvando...' : 'Salvar'}</button>
+          {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
+          {carregando && <div style={{ color: '#1976d2', marginTop: 8 }}>Carregando dados...</div>}
         </div>
       </div>
     </div>

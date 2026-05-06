@@ -30,8 +30,10 @@ const acaoRoutes = require('./routes/acaoRoutes');
 const contratoRoutes = require('./routes/contratoRoutes');
 
 
+
 const acompanhamentoRoutes = require('./routes/acompanhamentoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
+const gerenciadorAcessoRoutes = require('./routes/gerenciadorAcessoRoutes');
 
 
 app.use('/api', clienteRoutes);
@@ -39,9 +41,11 @@ app.use('/api/user', userRoutes);
 app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);
+
 app.use('/api/acompanhamento', acompanhamentoRoutes);
 app.use('/api/acompanhamento-scm', acompanhamentoSCMRoutes);
 app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
+app.use('/api/gerenciador-acesso', gerenciadorAcessoRoutes);
 
 // Rota raiz amigável
 app.get('/', (req, res) => {
