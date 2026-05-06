@@ -11,6 +11,7 @@ const MESES = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+
 function initialData() {
   const data = {};
   ANOS.forEach(ano => {
@@ -25,9 +26,15 @@ function initialData() {
   return data;
 }
 
+// Função utilitária para histórico inicial
+function initialHistorico() {
+  return [];
+}
+
 
 export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
+  const [historico, setHistorico] = useState(initialHistorico());
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -70,10 +77,12 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           });
         }
         setDados(base);
+        setHistorico(res.historico || initialHistorico());
         setErro(null);
       })
       .catch(() => {
         setDados(initialData());
+        setHistorico(initialHistorico());
         setErro('Erro ao carregar dados do acompanhamento.');
       })
       .finally(() => setLoading(false));
@@ -89,7 +98,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
 
   // Salvar dados no backend
-  const salvarNoBackend = async (novoDados) => {
+  const salvarNoBackend = async (novoDados, novoHistorico = historico) => {
     setSalvando(true);
     try {
       // Monta objeto para API
@@ -103,7 +112,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           links[ano][mes] = novoDados[ano][mes].link;
         });
       });
-      await saveAcompanhamento('TVPA', cnpj, { checks, links });
+      await saveAcompanhamento('TVPA', cnpj, { checks, links, historico: novoHistorico });
       setErro(null);
     } catch (e) {
       setErro('Erro ao salvar dados do acompanhamento.');
@@ -111,6 +120,16 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
       setSalvando(false);
     }
   };
+  // Adicionar item ao histórico
+  const adicionarHistorico = (texto) => {
+    const novoHistorico = [
+      { texto, data: new Date().toISOString() },
+      ...historico
+    ];
+    setHistorico(novoHistorico);
+    salvarNoBackend(dados, novoHistorico);
+  };
+
 
   // Marcar/desmarcar todos os meses de um ano
   const handleCheckAno = (ano) => {
@@ -161,6 +180,30 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
       <h2>Acompanhamento de TVpA</h2>
       {erro && <div style={{ color: 'red', marginBottom: 12 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginBottom: 12 }}>Salvando alterações...</div>}
+      {/* Histórico */}
+      <div style={{ marginBottom: 32 }}>
+        <h3>Histórico</h3>
+        <form onSubmit={e => {
+          e.preventDefault();
+          const texto = e.target.elements.historicoTexto.value.trim();
+          if (texto) {
+            adicionarHistorico(texto);
+            e.target.reset();
+          }
+        }} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <input name="historicoTexto" type="text" placeholder="Adicionar observação ao histórico..." style={{ flex: 1, padding: 6 }} />
+          <button type="submit" style={{ padding: '6px 18px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4 }}>Adicionar</button>
+        </form>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {historico.length === 0 && <li style={{ color: '#888' }}>Nenhum histórico ainda.</li>}
+          {historico.map((item, idx) => (
+            <li key={idx} style={{ marginBottom: 6, fontSize: 15 }}>
+              <span style={{ color: '#1976d2', fontWeight: 500 }}>{new Date(item.data).toLocaleString('pt-BR')}</span>: {item.texto}
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {todosOcultos && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <button
