@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
+import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
@@ -53,12 +54,9 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             }
           });
         }
-        // Só atualiza se for diferente do estado atual
         setDados(prev => {
           const igual = JSON.stringify(prev) === JSON.stringify(base);
           if (!igual) {
-            // Log para depuração
-            console.log('Atualizando dados do backend', base);
             return base;
           }
           return prev;
@@ -72,7 +70,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       .finally(() => setLoading(false));
   }, [cnpj]);
 
-  // Estados para anos desligados e ocultos
+  // Estados para anos desligados e ocultos (independentes do TVpA)
   const chaveDesligados = cnpj ? `anosDesligados_SCM_${cnpj}` : 'anosDesligados_SCM';
   const chaveOcultos = cnpj ? `anosOcultos_SCM_${cnpj}` : 'anosOcultos_SCM';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -92,7 +90,6 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
 
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
-
 
   // Marcar/desmarcar todos os meses de um ano
   const handleCheckAno = (ano) => {
@@ -127,7 +124,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
     });
   };
 
-  // Função para salvar no backend (igual ao Postes)
+  // Função para salvar no backend
   function salvarChecksLinks(novoDados) {
     const checksToSave = {};
     const linksToSave = {};
@@ -140,8 +137,6 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       });
     });
     if (cnpj) {
-      // Log para depuração
-      console.log('Salvando no backend', { checks: checksToSave, links: linksToSave });
       saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
     }
   }
