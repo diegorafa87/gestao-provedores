@@ -60,6 +60,12 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
     const salvo = localStorage.getItem(chaveDesligados);
     return salvo ? JSON.parse(salvo) : {};
   });
+
+  // Sempre recarrega anosDesligados do localStorage ao montar
+  useEffect(() => {
+    const salvo = localStorage.getItem(chaveDesligados);
+    if (salvo) setAnosDesligados(JSON.parse(salvo));
+  }, [chaveDesligados]);
   const [anosOcultos, setAnosOcultos] = useState(() => {
     const salvo = localStorage.getItem(chaveOcultos);
     return salvo ? JSON.parse(salvo) : {};
@@ -67,8 +73,11 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
 
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
+  }, [anosDesligados, chaveDesligados]);
+
+  useEffect(() => {
     localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
-  }, [anosDesligados, anosOcultos]);
+  }, [anosOcultos, chaveOcultos]);
 
   // Checa se todos os campos do ano estão marcados
   const todosCamposChecados = ano => CAMPOS.every(campo => dados[ano][campo].checked);
