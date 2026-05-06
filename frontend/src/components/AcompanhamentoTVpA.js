@@ -383,4 +383,4 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
               const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
 
   // ...existing code...
-  // O return correto do componente já está presente acima. Removendo duplicidade e código solto.
+  // Removido código duplicado/solto após o fechamento da função principal.
