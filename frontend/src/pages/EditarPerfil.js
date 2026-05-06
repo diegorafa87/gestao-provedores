@@ -77,6 +77,8 @@ const EditarPerfil = () => {
   if (erro) return <p style={{color:'red'}}>{erro}</p>;
   if (!cliente) return null;
 
+  const [editando, setEditando] = useState(false);
+
   return (
     <div style={{display:'flex'}}>
       <MenuLateral
@@ -102,40 +104,67 @@ const EditarPerfil = () => {
           alignItems:'center',
           justifyContent:'center',
         }}>
-          <div style={{fontSize:'1.5rem',color:'#1976d2',fontWeight:800,marginBottom:18, letterSpacing:1}}>Editar Perfil do Cliente</div>
-          <form onSubmit={handleSalvar} style={{width:'100%', display:'flex', flexDirection:'column', gap:18}}>
-            <div style={{display:'flex', gap:18}}>
-              <div style={{flex:2}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Razão Social</label>
-                <input name="razaoSocial" value={form.razaoSocial} onChange={handleChange} style={{fontSize:'1.1rem',fontWeight:600,marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
-              </div>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>CNPJ</label>
-                <input name="cnpj" value={form.cnpj} onChange={handleChange} style={{fontSize:'1.1rem',fontWeight:600,marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
-              </div>
-            </div>
-            <div style={{display:'flex', gap:18}}>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>E-mail</label>
-                <input name="email" value={form.email} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
-              </div>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Telefone</label>
-                <input name="telefone" value={form.telefone} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
-              </div>
-            </div>
-            <div style={{display:'flex', gap:18}}>
-              <div style={{flex:1}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Consultoria</label>
-                <input name="consultoria" value={form.consultoria} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
-              </div>
-              <div style={{flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end'}}>
-                <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Status</label>
+          {!editando ? (
+            <>
+              <div style={{fontSize:'1.3rem',color:'#153a6b',fontWeight:700,marginBottom:10, textAlign:'center'}}>Painel Cliente</div>
+              <div style={{fontWeight:700, fontSize:'1.1rem', marginBottom:8, textAlign:'center'}}>{cliente.razaoSocial}</div>
+              <div style={{marginBottom:6, textAlign:'center'}}><b>CNPJ</b><br/>{cliente.cnpj}</div>
+              <div style={{marginBottom:6, textAlign:'center'}}>
+                <span style={{fontWeight:600}}>Status</span><br/>
                 <span style={{background:statusCores[cliente.status],color:'#fff',borderRadius:'12px',padding:'0.4rem 1.2rem',fontWeight:700,fontSize:'1rem',marginTop:4, textAlign:'center', letterSpacing:1}}>{statusNomes[cliente.status]}</span>
               </div>
-            </div>
-            <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:'8px',padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',transition:'background 0.2s', marginTop:10, letterSpacing:1}}>Salvar Alterações</button>
-          </form>
+              <div style={{marginBottom:6, textAlign:'center'}}>
+                <b>E-mail:</b> <a href={`mailto:${cliente.email}`}>{cliente.email}</a>
+              </div>
+              <div style={{marginBottom:6, textAlign:'center'}}>
+                <b>Telefone:</b> <a href={`https://wa.me/${cliente.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">{cliente.telefone}</a>
+              </div>
+              <div style={{marginBottom:6, textAlign:'center'}}>
+                <b>Consultoria:</b> {cliente.consultoria}
+              </div>
+              <button onClick={()=>setEditando(true)} style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:'8px',padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',marginTop:18, width:120}}>Editar</button>
+            </>
+          ) : (
+            <>
+              <div style={{fontSize:'1.5rem',color:'#1976d2',fontWeight:800,marginBottom:18, letterSpacing:1}}>Editar Perfil do Cliente</div>
+              <form onSubmit={handleSalvar} style={{width:'100%', display:'flex', flexDirection:'column', gap:18}}>
+                <div style={{display:'flex', gap:18}}>
+                  <div style={{flex:2}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Razão Social</label>
+                    <input name="razaoSocial" value={form.razaoSocial} onChange={handleChange} style={{fontSize:'1.1rem',fontWeight:600,marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>CNPJ</label>
+                    <input name="cnpj" value={form.cnpj} onChange={handleChange} style={{fontSize:'1.1rem',fontWeight:600,marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                </div>
+                <div style={{display:'flex', gap:18}}>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>E-mail</label>
+                    <input name="email" value={form.email} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Telefone</label>
+                    <input name="telefone" value={form.telefone} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                </div>
+                <div style={{display:'flex', gap:18}}>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Consultoria</label>
+                    <input name="consultoria" value={form.consultoria} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                  <div style={{flex:1, display:'flex', flexDirection:'column', justifyContent:'flex-end'}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Status</label>
+                    <span style={{background:statusCores[cliente.status],color:'#fff',borderRadius:'12px',padding:'0.4rem 1.2rem',fontWeight:700,fontSize:'1rem',marginTop:4, textAlign:'center', letterSpacing:1}}>{statusNomes[cliente.status]}</span>
+                  </div>
+                </div>
+                <div style={{display:'flex', gap:18, justifyContent:'center'}}>
+                  <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:'8px',padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',transition:'background 0.2s', marginTop:10, letterSpacing:1, width:120}}>Salvar</button>
+                  <button type="button" onClick={()=>setEditando(false)} style={{background:'#888',color:'#fff',border:'none',borderRadius:'8px',padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',transition:'background 0.2s', marginTop:10, letterSpacing:1, width:120, marginLeft:12}}>Cancelar</button>
+                </div>
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>
