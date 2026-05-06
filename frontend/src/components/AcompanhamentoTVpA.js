@@ -249,4 +249,3 @@ function initialData() {
       ))}
     </div>
   );
-}
