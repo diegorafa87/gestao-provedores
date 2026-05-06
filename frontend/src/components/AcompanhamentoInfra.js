@@ -22,7 +22,10 @@ function initialData() {
 export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
   const chaveChecks = cnpj ? `checks_INFRA_${cnpj}` : 'checks_INFRA';
   const chaveLinks = cnpj ? `links_INFRA_${cnpj}` : 'links_INFRA';
-  const [dados, setDados] = useState(() => {
+  const [dados, setDados] = useState(initialData());
+
+  // Sempre recarrega do localStorage ao montar
+  useEffect(() => {
     const salvo = localStorage.getItem(chaveChecks);
     const salvoLinks = localStorage.getItem(chaveLinks);
     const base = initialData();
@@ -46,8 +49,8 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
         }
       });
     }
-    return base;
-  });
+    setDados(base);
+  }, [chaveChecks, chaveLinks]);
 
   // Estados para anos desligados e ocultos
   const chaveDesligados = cnpj ? `anosDesligados_INFRA_${cnpj}` : 'anosDesligados_INFRA';

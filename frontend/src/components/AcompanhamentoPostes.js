@@ -23,7 +23,10 @@ function initialData() {
 export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
   const chaveChecks = cnpj ? `checks_POSTES_${cnpj}` : 'checks_POSTES';
   const chaveLinks = cnpj ? `links_POSTES_${cnpj}` : 'links_POSTES';
-  const [dados, setDados] = useState(() => {
+  const [dados, setDados] = useState(initialData());
+
+  // Sempre recarrega do localStorage ao montar
+  useEffect(() => {
     const salvo = localStorage.getItem(chaveChecks);
     const salvoLinks = localStorage.getItem(chaveLinks);
     const base = initialData();
@@ -47,8 +50,8 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
         }
       });
     }
-    return base;
-  });
+    setDados(base);
+  }, [chaveChecks, chaveLinks]);
 
   // Estados para anos desligados e ocultos
   const chaveDesligados = cnpj ? `anosDesligados_POSTES_${cnpj}` : 'anosDesligados_POSTES';
