@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const CAMPOS = ['Contrato processado na Coleta Anatel'];
@@ -21,37 +22,35 @@ function initialData() {
 }
 
 export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
-  const chaveChecks = cnpj ? `checks_POSTES_${cnpj}` : 'checks_POSTES';
-  const chaveLinks = cnpj ? `links_POSTES_${cnpj}` : 'links_POSTES';
   const [dados, setDados] = useState(initialData());
-
-  // Sempre recarrega do localStorage ao montar
+  // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
-    const salvo = localStorage.getItem(chaveChecks);
-    const salvoLinks = localStorage.getItem(chaveLinks);
-    const base = initialData();
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
-      ANOS.forEach(ano => {
-        if (checksSalvos[ano]) {
-          CAMPOS.forEach(campo => {
-            if (checksSalvos[ano][campo] !== undefined) base[ano][campo].checked = checksSalvos[ano][campo];
+    if (!cnpj) return;
+    getAcompanhamento('POSTES', cnpj)
+      .then(res => {
+        const base = initialData();
+        if (res.checks) {
+          ANOS.forEach(ano => {
+            if (res.checks[ano]) {
+              CAMPOS.forEach(campo => {
+                if (res.checks[ano][campo] !== undefined) base[ano][campo].checked = res.checks[ano][campo];
+              });
+            }
           });
         }
-      });
-    }
-    if (salvoLinks) {
-      const linksSalvos = JSON.parse(salvoLinks);
-      ANOS.forEach(ano => {
-        if (linksSalvos[ano]) {
-          CAMPOS.forEach(campo => {
-            if (linksSalvos[ano][campo] !== undefined) base[ano][campo].link = linksSalvos[ano][campo];
+        if (res.links) {
+          ANOS.forEach(ano => {
+            if (res.links[ano]) {
+              CAMPOS.forEach(campo => {
+                if (res.links[ano][campo] !== undefined) base[ano][campo].link = res.links[ano][campo];
+              });
+            }
           });
         }
-      });
-    }
-    setDados(base);
-  }, [chaveChecks, chaveLinks]);
+        setDados(base);
+      })
+      .catch(() => setDados(initialData()));
+  }, [cnpj]);
 
   // Estados para anos desligados e ocultos
   const chaveDesligados = cnpj ? `anosDesligados_POSTES_${cnpj}` : 'anosDesligados_POSTES';
@@ -91,13 +90,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
       CAMPOS.forEach(campo => {
         novo[ano][campo] = { ...novo[ano][campo], checked: marcar };
       });
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        CAMPOS.forEach(c => { checksToSave[a][c] = novo[a][c].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -107,13 +100,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [campo]: { ...novo[ano][campo], checked: !novo[ano][campo].checked } };
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        CAMPOS.forEach(c => { checksToSave[a][c] = novo[a][c].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -122,16 +109,27 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [campo]: { ...novo[ano][campo], link: value } };
-      // Salva no localStorage
-      const linksToSave = {};
-      ANOS.forEach(a => {
-        linksToSave[a] = {};
-        CAMPOS.forEach(c => { linksToSave[a][c] = novo[a][c].link; });
-      });
-      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
+
+  // Função para salvar no backend
+  function salvarChecksLinks(novoDados) {
+    const checksToSave = {};
+    const linksToSave = {};
+    ANOS.forEach(ano => {
+      checksToSave[ano] = {};
+      linksToSave[ano] = {};
+      CAMPOS.forEach(campo => {
+        checksToSave[ano][campo] = novoDados[ano][campo].checked;
+        linksToSave[ano][campo] = novoDados[ano][campo].link;
+      });
+    });
+    if (cnpj) {
+      saveAcompanhamento('POSTES', cnpj, { checks: checksToSave, links: linksToSave });
+    }
+  }
 
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados de Postes.</div>;

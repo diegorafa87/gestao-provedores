@@ -29,6 +29,8 @@ const acaoRoutes = require('./routes/acaoRoutes');
 
 const contratoRoutes = require('./routes/contratoRoutes');
 
+
+const acompanhamentoRoutes = require('./routes/acompanhamentoRoutes');
 const acompanhamentoSCMRoutes = require('./routes/acompanhamentoSCMRoutes');
 
 
@@ -37,6 +39,7 @@ app.use('/api/user', userRoutes);
 app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);
 app.use('/api', contratoRoutes);
+app.use('/api/acompanhamento', acompanhamentoRoutes);
 app.use('/api/acompanhamento-scm', acompanhamentoSCMRoutes);
 app.use('/api/acompanhamento-postes', acompanhamentoPostesRoutes);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -22,34 +23,35 @@ function initialData() {
 }
 
 export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
-  const chaveChecks = cnpj ? `checks_SCM_${cnpj}` : 'checks_SCM';
-  const chaveLinks = cnpj ? `links_SCM_${cnpj}` : 'links_SCM';
-  const [dados, setDados] = useState(() => {
-    const salvo = localStorage.getItem(chaveChecks);
-    const salvoLinks = localStorage.getItem(chaveLinks);
-    const base = initialData();
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
-      ANOS.forEach(ano => {
-        if (checksSalvos[ano]) {
-          MESES.forEach(mes => {
-            if (checksSalvos[ano][mes] !== undefined) base[ano][mes].checked = checksSalvos[ano][mes];
+  const [dados, setDados] = useState(initialData());
+  // Carregar dados do backend ao montar ou mudar cnpj
+  useEffect(() => {
+    if (!cnpj) return;
+    getAcompanhamento('SCM', cnpj)
+      .then(res => {
+        const base = initialData();
+        if (res.checks) {
+          ANOS.forEach(ano => {
+            if (res.checks[ano]) {
+              MESES.forEach(mes => {
+                if (res.checks[ano][mes] !== undefined) base[ano][mes].checked = res.checks[ano][mes];
+              });
+            }
           });
         }
-      });
-    }
-    if (salvoLinks) {
-      const linksSalvos = JSON.parse(salvoLinks);
-      ANOS.forEach(ano => {
-        if (linksSalvos[ano]) {
-          MESES.forEach(mes => {
-            if (linksSalvos[ano][mes] !== undefined) base[ano][mes].link = linksSalvos[ano][mes];
+        if (res.links) {
+          ANOS.forEach(ano => {
+            if (res.links[ano]) {
+              MESES.forEach(mes => {
+                if (res.links[ano][mes] !== undefined) base[ano][mes].link = res.links[ano][mes];
+              });
+            }
           });
         }
-      });
-    }
-    return base;
-  });
+        setDados(base);
+      })
+      .catch(() => setDados(initialData()));
+  }, [cnpj]);
 
   // Estados para anos desligados e ocultos
   const chaveDesligados = cnpj ? `anosDesligados_SCM_${cnpj}` : 'anosDesligados_SCM';
@@ -81,13 +83,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       MESES.forEach(mes => {
         novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
       });
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      // Salva no backend
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -97,13 +94,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], checked: !novo[ano][mes].checked } };
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -112,16 +103,28 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], link: value } };
-      // Salva no localStorage
-      const linksToSave = {};
-      ANOS.forEach(a => {
-        linksToSave[a] = {};
-        MESES.forEach(m => { linksToSave[a][m] = novo[a][m].link; });
-      });
-      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
+
+  // Função para salvar no backend
+  function salvarChecksLinks(novoDados) {
+    // Monta checks e links para salvar
+    const checksToSave = {};
+    const linksToSave = {};
+    ANOS.forEach(ano => {
+      checksToSave[ano] = {};
+      linksToSave[ano] = {};
+      MESES.forEach(mes => {
+        checksToSave[ano][mes] = novoDados[ano][mes].checked;
+        linksToSave[ano][mes] = novoDados[ano][mes].link;
+      });
+    });
+    if (cnpj) {
+      saveAcompanhamento('SCM', cnpj, { checks: checksToSave, links: linksToSave });
+    }
+  }
 
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados de SCM.</div>;
