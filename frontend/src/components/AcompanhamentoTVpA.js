@@ -1,7 +1,9 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -25,37 +27,12 @@ function initialData() {
 
 
 
-export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
-  const chaveChecks = cnpj ? `checks_TVPA_${cnpj}` : 'checks_TVPA';
-  const chaveLinks = cnpj ? `links_TVPA_${cnpj}` : 'links_TVPA';
-  const [dados, setDados] = useState(() => {
-    const salvo = localStorage.getItem(chaveChecks);
-    const salvoLinks = localStorage.getItem(chaveLinks);
-    const base = initialData();
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
-      ANOS.forEach(ano => {
-        if (checksSalvos[ano]) {
-          MESES.forEach(mes => {
-            if (checksSalvos[ano][mes] !== undefined) base[ano][mes].checked = checksSalvos[ano][mes];
-          });
-        }
-      });
-    }
-    if (salvoLinks) {
-      const linksSalvos = JSON.parse(salvoLinks);
-      ANOS.forEach(ano => {
-        if (linksSalvos[ano]) {
-          MESES.forEach(mes => {
-            if (linksSalvos[ano][mes] !== undefined) base[ano][mes].link = linksSalvos[ano][mes];
-          });
-        }
-      });
-    }
-    return base;
-  });
+  const [dados, setDados] = useState(initialData());
+  const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  // Estados para anos desligados e ocultos
+  // Estados para anos desligados e ocultos (preferências locais)
   const chaveDesligados = cnpj ? `anosDesligados_TVPA_${cnpj}` : 'anosDesligados_TVPA';
   const chaveOcultos = cnpj ? `anosOcultos_TVPA_${cnpj}` : 'anosOcultos_TVPA';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -67,6 +44,41 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     return salvo ? JSON.parse(salvo) : {};
   });
 
+  // Carregar dados do backend ao montar ou mudar cnpj
+  useEffect(() => {
+    if (!cnpj) return;
+    setLoading(true);
+    getAcompanhamento('TVPA', cnpj)
+      .then(res => {
+        const base = initialData();
+        if (res.checks) {
+          ANOS.forEach(ano => {
+            if (res.checks[ano]) {
+              MESES.forEach(mes => {
+                if (res.checks[ano][mes] !== undefined) base[ano][mes].checked = res.checks[ano][mes];
+              });
+            }
+          });
+        }
+        if (res.links) {
+          ANOS.forEach(ano => {
+            if (res.links[ano]) {
+              MESES.forEach(mes => {
+                if (res.links[ano][mes] !== undefined) base[ano][mes].link = res.links[ano][mes];
+              });
+            }
+          });
+        }
+        setDados(base);
+        setErro(null);
+      })
+      .catch(() => {
+        setDados(initialData());
+        setErro('Erro ao carregar dados do acompanhamento.');
+      })
+      .finally(() => setLoading(false));
+  }, [cnpj]);
+
   // Atualiza localStorage ao mudar anosDesligados/anosOcultos
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
@@ -75,6 +87,30 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
 
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
+
+  // Salvar dados no backend
+  const salvarNoBackend = async (novoDados) => {
+    setSalvando(true);
+    try {
+      // Monta objeto para API
+      const checks = {};
+      const links = {};
+      ANOS.forEach(ano => {
+        checks[ano] = {};
+        links[ano] = {};
+        MESES.forEach(mes => {
+          checks[ano][mes] = novoDados[ano][mes].checked;
+          links[ano][mes] = novoDados[ano][mes].link;
+        });
+      });
+      await saveAcompanhamento('TVPA', cnpj, { checks, links });
+      setErro(null);
+    } catch (e) {
+      setErro('Erro ao salvar dados do acompanhamento.');
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   // Marcar/desmarcar todos os meses de um ano
   const handleCheckAno = (ano) => {
@@ -85,13 +121,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
       MESES.forEach(mes => {
         novo[ano][mes] = { ...novo[ano][mes], checked: marcar };
       });
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarNoBackend(novo);
       return novo;
     });
   };
@@ -101,34 +131,26 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], checked: !novo[ano][mes].checked } };
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        MESES.forEach(m => { checksToSave[a][m] = novo[a][m].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarNoBackend(novo);
       return novo;
     });
   };
 
+  // Alterar link
   const handleLinkChange = (ano, mes, value) => {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [mes]: { ...novo[ano][mes], link: value } };
-      // Salva no localStorage
-      const linksToSave = {};
-      ANOS.forEach(a => {
-        linksToSave[a] = {};
-        MESES.forEach(m => { linksToSave[a][m] = novo[a][m].link; });
-      });
-      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      salvarNoBackend(novo);
       return novo;
     });
   };
 
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados de TVpA.</div>;
+  }
+  if (loading) {
+    return <div>Carregando dados do acompanhamento TVpA...</div>;
   }
 
   // Verifica se todos os anos estão ocultos
@@ -137,6 +159,8 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
   return (
     <div style={{ padding: 24 }}>
       <h2>Acompanhamento de TVpA</h2>
+      {erro && <div style={{ color: 'red', marginBottom: 12 }}>{erro}</div>}
+      {salvando && <div style={{ color: '#1976d2', marginBottom: 12 }}>Salvando alterações...</div>}
       {todosOcultos && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <button
@@ -165,7 +189,6 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
           boxShadow: '0 2px 8px #0001',
           padding: 20,
           opacity: anosDesligados[ano] ? 0.5 : 1,
-          // Sempre exibe o título do ano, oculta só o conteúdo
         }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
             <input
