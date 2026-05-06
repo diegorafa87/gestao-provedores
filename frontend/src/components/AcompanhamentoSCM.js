@@ -191,9 +191,11 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
               {MESES.map(mes => (
                 <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
                   <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : undefined }}>{mes}</div>
-                  <label style={{ display: 'block', marginBottom: 4 }}>
+                  <label style={{ display: 'block', marginBottom: 4 }} htmlFor={`scm-check-${ano}-${mes}`}>
                     <input
                       type="checkbox"
+                      id={`scm-check-${ano}-${mes}`}
+                      name={`scm-check-${ano}-${mes}`}
                       checked={dados[ano][mes].checked}
                       onChange={() => handleCheck(ano, mes)}
                       disabled={anosDesligados[ano]}
@@ -202,6 +204,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                   </label>
                   <input
                     type="text"
+                    id={`scm-link-${ano}-${mes}`}
+                    name={`scm-link-${ano}-${mes}`}
                     value={dados[ano][mes].link}
                     onChange={e => handleLinkChange(ano, mes, e.target.value)}
                     placeholder="Comprovante (link Cloudflare)"
