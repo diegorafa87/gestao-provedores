@@ -40,9 +40,19 @@ export default function SubmenuAcessoCampos() {
         });
         setErro(null);
       })
-      .catch(() => {
+      .catch(async (err) => {
         setValores({ campo1: '', campo2: '', campo3: '' });
-        setErro('Erro ao carregar dados do gerenciador.');
+        let msg = 'Erro ao carregar dados do gerenciador.';
+        if (err && err.response) {
+          try {
+            const data = await err.response.json();
+            if (data && data.error) msg += ' ' + data.error;
+            if (data && data.details) msg += ' ' + data.details;
+          } catch {}
+        } else if (err && err.message) {
+          msg += ' ' + err.message;
+        }
+        setErro(msg);
       })
       .finally(() => setCarregando(false));
   }, [clienteSelecionado]);
@@ -111,8 +121,18 @@ export default function SubmenuAcessoCampos() {
                   senha: valores.campo3
                 });
                 setErro(null);
-              } catch {
-                setErro('Erro ao salvar dados do gerenciador.');
+              } catch (err) {
+                let msg = 'Erro ao salvar dados do gerenciador.';
+                if (err && err.response) {
+                  try {
+                    const data = await err.response.json();
+                    if (data && data.error) msg += ' ' + data.error;
+                    if (data && data.details) msg += ' ' + data.details;
+                  } catch {}
+                } else if (err && err.message) {
+                  msg += ' ' + err.message;
+                }
+                setErro(msg);
               }
               setSalvando(false);
             }}
