@@ -293,33 +293,54 @@ export default function CompartilhamentoPostesPage() {
               disabled={historicoLinhas.length === 0}
               onClick={() => {
                 if (historicoLinhas.length === 0) return;
+                // Cabeçalho igual ao arquivo de exemplo
                 const header = [
-                  'cnpjOutorgada',
-                  'cnpjOutorgadaOriginal',
-                  'numProcessoHomologacao',
-                  'cnpjDetentoraInfra',
-                  'coDescritivoContratoInfra',
-                  'dtAssinaturaContratoInfra',
-                  'dtValidadeFinalContratoInfra',
-                  'qtPontosFixacaoInfra',
-                  'vrPontoFixacaoInfra',
-                  'indiceReajusteContratoInfra',
-                  'dtBaseReajusteContratoInfra',
-                  'icControversiaJudAdm',
-                  'observacoes'
+                  'CNPJ_OUTORGADA',
+                  'CNPJ_OUTORGADA_ORIGINAL',
+                  'NUM_PROCESSO_HOMOLOGACAO',
+                  'CNPJ_DETENTORA_INFRA',
+                  'CO_DESCRITIVO_CONTRATO_INFRA',
+                  'DT_ASSINATURA_CONTRATO_INFRA',
+                  'DT_VALIDADE_FINAL_CONTRATO_INFRA',
+                  'QT_PONTOS_FIXACAO_INFRA',
+                  'VR_PONTO_FIXACAO_INFRA',
+                  'INDICE_REAJUSTE_CONTRATO_INFRA',
+                  'DT_BASE_REAJUSTE_CONTRATO_INFRA',
+                  'IC_CONTROVERSIA_JUD_ADM',
+                  'OBSERVACOES'
                 ];
+                // Gera CSV com as regras do SCM (campos na ordem, separador ;, sem download direto)
                 const csv = [
                   header.join(';'),
-                  ...historicoLinhas.map(linha => header.map(h => (linha[h] || '').toString().replace(/;/g, ',')).join(';'))
+                  ...historicoLinhas.map(linha => [
+                    linha.cnpjOutorgada || '',
+                    linha.cnpjOutorgadaOriginal || '',
+                    linha.numProcessoHomologacao || '',
+                    linha.cnpjDetentoraInfra || '',
+                    linha.coDescritivoContratoInfra || '',
+                    linha.dtAssinaturaContratoInfra || '',
+                    linha.dtValidadeFinalContratoInfra || '',
+                    linha.qtPontosFixacaoInfra || '',
+                    linha.vrPontoFixacaoInfra || '',
+                    linha.indiceReajusteContratoInfra || '',
+                    linha.dtBaseReajusteContratoInfra || '',
+                    linha.icControversiaJudAdm || '',
+                    linha.observacoes || ''
+                  ].map(v => v.toString().replace(/;/g, ',')).join(';'))
                 ].join('\n');
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const link = document.createElement('a');
                 const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-                link.href = URL.createObjectURL(blob);
-                link.download = `compartilhamento_postes_${dataAtual}.csv`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                const nome = `POSTES_${dataAtual}.csv`;
+                const novoArquivo = {
+                  nome,
+                  data: dataAtual,
+                  conteudo: csv
+                };
+                setHistoricoArquivos(h => {
+                  const novo = [novoArquivo, ...h];
+                  salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+                  return novo;
+                });
+                alert('Arquivo CSV gerado e salvo no histórico!');
               }}
             >
               Gerar CSV
