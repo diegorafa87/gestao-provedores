@@ -1,5 +1,6 @@
 import { getSTFCHistoricoCSV, deleteSTFCHistoricoCSV } from '../services/stfcHistorico';
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
+
   // Carregar histórico global de arquivos CSV STFC
   useEffect(() => {
     getSTFCHistoricoCSV()
