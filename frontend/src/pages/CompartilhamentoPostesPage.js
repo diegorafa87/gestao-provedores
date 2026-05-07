@@ -252,7 +252,7 @@ export default function CompartilhamentoPostesPage() {
               />
             </label>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
             <button
               type="button"
               style={{
@@ -274,6 +274,55 @@ export default function CompartilhamentoPostesPage() {
               }}
             >
               Salvar Linha
+            </button>
+            <button
+              type="button"
+              style={{
+                background: '#43a047',
+                color: '#fff',
+                fontWeight: 700,
+                border: 'none',
+                borderRadius: 4,
+                padding: '8px 24px',
+                fontSize: 15,
+                cursor: historicoLinhas.length === 0 ? 'not-allowed' : 'pointer',
+                opacity: historicoLinhas.length === 0 ? 0.6 : 1,
+                marginTop: 0,
+                marginRight: 12
+              }}
+              disabled={historicoLinhas.length === 0}
+              onClick={() => {
+                if (historicoLinhas.length === 0) return;
+                const header = [
+                  'cnpjOutorgada',
+                  'cnpjOutorgadaOriginal',
+                  'numProcessoHomologacao',
+                  'cnpjDetentoraInfra',
+                  'coDescritivoContratoInfra',
+                  'dtAssinaturaContratoInfra',
+                  'dtValidadeFinalContratoInfra',
+                  'qtPontosFixacaoInfra',
+                  'vrPontoFixacaoInfra',
+                  'indiceReajusteContratoInfra',
+                  'dtBaseReajusteContratoInfra',
+                  'icControversiaJudAdm',
+                  'observacoes'
+                ];
+                const csv = [
+                  header.join(';'),
+                  ...historicoLinhas.map(linha => header.map(h => (linha[h] || '').toString().replace(/;/g, ',')).join(';'))
+                ].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const link = document.createElement('a');
+                const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+                link.href = URL.createObjectURL(blob);
+                link.download = `compartilhamento_postes_${dataAtual}.csv`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Gerar CSV
             </button>
           </div>
           {/* Histórico de linhas salvas (mantém dentro do card) */}
