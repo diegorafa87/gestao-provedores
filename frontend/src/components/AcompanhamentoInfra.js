@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const ITENS = ['Estações', 'Enlaces Próprios', 'Enlaces Contratados'];
@@ -20,39 +21,53 @@ function initialData() {
 }
 
 export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
-  const chaveChecks = cnpj ? `checks_INFRA_${cnpj}` : 'checks_INFRA';
-  const chaveLinks = cnpj ? `links_INFRA_${cnpj}` : 'links_INFRA';
   const [dados, setDados] = useState(initialData());
+  const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  // Sempre recarrega do localStorage ao montar
+  // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
-    const salvo = localStorage.getItem(chaveChecks);
-    const salvoLinks = localStorage.getItem(chaveLinks);
-    const base = initialData();
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
-      ANOS.forEach(ano => {
-        if (checksSalvos[ano]) {
-          ITENS.forEach(item => {
-            if (checksSalvos[ano][item] !== undefined) base[ano][item].checked = checksSalvos[ano][item];
+    if (!cnpj) return;
+    setLoading(true);
+    getAcompanhamento('INFRA', cnpj)
+      .then(res => {
+        const base = initialData();
+        if (res.checks) {
+          ANOS.forEach(ano => {
+            if (res.checks[ano]) {
+              ITENS.forEach(item => {
+                if (res.checks[ano][item] !== undefined) base[ano][item].checked = res.checks[ano][item];
+              });
+            }
           });
         }
-      });
-    }
-    if (salvoLinks) {
-      const linksSalvos = JSON.parse(salvoLinks);
-      ANOS.forEach(ano => {
-        if (linksSalvos[ano]) {
-          ITENS.forEach(item => {
-            if (linksSalvos[ano][item] !== undefined) base[ano][item].link = linksSalvos[ano][item];
+        if (res.links) {
+          ANOS.forEach(ano => {
+            if (res.links[ano]) {
+              ITENS.forEach(item => {
+                if (res.links[ano][item] !== undefined) base[ano][item].link = res.links[ano][item];
+              });
+            }
           });
         }
-      });
-    }
-    setDados(base);
-  }, [chaveChecks, chaveLinks]);
+        setDados(prev => {
+          const igual = JSON.stringify(prev) === JSON.stringify(base);
+          if (!igual) {
+            return base;
+          }
+          return prev;
+        });
+        setErro(null);
+      })
+      .catch(() => {
+        setDados(initialData());
+        setErro('Erro ao carregar dados do acompanhamento.');
+      })
+      .finally(() => setLoading(false));
+  }, [cnpj]);
 
-  // Estados para anos desligados e ocultos
+  // Estados para anos desligados e ocultos (mantém local, pois é preferência visual)
   const chaveDesligados = cnpj ? `anosDesligados_INFRA_${cnpj}` : 'anosDesligados_INFRA';
   const chaveOcultos = cnpj ? `anosOcultos_INFRA_${cnpj}` : 'anosOcultos_INFRA';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -63,8 +78,6 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
     const salvo = localStorage.getItem(chaveOcultos);
     return salvo ? JSON.parse(salvo) : {};
   });
-
-  // Atualiza localStorage ao mudar anosDesligados/anosOcultos
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
     localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
@@ -82,13 +95,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
       ITENS.forEach(item => {
         novo[ano][item] = { ...novo[ano][item], checked: marcar };
       });
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        ITENS.forEach(i => { checksToSave[a][i] = novo[a][i].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -98,13 +105,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [item]: { ...novo[ano][item], checked: !novo[ano][item].checked } };
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        ITENS.forEach(i => { checksToSave[a][i] = novo[a][i].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -113,19 +114,33 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [item]: { ...novo[ano][item], link: value } };
-      // Salva no localStorage
-      const linksToSave = {};
-      ANOS.forEach(a => {
-        linksToSave[a] = {};
-        ITENS.forEach(i => { linksToSave[a][i] = novo[a][i].link; });
-      });
-      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
 
+  // Função para salvar no backend
+  function salvarChecksLinks(novoDados) {
+    const checksToSave = {};
+    const linksToSave = {};
+    ANOS.forEach(ano => {
+      checksToSave[ano] = {};
+      linksToSave[ano] = {};
+      ITENS.forEach(item => {
+        checksToSave[ano][item] = novoDados[ano][item].checked;
+        linksToSave[ano][item] = novoDados[ano][item].link;
+      });
+    });
+    if (cnpj) {
+      saveAcompanhamento('INFRA', cnpj, { checks: checksToSave, links: linksToSave });
+    }
+  }
+
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados de Infra.</div>;
+  }
+  if (loading) {
+    return <div>Carregando dados do acompanhamento...</div>;
   }
 
   // Verifica se todos os anos estão ocultos
@@ -169,7 +184,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
               checked={todosItensChecados(ano)}
               onChange={() => handleCheckAno(ano)}
               style={{ marginRight: 10, width: 20, height: 20 }}
-              disabled={anosDesligados[ano]}
+              disabled={anosDesligados[ano] || salvando}
             />
             <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
             <button
@@ -188,7 +203,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
             </button>
           </div>
           {!anosOcultos[ano] && (
-            <>
+            <React.Fragment>
               {ITENS.map(item => (
                 <div key={item} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
                   <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][item].checked ? '#43a047' : undefined }}>{item}</div>
@@ -197,7 +212,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
                       type="checkbox"
                       checked={dados[ano][item].checked}
                       onChange={() => handleCheck(ano, item)}
-                      disabled={anosDesligados[ano]}
+                      disabled={anosDesligados[ano] || salvando}
                     />{' '}
                     Comprovante Infraestrutura ({item})
                   </label>
@@ -207,7 +222,7 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
                     onChange={e => handleLinkChange(ano, item, e.target.value)}
                     placeholder="Comprovante (link Cloudflare)"
                     style={{ width: 400, maxWidth: '100%' }}
-                    disabled={anosDesligados[ano]}
+                    disabled={anosDesligados[ano] || salvando}
                   />
                   {dados[ano][item].link && (
                     <a
@@ -221,10 +236,12 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
                   )}
                 </div>
               ))}
-            </>
+            </React.Fragment>
           )}
         </div>
       ))}
+      {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
+      {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
   );
 }
