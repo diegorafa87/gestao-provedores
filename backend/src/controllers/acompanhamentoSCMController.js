@@ -27,6 +27,7 @@ exports.getSCMStatus = (req, res) => {
   res.json(dados[cnpj] || { anosDesligados: {}, anosOcultos: {} });
 };
 
+
 exports.setSCMStatus = (req, res) => {
   const { cnpj } = req.params;
   const { anosDesligados, anosOcultos } = req.body;
@@ -34,4 +35,39 @@ exports.setSCMStatus = (req, res) => {
   dados[cnpj] = { anosDesligados, anosOcultos };
   salvarAcompanhamentoSCM(dados);
   res.json({ success: true });
+};
+
+// Novo: Listar histórico de geração de CSV SCM
+exports.getSCMHistoricoCSV = (req, res) => {
+  const dbPath = path.join(__dirname, '../db_logs.json');
+  let historico = [];
+  try {
+    const data = fs.readFileSync(dbPath, 'utf8');
+    const json = JSON.parse(data);
+    // Suporta tanto array quanto objeto (compatibilidade)
+    const logs = Array.isArray(json) ? json : (json.logs || []);
+    historico = logs.filter(
+      (item) => item.acao === 'GERAR_CSV_SCM'
+    );
+  } catch (e) {}
+  res.json(historico);
+};
+
+// Novo: Adicionar entrada ao histórico de geração de CSV SCM
+exports.addSCMHistoricoCSV = (req, res) => {
+  const dbPath = path.join(__dirname, '../db_logs.json');
+  let logs = [];
+  try {
+    const data = fs.readFileSync(dbPath, 'utf8');
+    const json = JSON.parse(data);
+    logs = Array.isArray(json) ? json : (json.logs || []);
+  } catch (e) {}
+  const novaEntrada = req.body;
+  logs.push(novaEntrada);
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'Erro ao salvar histórico' });
+  }
 };

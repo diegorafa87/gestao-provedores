@@ -1,6 +1,7 @@
 import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
+import { getSCMHistoricoCSV, addSCMHistoricoCSV } from '../services/scmHistorico';
 
 const campos = [
   // { name: 'CNPJ', label: 'CNPJ', required: false }, // Não exibe campo de preenchimento de CNPJ
@@ -47,15 +48,23 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
   const [linhas, setLinhas] = useState([]); // Armazena linhas salvas
   const [csv, setCsv] = useState('');
   const [municipios, setMunicipios] = useState([]);
-  const historicoKey = `historicoSCM_${cnpj}`;
-  const [historico, setHistorico] = useState(() => {
-    try {
-      const salvo = localStorage.getItem(historicoKey);
-      return salvo ? JSON.parse(salvo) : [];
-    } catch {
-      return [];
-    }
-  });
+
+  const [historico, setHistorico] = useState([]);
+
+  // Busca histórico global do backend ao montar
+  useEffect(() => {
+    getSCMHistoricoCSV()
+      .then(data => {
+        // Filtra apenas arquivos do CNPJ atual, se houver
+        if (cnpj) {
+          const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+          setHistorico(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
+        } else {
+          setHistorico(data);
+        }
+      })
+      .catch(() => setHistorico([]));
+  }, [cnpj]);
 
   useEffect(() => {
     fetch('/municipiosIBGE.json')
@@ -100,7 +109,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     alert('Linhas corrigidas!');
   };
 
-  const handleGerarCSV = () => {
+  const handleGerarCSV = async () => {
     if (linhas.length === 0) return;
     const header = ordemCSV.join(';');
     // Insere o CNPJ do cliente em cada linha, apenas números
@@ -138,13 +147,26 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     }
     nomeRazao = (nomeRazao || '').replace(/[^a-zA-Z0-9]/g, '_') || 'CLIENTE';
     const nomeArquivo = `SCM_${nomeRazao}_${ano}_${mes}.csv`;
-    // Não faz download automático. Apenas salva no histórico.
-    // Histórico: nome igual ao arquivo gerado
-    const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
-    setHistorico(novoHistorico);
-    localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
-    // Não limpa as linhas após gerar o CSV
-    // Log da ação no backend
+    // Salva no backend
+    const novaEntrada = {
+      nome: nomeArquivo,
+      conteudo: csvContent,
+      data: new Date().toLocaleString(),
+      usuario: cnpj || 'desconhecido',
+      detalhes: { nomeArquivo, ano, mes, razaoSocial: nomeRazao },
+      acao: 'GERAR_CSV_SCM'
+    };
+    try {
+      await addSCMHistoricoCSV(novaEntrada);
+      // Atualiza histórico local após salvar
+      const data = await getSCMHistoricoCSV();
+      if (cnpj) {
+        setHistorico(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
+      } else {
+        setHistorico(data);
+      }
+    } catch {}
+    // Log da ação no backend (mantém para compatibilidade)
     fetch(`${API_URL}/api/acao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -157,12 +179,11 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
   };
 
   // Atualiza o localStorage ao excluir do histórico
+  // Exclusão local apenas (não remove do backend global)
   const handleExcluirHistorico = idx => {
-    if (window.confirm('Tem certeza que deseja excluir este arquivo CSV do histórico? Essa ação não poderá ser desfeita.')) {
+    if (window.confirm('Tem certeza que deseja excluir este arquivo CSV do histórico local? (Não remove do backend global)')) {
       const novo = historico.filter((_, i) => i !== idx);
       setHistorico(novo);
-      // Usa a mesma chave dinâmica do localStorage usada para salvar
-      localStorage.setItem(historicoKey, JSON.stringify(novo));
     }
   };
 

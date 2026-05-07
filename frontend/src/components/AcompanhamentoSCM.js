@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { salvarHistoricoNoStorage, carregarHistoricoDoStorage } from '../utils/localStorageHistorico';
+import { getSCMHistoricoCSV } from '../services/scmHistorico';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
@@ -29,12 +29,17 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
 
-  // Histórico de arquivos CSV gerados
+  // Histórico de arquivos CSV gerados (global, backend)
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
-  // Sempre que o cnpj mudar, recarrega o histórico correto
   useEffect(() => {
-    if (cnpj) setHistoricoArquivos(carregarHistoricoDoStorage(cnpj));
-    else setHistoricoArquivos([]);
+    getSCMHistoricoCSV()
+      .then(data => {
+        // Se quiser filtrar por CNPJ, descomente a linha abaixo:
+        // const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+        // setHistoricoArquivos(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
+        setHistoricoArquivos(data);
+      })
+      .catch(() => setHistoricoArquivos([]));
   }, [cnpj]);
 
   // Carregar dados do backend ao montar ou mudar cnpj
@@ -268,9 +273,58 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
           </div>
         ))}
       </div>
+      {/* Histórico global de arquivos CSV SCM */}
+      <div style={{marginTop:40}}>
+        <h3>Histórico global de arquivos CSV SCM</h3>
+        {historicoArquivos.length === 0 ? (
+          <div style={{color:'#888'}}>Nenhum arquivo CSV gerado ainda.</div>
+        ) : (
+          <table style={{width:'100%',background:'#f4f4f4',borderRadius:6,padding:8}}>
+            <thead>
+              <tr>
+                <th style={{textAlign:'left',padding:'4px 8px'}}>Nome do Arquivo</th>
+                <th style={{textAlign:'left',padding:'4px 8px'}}>Data</th>
+                <th style={{textAlign:'left',padding:'4px 8px'}}>Usuário/CNPJ</th>
+                <th style={{textAlign:'center',padding:'4px 8px'}}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historicoArquivos.map((item, idx) => (
+                <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
+                  <td style={{padding:'4px 8px'}}>{item.nome}</td>
+                  <td style={{padding:'4px 8px'}}>{item.data}</td>
+                  <td style={{padding:'4px 8px'}}>{item.usuario}</td>
+                  <td style={{textAlign:'center',padding:'4px 8px'}}>
+                    <button onClick={() => {
+                      // Força BOM UTF-8, separador vírgula, CRLF e sem linha em branco final
+                      const BOM = '\uFEFF';
+                      let conteudo = item.conteudo.replace(/^\s+/, '');
+                      // Garante que a primeira linha é o cabeçalho correto e com vírgula
+                      const header = 'CNPJ;ANO;MES;COD_IBGE;TIPO_CLIENTE;TIPO_ATENDIMENTO;TIPO_MEIO;TIPO_PRODUTO;TIPO_TECNOLOGIA;VELOCIDADE;ACESSOS';
+                      let linhas = conteudo.split(/\r?\n/);
+                      linhas[0] = header;
+                      conteudo = linhas.join('\r\n') + '\r\n'; // Garante CRLF ao final
+                      // Força CRLF em todas as linhas (caso haja algum \n isolado)
+                      conteudo = conteudo.replace(/([^\r])\n/g, '$1\r\n');
+                      const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.setAttribute('download', item.nome);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Baixar arquivo" aria-label="Baixar arquivo">
+                      <span role="img" aria-label="download">⬇️</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
-
     </div>
   );
 }
