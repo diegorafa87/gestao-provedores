@@ -34,10 +34,11 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   useEffect(() => {
     getSCMHistoricoCSV()
       .then(data => {
-        // Se quiser filtrar por CNPJ, descomente a linha abaixo:
-        // const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-        // setHistoricoArquivos(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
-        setHistoricoArquivos(data);
+        // Filtra para exibir apenas arquivos do CNPJ atual
+        const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+        setHistoricoArquivos(
+          data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
+        );
       })
       .catch(() => setHistoricoArquivos([]));
   }, [cnpj]);
@@ -316,19 +317,25 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Baixar arquivo" aria-label="Baixar arquivo">
                       <span role="img" aria-label="download">⬇️</span>
                     </button>
-                    <button onClick={async () => {
-                      if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico global?')) {
-                        try {
-                          await deleteSCMHistoricoCSV(idx);
-                          const data = await getSCMHistoricoCSV();
-                          setHistoricoArquivos(data);
-                        } catch {
-                          alert('Erro ao excluir arquivo do histórico.');
+                    {/* Só exibe o botão excluir se o arquivo for do CNPJ atual */}
+                    {((item.usuario || '').replace(/\D/g, '') === (cnpj || '').replace(/\D/g, '')) && (
+                      <button onClick={async () => {
+                        if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                          try {
+                            await deleteSCMHistoricoCSV(idx);
+                            const data = await getSCMHistoricoCSV();
+                            const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+                            setHistoricoArquivos(
+                              data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
+                            );
+                          } catch {
+                            alert('Erro ao excluir arquivo do histórico.');
+                          }
                         }
-                      }
-                    }} style={{background:'none',border:'none',cursor:'pointer',padding:2, color:'#d32f2f'}} title="Excluir arquivo" aria-label="Excluir arquivo">
-                      <span role="img" aria-label="excluir">🗑️</span>
-                    </button>
+                      }} style={{background:'none',border:'none',cursor:'pointer',padding:2, color:'#d32f2f'}} title="Excluir arquivo" aria-label="Excluir arquivo">
+                        <span role="img" aria-label="excluir">🗑️</span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
