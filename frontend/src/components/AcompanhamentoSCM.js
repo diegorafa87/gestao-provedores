@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getSCMHistoricoCSV } from '../services/scmHistorico';
+import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
@@ -294,7 +294,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                   <td style={{padding:'4px 8px'}}>{item.nome}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{padding:'4px 8px'}}>{item.usuario}</td>
-                  <td style={{textAlign:'center',padding:'4px 8px'}}>
+                  <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
                       // Força BOM UTF-8, separador vírgula, CRLF e sem linha em branco final
                       const BOM = '\uFEFF';
@@ -315,6 +315,19 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       document.body.removeChild(link);
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Baixar arquivo" aria-label="Baixar arquivo">
                       <span role="img" aria-label="download">⬇️</span>
+                    </button>
+                    <button onClick={async () => {
+                      if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico global?')) {
+                        try {
+                          await deleteSCMHistoricoCSV(idx);
+                          const data = await getSCMHistoricoCSV();
+                          setHistoricoArquivos(data);
+                        } catch {
+                          alert('Erro ao excluir arquivo do histórico.');
+                        }
+                      }
+                    }} style={{background:'none',border:'none',cursor:'pointer',padding:2, color:'#d32f2f'}} title="Excluir arquivo" aria-label="Excluir arquivo">
+                      <span role="img" aria-label="excluir">🗑️</span>
                     </button>
                   </td>
                 </tr>
