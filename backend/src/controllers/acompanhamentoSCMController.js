@@ -1,21 +1,18 @@
-// Excluir entrada do histórico de geração de CSV SCM por índice
+// Excluir entrada do histórico de geração de CSV SCM por nome, data e usuario
 exports.deleteSCMHistoricoCSV = (req, res) => {
   const dbPath = path.join(__dirname, '../db_logs.json');
-  const { idx } = req.params;
+  const { nome, data, usuario } = req.body;
   let logs = [];
   try {
-    const data = fs.readFileSync(dbPath, 'utf8');
-    const json = JSON.parse(data);
+    const fileData = fs.readFileSync(dbPath, 'utf8');
+    const json = JSON.parse(fileData);
     logs = Array.isArray(json) ? json : (json.logs || []);
   } catch (e) {}
-  // Filtra apenas logs de CSV SCM
-  const scmLogs = logs.filter(item => item.acao === 'GERAR_CSV_SCM');
-  if (idx < 0 || idx >= scmLogs.length) {
-    return res.status(404).json({ success: false, error: 'Índice inválido' });
-  }
-  // Remove do array original (logs)
-  const itemRemover = scmLogs[idx];
-  const novaLista = logs.filter((item, i) => !(item.acao === 'GERAR_CSV_SCM' && JSON.stringify(item) === JSON.stringify(itemRemover)) || scmLogs.indexOf(item) !== idx);
+  const novaLista = logs.filter(item => {
+    if (item.acao !== 'GERAR_CSV_SCM') return true;
+    // Remove apenas o item exato
+    return !(item.nome === nome && item.data === data && item.usuario === usuario);
+  });
   try {
     fs.writeFileSync(dbPath, JSON.stringify(novaLista, null, 2));
     res.json({ success: true });
