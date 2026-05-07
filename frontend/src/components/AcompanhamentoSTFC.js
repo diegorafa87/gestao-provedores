@@ -1,16 +1,3 @@
-import { getSTFCHistoricoCSV, deleteSTFCHistoricoCSV } from '../services/stfcHistorico';
-  const [historicoArquivos, setHistoricoArquivos] = useState([]);
-  // Carregar histórico global de arquivos CSV STFC
-  useEffect(() => {
-    getSTFCHistoricoCSV()
-      .then(data => {
-        const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-        setHistoricoArquivos(
-          data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
-        );
-      })
-      .catch(() => setHistoricoArquivos([]));
-  }, [cnpj]);
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
@@ -250,53 +237,6 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
           )}
         </div>
       ))}
-      {/* Histórico global de arquivos CSV STFC */}
-      <div style={{marginTop:40}}>
-        <h3>Histórico global de arquivos CSV STFC</h3>
-        {historicoArquivos.length === 0 ? (
-          <div style={{color:'#888'}}>Nenhum arquivo CSV gerado ainda.</div>
-        ) : (
-          <table style={{width:'100%',background:'#f4f4f4',borderRadius:6,padding:8}}>
-            <thead>
-              <tr>
-                <th style={{textAlign:'left',padding:'4px 8px'}}>Nome do Arquivo</th>
-                <th style={{textAlign:'left',padding:'4px 8px'}}>Data</th>
-                <th style={{textAlign:'left',padding:'4px 8px'}}>Usuário/CNPJ</th>
-                <th style={{textAlign:'center',padding:'4px 8px'}}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historicoArquivos.map((item, idx) => (
-                <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
-                  <td style={{padding:'4px 8px'}}>{item.nome}</td>
-                  <td style={{padding:'4px 8px'}}>{item.data}</td>
-                  <td style={{padding:'4px 8px'}}>{item.usuario}</td>
-                  <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
-                    {((item.usuario || '').replace(/\D/g, '') === (cnpj || '').replace(/\D/g, '')) && (
-                      <button onClick={async () => {
-                        if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
-                          try {
-                            await deleteSTFCHistoricoCSV({ nome: item.nome, data: item.data, usuario: item.usuario });
-                            const data = await getSTFCHistoricoCSV();
-                            const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-                            setHistoricoArquivos(
-                              data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
-                            );
-                          } catch {
-                            alert('Erro ao excluir arquivo do histórico.');
-                          }
-                        }
-                      }} style={{background:'none',border:'none',cursor:'pointer',padding:2, color:'#d32f2f'}} title="Excluir arquivo" aria-label="Excluir arquivo">
-                        <span role="img" aria-label="excluir">🗑️</span>
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
