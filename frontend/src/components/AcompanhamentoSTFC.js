@@ -1,6 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
-import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 import { getSTFCHistoricoCSV, deleteSTFCHistoricoCSV } from '../services/stfcHistorico';
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
 
