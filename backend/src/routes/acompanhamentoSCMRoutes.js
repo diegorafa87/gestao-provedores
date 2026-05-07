@@ -1,8 +1,9 @@
-// Excluir entrada do histórico de geração de CSV SCM por índice
-router.delete('/historico/csv/:idx', acompanhamentoSCMController.deleteSCMHistoricoCSV);
+
 const express = require('express');
 const router = express.Router();
 const acompanhamentoSCMController = require('../controllers/acompanhamentoSCMController');
+// Excluir entrada do histórico de geração de CSV SCM por índice
+router.delete('/historico/csv/:idx', acompanhamentoSCMController.deleteSCMHistoricoCSV);
 
 
 // Buscar status de anos desligados/ocultos do SCM para um cliente
