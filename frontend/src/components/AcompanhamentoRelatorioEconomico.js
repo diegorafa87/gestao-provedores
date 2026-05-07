@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const SEMESTRES = ['Primeiro Semestre', 'Segundo Semestre'];
@@ -20,36 +21,53 @@ function initialData() {
 }
 
 export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) {
-  const chaveChecks = cnpj ? `checks_REL_ECON_${cnpj}` : 'checks_REL_ECON';
-  const chaveLinks = cnpj ? `links_REL_ECON_${cnpj}` : 'links_REL_ECON';
-  const [dados, setDados] = useState(() => {
-    const salvo = localStorage.getItem(chaveChecks);
-    const salvoLinks = localStorage.getItem(chaveLinks);
-    const base = initialData();
-    if (salvo) {
-      const checksSalvos = JSON.parse(salvo);
-      ANOS.forEach(ano => {
-        if (checksSalvos[ano]) {
-          SEMESTRES.forEach(semestre => {
-            if (checksSalvos[ano][semestre] !== undefined) base[ano][semestre].checked = checksSalvos[ano][semestre];
-          });
-        }
-      });
-    }
-    if (salvoLinks) {
-      const linksSalvos = JSON.parse(salvoLinks);
-      ANOS.forEach(ano => {
-        if (linksSalvos[ano]) {
-          SEMESTRES.forEach(semestre => {
-            if (linksSalvos[ano][semestre] !== undefined) base[ano][semestre].link = linksSalvos[ano][semestre];
-          });
-        }
-      });
-    }
-    return base;
-  });
+  const [dados, setDados] = useState(initialData());
+  const [loading, setLoading] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  // Estados para anos desligados e ocultos
+  // Carregar dados do backend ao montar ou mudar cnpj
+  useEffect(() => {
+    if (!cnpj) return;
+    setLoading(true);
+    getAcompanhamento('REL_ECON', cnpj)
+      .then(res => {
+        const base = initialData();
+        if (res.checks) {
+          ANOS.forEach(ano => {
+            if (res.checks[ano]) {
+              SEMESTRES.forEach(semestre => {
+                if (res.checks[ano][semestre] !== undefined) base[ano][semestre].checked = res.checks[ano][semestre];
+              });
+            }
+          });
+        }
+        if (res.links) {
+          ANOS.forEach(ano => {
+            if (res.links[ano]) {
+              SEMESTRES.forEach(semestre => {
+                if (res.links[ano][semestre] !== undefined) base[ano][semestre].link = res.links[ano][semestre];
+              });
+            }
+          });
+        }
+        setDados(prev => {
+          const igual = JSON.stringify(prev) === JSON.stringify(base);
+          if (!igual) {
+            return base;
+          }
+          return prev;
+        });
+        setErro(null);
+      })
+      .catch(() => {
+        setDados(initialData());
+        setErro('Erro ao carregar dados do acompanhamento.');
+      })
+      .finally(() => setLoading(false));
+  }, [cnpj]);
+
+  // Estados para anos desligados e ocultos (mantém local, pois é preferência visual)
   const chaveDesligados = cnpj ? `anosDesligados_REL_ECON_${cnpj}` : 'anosDesligados_REL_ECON';
   const chaveOcultos = cnpj ? `anosOcultos_REL_ECON_${cnpj}` : 'anosOcultos_REL_ECON';
   const [anosDesligados, setAnosDesligados] = useState(() => {
@@ -60,8 +78,6 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
     const salvo = localStorage.getItem(chaveOcultos);
     return salvo ? JSON.parse(salvo) : {};
   });
-
-  // Atualiza localStorage ao mudar anosDesligados/anosOcultos
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
     localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
@@ -79,13 +95,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
       SEMESTRES.forEach(semestre => {
         novo[ano][semestre] = { ...novo[ano][semestre], checked: marcar };
       });
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        SEMESTRES.forEach(s => { checksToSave[a][s] = novo[a][s].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -95,13 +105,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [semestre]: { ...novo[ano][semestre], checked: !novo[ano][semestre].checked } };
-      // Salva no localStorage
-      const checksToSave = {};
-      ANOS.forEach(a => {
-        checksToSave[a] = {};
-        SEMESTRES.forEach(s => { checksToSave[a][s] = novo[a][s].checked; });
-      });
-      localStorage.setItem(chaveChecks, JSON.stringify(checksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
@@ -110,19 +114,33 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
     setDados(prev => {
       const novo = { ...prev };
       novo[ano] = { ...novo[ano], [semestre]: { ...novo[ano][semestre], link: value } };
-      // Salva no localStorage
-      const linksToSave = {};
-      ANOS.forEach(a => {
-        linksToSave[a] = {};
-        SEMESTRES.forEach(s => { linksToSave[a][s] = novo[a][s].link; });
-      });
-      localStorage.setItem(chaveLinks, JSON.stringify(linksToSave));
+      salvarChecksLinks(novo);
       return novo;
     });
   };
 
+  // Função para salvar no backend
+  function salvarChecksLinks(novoDados) {
+    const checksToSave = {};
+    const linksToSave = {};
+    ANOS.forEach(ano => {
+      checksToSave[ano] = {};
+      linksToSave[ano] = {};
+      SEMESTRES.forEach(semestre => {
+        checksToSave[ano][semestre] = novoDados[ano][semestre].checked;
+        linksToSave[ano][semestre] = novoDados[ano][semestre].link;
+      });
+    });
+    if (cnpj) {
+      saveAcompanhamento('REL_ECON', cnpj, { checks: checksToSave, links: linksToSave });
+    }
+  }
+
   if (!razaoSocial) {
     return <div>Selecione um cliente para visualizar os dados do Relatório Econômico.</div>;
+  }
+  if (loading) {
+    return <div>Carregando dados do acompanhamento...</div>;
   }
 
   // Verifica se todos os anos estão ocultos
@@ -166,7 +184,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
               checked={todosSemestresChecados(ano)}
               onChange={() => handleCheckAno(ano)}
               style={{ marginRight: 10, width: 20, height: 20 }}
-              disabled={anosDesligados[ano]}
+              disabled={anosDesligados[ano] || salvando}
             />
             <span style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', flex: 1 }}>Ano: {ano}</span>
             <button
@@ -185,7 +203,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
             </button>
           </div>
           {!anosOcultos[ano] && (
-            <>
+            <React.Fragment>
               {SEMESTRES.map(semestre => (
                 <div key={semestre} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
                   <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][semestre].checked ? '#43a047' : undefined }}>{semestre}</div>
@@ -194,7 +212,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
                       type="checkbox"
                       checked={dados[ano][semestre].checked}
                       onChange={() => handleCheck(ano, semestre)}
-                      disabled={anosDesligados[ano]}
+                      disabled={anosDesligados[ano] || salvando}
                     />{' '}
                     Comprovante Relatório Econômico ({semestre})
                   </label>
@@ -204,7 +222,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
                     onChange={e => handleLinkChange(ano, semestre, e.target.value)}
                     placeholder="Comprovante (link Cloudflare)"
                     style={{ width: 400, maxWidth: '100%' }}
-                    disabled={anosDesligados[ano]}
+                    disabled={anosDesligados[ano] || salvando}
                   />
                   {dados[ano][semestre].link && (
                     <a
@@ -218,10 +236,12 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
                   )}
                 </div>
               ))}
-            </>
+            </React.Fragment>
           )}
         </div>
       ))}
+      {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
+      {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
   );
 }
