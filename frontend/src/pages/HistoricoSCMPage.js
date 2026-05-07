@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { carregarHistoricoDoStorage, salvarHistoricoNoStorage } from '../utils/localStorageHistorico';
+import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
@@ -14,7 +14,11 @@ export default function HistoricoSCMPage() {
       if (salvo) {
         const obj = JSON.parse(salvo);
         setClienteSelecionado(obj);
-        setHistoricoArquivos(carregarHistoricoDoStorage(obj.cnpj));
+        // Busca histórico global do backend filtrado pelo CNPJ
+        getSCMHistoricoCSV().then(data => {
+          const cnpjLimpo = (obj.cnpj || '').replace(/\D/g, '');
+          setHistoricoArquivos(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
+        });
         return;
       }
     } catch {}
@@ -67,13 +71,17 @@ export default function HistoricoSCMPage() {
                     </button>
                     <button
                       style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
-                      onClick={() => {
+                      onClick={async () => {
                         if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
-                          setHistoricoArquivos(h => {
-                            const novo = h.filter((_, i) => i !== idx);
-                            salvarHistoricoNoStorage(novo, clienteSelecionado.cnpj);
-                            return novo;
-                          });
+                          try {
+                            await deleteSCMHistoricoCSV({ nome: arq.nome, data: arq.data, usuario: arq.usuario });
+                            // Atualiza histórico após exclusão
+                            const data = await getSCMHistoricoCSV();
+                            const cnpjLimpo = (clienteSelecionado.cnpj || '').replace(/\D/g, '');
+                            setHistoricoArquivos(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
+                          } catch {
+                            alert('Erro ao excluir arquivo do histórico.');
+                          }
                         }
                       }}
                     >
