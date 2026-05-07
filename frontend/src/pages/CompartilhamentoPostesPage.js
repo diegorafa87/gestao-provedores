@@ -309,31 +309,45 @@ export default function CompartilhamentoPostesPage() {
                   'IC_CONTROVERSIA_JUD_ADM',
                   'OBSERVACOES'
                 ];
-                // Gera CSV com as regras do SCM (campos na ordem, separador ;, sem download direto)
-                const csv = [
-                  header.join(';'),
-                  ...historicoLinhas.map(linha => [
-                    linha.cnpjOutorgada || '',
-                    linha.cnpjOutorgadaOriginal || '',
-                    linha.numProcessoHomologacao || '',
-                    linha.cnpjDetentoraInfra || '',
-                    linha.coDescritivoContratoInfra || '',
-                    linha.dtAssinaturaContratoInfra || '',
-                    linha.dtValidadeFinalContratoInfra || '',
-                    linha.qtPontosFixacaoInfra || '',
-                    linha.vrPontoFixacaoInfra || '',
-                    linha.indiceReajusteContratoInfra || '',
-                    linha.dtBaseReajusteContratoInfra || '',
-                    linha.icControversiaJudAdm || '',
-                    linha.observacoes || ''
-                  ].map(v => v.toString().replace(/;/g, ',')).join(';'))
-                ].join('\n');
+                // Gera CSV com as regras do SCM (campos na ordem, separador ;, CRLF, UTF-8, sem download direto)
+                const linhas = historicoLinhas.map(linha => [
+                  linha.cnpjOutorgada || '',
+                  linha.cnpjOutorgadaOriginal || '',
+                  linha.numProcessoHomologacao || '',
+                  linha.cnpjDetentoraInfra || '',
+                  linha.coDescritivoContratoInfra || '',
+                  linha.dtAssinaturaContratoInfra || '',
+                  linha.dtValidadeFinalContratoInfra || '',
+                  linha.qtPontosFixacaoInfra || '',
+                  linha.vrPontoFixacaoInfra || '',
+                  linha.indiceReajusteContratoInfra || '',
+                  linha.dtBaseReajusteContratoInfra || '',
+                  linha.icControversiaJudAdm || '',
+                  linha.observacoes || ''
+                ].map(v => v.toString().replace(/;/g, ',')).join(';'));
+                const csv = [header.join(';'), ...linhas].join('\r\n');
+                // Nome: POSTES_ANO_RAZAOSOCIAL.csv
+                let ano = '';
+                if (historicoLinhas.length > 0) {
+                  // Tenta pegar o ano da primeira linha salva (data de assinatura ou validade)
+                  const dt = historicoLinhas[0].dtAssinaturaContratoInfra || historicoLinhas[0].dtValidadeFinalContratoInfra || '';
+                  const match = dt.match(/\d{4}/);
+                  if (match) ano = match[0];
+                }
+                let razao = '';
+                try {
+                  const salvo = localStorage.getItem('clienteSelecionado');
+                  if (salvo) {
+                    const obj = JSON.parse(salvo);
+                    if (obj.razaoSocial) razao = obj.razaoSocial.replace(/[^a-zA-Z0-9]/g, '_');
+                  }
+                } catch {}
                 const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-                const nome = `POSTES_${dataAtual}.csv`;
+                const nome = `POSTES${ano ? '_' + ano : ''}${razao ? '_' + razao : ''}.csv`;
                 const novoArquivo = {
                   nome,
                   data: dataAtual,
-                  conteudo: csv
+                  conteudo: '\uFEFF' + csv // UTF-8 BOM para Excel
                 };
                 setHistoricoArquivos(h => {
                   const novo = [novoArquivo, ...h];
