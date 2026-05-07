@@ -335,15 +335,17 @@ export default function CompartilhamentoPostesPage() {
                   if (match) ano = match[0];
                 }
                 let razao = '';
+                let cnpjLimpo = '';
                 try {
                   const salvo = localStorage.getItem('clienteSelecionado');
                   if (salvo) {
                     const obj = JSON.parse(salvo);
                     if (obj.razaoSocial) razao = obj.razaoSocial.replace(/[^a-zA-Z0-9]/g, '_');
+                    if (obj.cnpj) cnpjLimpo = obj.cnpj.replace(/[\.\/-]/g, '');
                   }
                 } catch {}
                 const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-                const nome = `POSTES${ano ? '_' + ano : ''}${razao ? '_' + razao : ''}.csv`;
+                const nome = `POSTES${ano ? '_' + ano : ''}${razao ? '_' + razao : ''}${cnpjLimpo ? '_' + cnpjLimpo : ''}.csv`;
                 const novoArquivo = {
                   nome,
                   data: dataAtual,
