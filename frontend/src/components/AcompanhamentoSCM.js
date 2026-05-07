@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { salvarHistoricoNoStorage, carregarHistoricoDoStorage } from '../utils/localStorageHistorico';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
@@ -27,6 +28,14 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
+
+  // Histórico de arquivos CSV gerados
+  const [historicoArquivos, setHistoricoArquivos] = useState([]);
+  // Sempre que o cnpj mudar, recarrega o histórico correto
+  useEffect(() => {
+    if (cnpj) setHistoricoArquivos(carregarHistoricoDoStorage(cnpj));
+    else setHistoricoArquivos([]);
+  }, [cnpj]);
 
   // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
@@ -261,6 +270,58 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
       </div>
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
+
+      {/* Histórico de arquivos gerados (igual Postes) */}
+      <div style={{margin:'32px auto 0', maxWidth:900, width:'100%'}}>
+        <div style={{ background: '#e3f2fd', border: '2px solid #1976d2', borderRadius: 12, padding: 24 }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Histórico de arquivos gerados:</div>
+          {historicoArquivos.length === 0 ? (
+            <div style={{ color: '#888', fontStyle: 'italic', fontSize: 14, padding: 8, background: '#f9f9f9', borderRadius: 6 }}>
+              Nenhum arquivo gerado ainda.
+            </div>
+          ) : (
+            <ul style={{ fontFamily: 'monospace', fontSize: 14, paddingLeft: 20 }}>
+              {historicoArquivos.map((arq, idx) => (
+                <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ flex: 1 }}>
+                    {arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
+                  </span>
+                  <button
+                    style={{ marginLeft: 12, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
+                    title="Baixar arquivo"
+                    aria-label="Baixar arquivo"
+                    onClick={() => {
+                      const blob = new Blob([arq.conteudo], { type: 'text/csv' });
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = arq.nome;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    <IconDownload />
+                  </button>
+                  <button
+                    style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                    onClick={() => {
+                      if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                        setHistoricoArquivos(h => {
+                          const novo = h.filter((_, i) => i !== idx);
+                          salvarHistoricoNoStorage(novo, cnpj);
+                          return novo;
+                        });
+                      }
+                    }}
+                  >
+                    Excluir
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
