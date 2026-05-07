@@ -1,3 +1,4 @@
+import HistoricoSCMPage from './pages/HistoricoSCMPage';
 import CadastroRapidoCliente from './components/CadastroRapidoCliente';
 import AdminLogin from './components/AdminLogin';
 import PaginaAcompanhamentoPostes from './pages/AcompanhamentoPostesPage';
@@ -57,6 +58,7 @@ const AppRouter = () => {
 
         {/* Todas as outras rotas protegidas individualmente */}
         <Route path="/admin-area" element={<PrivateRoute><div style={{padding:40}}><h2>Bem-vindo, Admin!</h2><p>Você está autenticado como administrador.</p></div></PrivateRoute>} />
+        <Route path="/historico-scm" element={<PrivateRoute><HistoricoSCMPage /></PrivateRoute>} />
         <Route path="/" element={<PrivateRoute><App /></PrivateRoute>} />
         <Route path="/cliente/:id" element={<PrivateRoute><DetalheCliente /></PrivateRoute>} />
         <Route path="/scm/cadastro" element={<PrivateRoute><PaginaCadastroSCM /></PrivateRoute>} />
