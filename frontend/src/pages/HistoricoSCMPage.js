@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchHistoricoSCM } from '../services/historicoSCM';
+import { carregarHistoricoDoStorage, salvarHistoricoNoStorage } from '../utils/localStorageHistorico';
 import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
@@ -7,27 +7,19 @@ import { Link } from 'react-router-dom';
 export default function HistoricoSCMPage() {
   const [clienteSelecionado, setClienteSelecionado] = useState({ cnpj: 'semcnpj', razaoSocial: '' });
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Busca cliente selecionado (apenas para exibir info)
     try {
       const salvo = localStorage.getItem('clienteSelecionado');
       if (salvo) {
         const obj = JSON.parse(salvo);
         setClienteSelecionado(obj);
+        setHistoricoArquivos(carregarHistoricoDoStorage(obj.cnpj));
+        return;
       }
     } catch {}
-    // Busca histórico do backend
-    fetchHistoricoSCM()
-      .then((data) => {
-        // Ordena do mais recente para o mais antigo
-        setHistoricoArquivos(
-          data.sort((a, b) => new Date(b.data) - new Date(a.data))
-        );
-      })
-      .catch(() => setHistoricoArquivos([]))
-      .finally(() => setLoading(false));
+    setClienteSelecionado({ cnpj: 'semcnpj', razaoSocial: '' });
+    setHistoricoArquivos([]);
   }, []);
 
   return (
@@ -46,11 +38,7 @@ export default function HistoricoSCMPage() {
           <h2 style={{ color: '#1976d2', marginBottom: 24 }}>Histórico de Arquivos SCM</h2>
           <div style={{ background: '#e3f2fd', border: '2px solid #1976d2', borderRadius: 12, padding: 24 }}>
             <div style={{ fontWeight: 700, marginBottom: 8 }}>Arquivos gerados:</div>
-            {loading ? (
-              <div style={{ color: '#888', fontStyle: 'italic', fontSize: 14, padding: 8, background: '#f9f9f9', borderRadius: 6 }}>
-                Carregando histórico...
-              </div>
-            ) : historicoArquivos.length === 0 ? (
+            {historicoArquivos.length === 0 ? (
               <div style={{ color: '#888', fontStyle: 'italic', fontSize: 14, padding: 8, background: '#f9f9f9', borderRadius: 6 }}>
                 Nenhum arquivo gerado ainda.
               </div>
@@ -59,9 +47,38 @@ export default function HistoricoSCMPage() {
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>
-                      {arq.detalhes?.nomeArquivo || arq.nomeArquivo || arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data ? new Date(arq.data).toLocaleString('pt-BR') : ''}</span>
+                      {arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
                     </span>
-                    {/* Não é possível baixar o arquivo CSV diretamente, pois só temos o nome. */}
+                    <button
+                      style={{ marginLeft: 12, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
+                      title="Baixar arquivo"
+                      aria-label="Baixar arquivo"
+                      onClick={() => {
+                        const blob = new Blob([arq.conteudo], { type: 'text/csv' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = arq.nome;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      <IconDownload />
+                    </button>
+                    <button
+                      style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                      onClick={() => {
+                        if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
+                          setHistoricoArquivos(h => {
+                            const novo = h.filter((_, i) => i !== idx);
+                            salvarHistoricoNoStorage(novo, clienteSelecionado.cnpj);
+                            return novo;
+                          });
+                        }
+                      }}
+                    >
+                      Excluir
+                    </button>
                   </li>
                 ))}
               </ul>
