@@ -2,19 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 import { getSTFCHistoricoCSV, deleteSTFCHistoricoCSV } from '../services/stfcHistorico';
-  const [historicoArquivos, setHistoricoArquivos] = useState([]);
-
-  // Carregar histórico global de arquivos CSV STFC
-  useEffect(() => {
-    getSTFCHistoricoCSV()
-      .then(data => {
-        const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-        setHistoricoArquivos(
-          data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
-        );
-      })
-      .catch(() => setHistoricoArquivos([]));
-  }, [cnpj]);
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
