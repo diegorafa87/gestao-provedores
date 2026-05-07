@@ -216,7 +216,7 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
                       onChange={() => handleCheck(ano, mes)}
                       disabled={anosDesligados[ano] || salvando}
                     />{' '}
-                    Comprovante Coleta STFC ({mes})
+                           <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Comprovante</span>
                   </label>
                   <input
                     type="text"

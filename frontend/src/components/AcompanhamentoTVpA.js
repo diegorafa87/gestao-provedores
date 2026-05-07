@@ -240,7 +240,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                       disabled={anosDesligados[ano] || salvando}
                       style={{ marginRight: 8 }}
                     />
-                    <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Check</span>
+                    <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Comprovante</span>
                   </label>
                   <input
                     type="text"
