@@ -143,17 +143,30 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [erro, setErro] = useState(null);
 
   const obterNomeArquivoHistorico = (item) => item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
+  const deduplicarHistorico = (lista = []) => {
+    const porCnpj = lista.filter(item => ((item?.usuario || '').replace(/\D/g, '') === (cnpj || '').replace(/\D/g, '')));
+
+    const ordenada = [...porCnpj].sort((a, b) => {
+      const dataA = new Date(a?.data || 0).getTime();
+      const dataB = new Date(b?.data || 0).getTime();
+      return dataB - dataA;
+    });
+
+    const vistos = new Set();
+    return ordenada.filter(item => {
+      const chave = `${obterNomeArquivoHistorico(item)}|${(item?.usuario || '').replace(/\D/g, '')}`;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+  };
 
   // Histórico de arquivos CSV gerados (global, backend)
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
   useEffect(() => {
     getSCMHistoricoCSV()
       .then(data => {
-        // Filtra para exibir apenas arquivos do CNPJ atual
-        const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-        setHistoricoArquivos(
-          data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
-        );
+        setHistoricoArquivos(deduplicarHistorico(data));
       })
       .catch(() => setHistoricoArquivos([]));
   }, [cnpj]);
@@ -443,10 +456,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                               usuario: item?.usuario
                             });
                             const data = await getSCMHistoricoCSV();
-                            const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-                            setHistoricoArquivos(
-                              data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo)
-                            );
+                            setHistoricoArquivos(deduplicarHistorico(data));
                           } catch {
                             alert('Erro ao excluir arquivo do histórico.');
                           }
