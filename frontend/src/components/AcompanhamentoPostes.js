@@ -21,10 +21,21 @@ function initialData() {
   return data;
 }
 
-function ComprovantePostesDownload({ campo, link, onSaveLink, disabled }) {
+function normalizarToken(texto = '') {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+function ComprovantePostesDownload({ ano, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
   const hasLink = Boolean(link && link.trim());
+  const tokenRazaoSocial = normalizarToken(razaoSocial) || 'SEM_RAZAO_SOCIAL';
+  const nomeComprovante = `POSTES_${tokenRazaoSocial}_${ano}`;
 
   useEffect(() => {
     if (!hasLink) {
@@ -38,7 +49,7 @@ function ComprovantePostesDownload({ campo, link, onSaveLink, disabled }) {
       anchor.href = link;
       anchor.target = '_blank';
       anchor.rel = 'noopener noreferrer';
-      anchor.download = `comprovante-postes-${campo.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      anchor.download = `${nomeComprovante}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -82,7 +93,7 @@ function ComprovantePostesDownload({ campo, link, onSaveLink, disabled }) {
       </button>
 
       <span style={{ fontSize: 15, color: '#1976d2', minWidth: 240 }}>
-        Comprovante de Postes ({campo})
+        {nomeComprovante}
       </span>
 
       {editando && !hasLink && (
@@ -321,7 +332,8 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
                     {campo}
                   </label>
                   <ComprovantePostesDownload
-                    campo={campo}
+                    ano={ano}
+                    razaoSocial={razaoSocial}
                     link={dados[ano][campo].link}
                     onSaveLink={url => handleLinkChange(ano, campo, url)}
                     disabled={anosDesligados[ano]}
