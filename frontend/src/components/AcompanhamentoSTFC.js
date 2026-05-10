@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import { getLogs } from '../services/logs';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -137,6 +138,7 @@ function ComprovanteSTFCDownload({ ano, mes, mesNumero, razaoSocial, link, onSav
 
 export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
+  const [logsSTFC, setLogsSTFC] = useState([]);
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
@@ -197,6 +199,20 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
     localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
   }, [anosDesligados, anosOcultos]);
+
+  // Carregar logs de geração de CSV STFC
+  useEffect(() => {
+    if (!cnpj) return;
+    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    getLogs()
+      .then(todosLogs => {
+        const logsFiltrados = todosLogs.filter(
+          log => log.acao === 'GERAR_CSV_STFC' && ((log.usuario || '').replace(/\D/g, '') === cnpjLimpo)
+        );
+        setLogsSTFC(logsFiltrados);
+      })
+      .catch(() => setLogsSTFC([]));
+  }, [cnpj]);
 
   // Checa se todos os meses do ano estão marcados
   const todosMesesChecados = ano => MESES.every(mes => dados[ano][mes].checked);
@@ -260,6 +276,7 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
 
   // Verifica se todos os anos estão ocultos
   const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
+  const obterNomeArquivoHistorico = (item) => item?.nome || item?.detalhes?.nomeArquivo || 'stfc.csv';
 
   return (
     <div style={{ padding: 24 }}>
@@ -346,6 +363,55 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
           )}
         </div>
       ))}
+
+      {/* Histórico de arquivos CSV STFC */}
+      <div style={{ marginTop: 40 }}>
+        <h3>Histórico de arquivos CSV STFC</h3>
+        {logsSTFC.length === 0 ? (
+          <div style={{ color: '#888' }}>Nenhum arquivo CSV gerado ainda.</div>
+        ) : (
+          <table style={{ width: '100%', background: '#f4f4f4', borderRadius: 6, padding: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Nome do Arquivo</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Data</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Usuário/CNPJ</th>
+                <th style={{ textAlign: 'center', padding: '4px 8px' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logsSTFC.map((item, idx) => (
+                <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
+                  <td style={{ padding: '4px 8px' }}>{obterNomeArquivoHistorico(item)}</td>
+                  <td style={{ padding: '4px 8px' }}>{item.data || '-'}</td>
+                  <td style={{ padding: '4px 8px' }}>{item.usuario || '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                    <button
+                      onClick={() => {
+                        const BOM = '\uFEFF';
+                        const conteudo = item.conteudo || '';
+                        const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.setAttribute('download', obterNomeArquivoHistorico(item));
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                      title="Baixar arquivo"
+                      aria-label="Baixar arquivo"
+                    >
+                      <span role="img" aria-label="download">⬇️</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
