@@ -23,10 +23,22 @@ function initialData() {
   return data;
 }
 
-function ComprovanteSCMDownload({ mes, link, onSaveLink, disabled }) {
+function normalizarToken(texto = '') {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+function ComprovanteSCMDownload({ ano, mes, mesNumero, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
   const hasLink = Boolean(link && link.trim());
+  const tokenRazaoSocial = normalizarToken(razaoSocial) || 'SEM_RAZAO_SOCIAL';
+  const tokenMes = normalizarToken(mes) || 'MES';
+  const nomeComprovante = `SCM_${tokenRazaoSocial}_${ano}_${tokenMes}(${mesNumero})`;
 
   useEffect(() => {
     if (!link) {
@@ -40,7 +52,7 @@ function ComprovanteSCMDownload({ mes, link, onSaveLink, disabled }) {
       anchor.href = link;
       anchor.target = '_blank';
       anchor.rel = 'noopener noreferrer';
-      anchor.download = `comprovante-scm-${mes.toLowerCase()}.pdf`;
+      anchor.download = `${nomeComprovante}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -84,7 +96,7 @@ function ComprovanteSCMDownload({ mes, link, onSaveLink, disabled }) {
       </button>
 
       <span style={{ fontSize: 15, color: '#1976d2', minWidth: 140 }}>
-        Comprovante SCM {mes}
+        {nomeComprovante}
       </span>
 
       {editando && !hasLink && (
@@ -335,7 +347,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             </div>
             {!anosOcultos[ano] && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {MESES.map(mes => (
+                {MESES.map((mes, idx) => (
                   <div key={mes} style={{
                     width: '100%',
                     marginBottom: 18,
@@ -358,7 +370,10 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
 
 
                     <ComprovanteSCMDownload
+                      ano={ano}
                       mes={mes}
+                      mesNumero={idx + 1}
+                      razaoSocial={razaoSocial}
                       link={dados[ano][mes].link}
                       onSaveLink={url => handleLinkChange(ano, mes, url)}
                       disabled={anosDesligados[ano] || salvando}
