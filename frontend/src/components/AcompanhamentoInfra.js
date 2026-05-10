@@ -187,8 +187,9 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
   }, [cnpj]);
 
   // Estados para anos desligados e ocultos (mantém local, pois é preferência visual)
-  const chaveDesligados = cnpj ? `anosDesligados_INFRA_${cnpj}` : 'anosDesligados_INFRA';
-  const chaveOcultos = cnpj ? `anosOcultos_INFRA_${cnpj}` : 'anosOcultos_INFRA';
+  const cnpjChave = (cnpj || '').replace(/\D/g, '');
+  const chaveDesligados = cnpjChave ? `anosDesligados_INFRA_${cnpjChave}` : 'anosDesligados_INFRA';
+  const chaveOcultos = cnpjChave ? `anosOcultos_INFRA_${cnpjChave}` : 'anosOcultos_INFRA';
   const [anosDesligados, setAnosDesligados] = useState(() => {
     const salvo = localStorage.getItem(chaveDesligados);
     return salvo ? JSON.parse(salvo) : {};
@@ -197,10 +198,19 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
     const salvo = localStorage.getItem(chaveOcultos);
     return salvo ? JSON.parse(salvo) : {};
   });
+
+  // Recarrega estados visuais quando o cliente/chave mudar
+  useEffect(() => {
+    const desligadosSalvos = localStorage.getItem(chaveDesligados);
+    const ocultosSalvos = localStorage.getItem(chaveOcultos);
+    setAnosDesligados(desligadosSalvos ? JSON.parse(desligadosSalvos) : {});
+    setAnosOcultos(ocultosSalvos ? JSON.parse(ocultosSalvos) : {});
+  }, [chaveDesligados, chaveOcultos]);
+
   useEffect(() => {
     localStorage.setItem(chaveDesligados, JSON.stringify(anosDesligados));
     localStorage.setItem(chaveOcultos, JSON.stringify(anosOcultos));
-  }, [anosDesligados, anosOcultos]);
+  }, [anosDesligados, anosOcultos, chaveDesligados, chaveOcultos]);
 
   // Checa se todos os itens do ano estão marcados
   const todosItensChecados = ano => ITENS.every(item => dados[ano][item].checked);
