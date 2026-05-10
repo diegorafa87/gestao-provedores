@@ -280,6 +280,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
 
   // Verifica se todos os anos estão ocultos
   const todosOcultos = ANOS.every(ano => anosOcultos[ano]);
+  const obterNomeArquivoHistorico = (item) => item?.nome || item?.detalhes?.nomeArquivo || 'tvpa.csv';
 
   return (
     <div style={{ padding: 24 }}>
@@ -389,7 +390,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
             <tbody>
               {logsTVPA.map((item, idx) => (
                 <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
-                  <td style={{ padding: '4px 8px' }}>{item.nome || '-'}</td>
+                  <td style={{ padding: '4px 8px' }}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{ padding: '4px 8px' }}>{item.data || '-'}</td>
                   <td style={{ padding: '4px 8px' }}>{item.usuario || '-'}</td>
                   <td style={{ textAlign: 'center', padding: '4px 8px' }}>
@@ -400,7 +401,7 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
                         const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        link.setAttribute('download', item.nome || 'tvpa.csv');
+                        link.setAttribute('download', obterNomeArquivoHistorico(item));
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
