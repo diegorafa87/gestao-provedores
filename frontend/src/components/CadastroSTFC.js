@@ -90,15 +90,17 @@ const CadastroSTFC = ({ cnpj }) => {
     if (linhas.length === 0) return;
     // Cabeçalho fixo padrão ANSAT, separador ponto e vírgula
     const header = camposCSV_STFC.join(';');
-    // Monta as linhas do CSV na ordem correta, separador vírgula
+    // Monta as linhas do CSV na ordem correta, separador ponto e vírgula
     const rows = linhas.map(linha => {
       return camposCSV_STFC.map(campo => {
         if (campo === 'CNPJ') return cnpjLimpo;
         return linha[campo] || '';
       }).join(';');
     });
-    // Usa CRLF como quebra de linha, sem linha em branco final
+    // Usa CRLF como quebra de linha
     let csvContent = [header, ...rows].join('\r\n');
+    // Força CRLF em todas as linhas (caso haja algum \n isolado)
+    csvContent = csvContent.replace(/([^\r])\n/g, '$1\r\n');
     // Busca razão social do localStorage se não vier via props
     let nomeRazao = '';
     if (typeof window !== 'undefined') {
@@ -252,17 +254,15 @@ const CadastroSTFC = ({ cnpj }) => {
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
-                      // Força BOM UTF-8, separador vírgula, CRLF e sem linha em branco final
+                      // Força BOM UTF-8, separador ponto e vírgula e CRLF (padrão SCM)
                       const BOM = '\uFEFF';
                       let conteudo = item.conteudo.replace(/^\s+/, '');
-                      // Garante que a primeira linha é o cabeçalho correto e com vírgula
-                      const header = 'CNPJ,ANO,MES,COD_IBGE,TIPO_CLIENTE,TIPO_ATENDIMENTO,TIPO_MEIO,ACESSOS';
+                      // Garante que a primeira linha é o cabeçalho correto e com ponto e vírgula
+                      const header = 'CNPJ;ANO;MES;COD_IBGE;TIPO_CLIENTE;TIPO_ATENDIMENTO;TIPO_MEIO;ACESSOS';
                       let linhas = conteudo.split(/\r?\n/);
                       linhas[0] = header;
-                      conteudo = linhas.join('\r\n');
-                      // Remove linha em branco final
-                      conteudo = conteudo.replace(/(\r\n)+$/g, '');
-                      // Força CRLF em todas as linhas
+                      conteudo = linhas.join('\r\n') + '\r\n'; // Garante CRLF ao final
+                      // Força CRLF em todas as linhas (caso haja algum \n isolado)
                       conteudo = conteudo.replace(/([^\r])\n/g, '$1\r\n');
                       const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
