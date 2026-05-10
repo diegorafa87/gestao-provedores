@@ -436,7 +436,12 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       <button onClick={async () => {
                         if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           try {
-                            await deleteSCMHistoricoCSV({ nome: obterNomeArquivoHistorico(item), data: item.data, usuario: item.usuario });
+                            await deleteSCMHistoricoCSV({
+                              nome: item?.nome,
+                              nomeDetalhes: item?.detalhes?.nomeArquivo,
+                              data: item?.data,
+                              usuario: item?.usuario
+                            });
                             const data = await getSCMHistoricoCSV();
                             const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
                             setHistoricoArquivos(

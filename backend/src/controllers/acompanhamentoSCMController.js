@@ -1,17 +1,35 @@
 // Excluir entrada do histórico de geração de CSV SCM por nome, data e usuario
 exports.deleteSCMHistoricoCSV = (req, res) => {
   const dbPath = path.join(__dirname, '../db_logs.json');
-  const { nome, data, usuario } = req.body;
+  const { nome, nomeDetalhes, data, usuario } = req.body;
+
+  const normalizarTexto = (valor = '') => String(valor).trim().toLowerCase();
+  const obterNomeArquivo = (item = {}) => item.nome || item?.detalhes?.nomeArquivo || '';
+
+  const nomeAlvo = normalizarTexto(nome || nomeDetalhes || '');
+  const dataAlvo = normalizarTexto(data || '');
+  const usuarioAlvo = normalizarTexto(usuario || '');
+
   let logs = [];
   try {
     const fileData = fs.readFileSync(dbPath, 'utf8');
     const json = JSON.parse(fileData);
     logs = Array.isArray(json) ? json : (json.logs || []);
   } catch (e) {}
+
   const novaLista = logs.filter(item => {
     if (item.acao !== 'GERAR_CSV_SCM') return true;
-    // Remove apenas o item exato
-    return !(item.nome === nome && item.data === data && item.usuario === usuario);
+
+    const nomeItem = normalizarTexto(obterNomeArquivo(item));
+    const dataItem = normalizarTexto(item.data || '');
+    const usuarioItem = normalizarTexto(item.usuario || '');
+
+    const mesmoNome = nomeAlvo ? nomeItem === nomeAlvo : true;
+    const mesmaData = dataAlvo ? dataItem === dataAlvo : true;
+    const mesmoUsuario = usuarioAlvo ? usuarioItem === usuarioAlvo : true;
+
+    // Remove o item exato com suporte a legado (nome em item.nome ou em item.detalhes.nomeArquivo)
+    return !(mesmoNome && mesmaData && mesmoUsuario);
   });
   try {
     fs.writeFileSync(dbPath, JSON.stringify(novaLista, null, 2));
