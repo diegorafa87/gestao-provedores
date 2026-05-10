@@ -23,6 +23,18 @@ const opcoesUF = [
   'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
 ];
 
+function normalizarConteudoCSV(conteudo = '') {
+  let texto = String(conteudo).replace(/^\s+/, '');
+  texto = texto.replace(/([^\r])\n/g, '$1\r\n');
+  texto = texto.replace(/(\r\n)+$/g, '');
+  return texto + '\r\n';
+}
+
+function criarBlobCSV(conteudo = '') {
+  const BOM = '\uFEFF';
+  return new Blob([BOM + normalizarConteudoCSV(conteudo)], { type: 'text/csv;charset=utf-8;' });
+}
+
 export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datasPadrao, razaoSocial = '', semestre = 'SEM1', ano = '' }) {
   // Busca o CNPJ do cliente do card (localStorage)
   let cnpjCliente = cnpjPadrao;
@@ -40,8 +52,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
     if (!salvo) return [];
     // Garante que cada item tenha uma URL de download válida
     return JSON.parse(salvo).map(item => {
-      if (item.url) return item;
-      const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });
+      const blob = criarBlobCSV(item.conteudo);
       return { ...item, url: URL.createObjectURL(blob) };
     });
   });
@@ -103,7 +114,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
       linha.DATA || ''
     ].join(';'));
     // Usa CRLF como quebra de linha e garante CRLF ao final
-    const csv = [header, ...rows].join('\r\n') + '\r\n';
+    const csv = normalizarConteudoCSV([header, ...rows].join('\r\n'));
     // Monta nome do arquivo conforme padrão solicitado
     let nomeRazao = razaoSocial
       ? razaoSocial.normalize('NFD').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '').toUpperCase()
@@ -112,7 +123,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
     let sem = (semestre || '').toString().replace(/[^12]/g, '').replace(/^$/, '1');
     let nomeArquivo = `REL_ECON_${nomeRazao}_${nomeAno}_SEM${sem}.csv`;
     // Salvar histórico (download só pelo histórico)
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = criarBlobCSV(csv);
     const url = URL.createObjectURL(blob);
     const novoHistorico = [
       { data: new Date().toLocaleString(), conteudo: csv, nome: nomeArquivo, url },
