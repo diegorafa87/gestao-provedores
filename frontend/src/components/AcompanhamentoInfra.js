@@ -20,10 +20,28 @@ function initialData() {
   return data;
 }
 
-function ComprovanteInfraDownload({ item, link, onSaveLink, disabled }) {
+function normalizarToken(texto = '') {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+function prefixoComprovanteInfra(item) {
+  if (item === 'Estações') return 'ESTACOES';
+  if (item === 'Enlaces Próprios') return 'ENL_PROPRIOS';
+  if (item === 'Enlaces Contratados') return 'ENL_CONTR';
+  return 'INFRA';
+}
+
+function ComprovanteInfraDownload({ ano, item, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
   const hasLink = Boolean(link && link.trim());
+  const tokenRazaoSocial = normalizarToken(razaoSocial) || 'SEM_RAZAO_SOCIAL';
+  const nomeComprovante = `${prefixoComprovanteInfra(item)}_${tokenRazaoSocial}_${ano}`;
 
   useEffect(() => {
     if (!hasLink) {
@@ -37,7 +55,7 @@ function ComprovanteInfraDownload({ item, link, onSaveLink, disabled }) {
       anchor.href = link;
       anchor.target = '_blank';
       anchor.rel = 'noopener noreferrer';
-      anchor.download = `comprovante-infra-${item.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      anchor.download = `${nomeComprovante}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -81,7 +99,7 @@ function ComprovanteInfraDownload({ item, link, onSaveLink, disabled }) {
       </button>
 
       <span style={{ fontSize: 15, color: '#1976d2', minWidth: 220 }}>
-        Comprovante Infraestrutura ({item})
+        {nomeComprovante}
       </span>
 
       {editando && !hasLink && (
@@ -318,7 +336,9 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
                     Comprovante Infraestrutura ({item})
                   </label>
                   <ComprovanteInfraDownload
+                    ano={ano}
                     item={item}
+                    razaoSocial={razaoSocial}
                     link={dados[ano][item].link}
                     onSaveLink={url => handleLinkChange(ano, item, url)}
                     disabled={anosDesligados[ano] || salvando}
