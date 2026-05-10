@@ -22,10 +22,22 @@ function initialData() {
   return data;
 }
 
-function ComprovanteSTFCDownload({ mes, link, onSaveLink, disabled }) {
+function normalizarToken(texto = '') {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toUpperCase();
+}
+
+function ComprovanteSTFCDownload({ ano, mes, mesNumero, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
   const hasLink = Boolean(link && link.trim());
+  const tokenRazaoSocial = normalizarToken(razaoSocial) || 'SEM_RAZAO_SOCIAL';
+  const tokenMes = normalizarToken(mes) || 'MES';
+  const nomeComprovante = `STFC_${tokenRazaoSocial}_${ano}_${tokenMes}(${mesNumero})`;
 
   useEffect(() => {
     if (!hasLink) {
@@ -39,7 +51,7 @@ function ComprovanteSTFCDownload({ mes, link, onSaveLink, disabled }) {
       anchor.href = link;
       anchor.target = '_blank';
       anchor.rel = 'noopener noreferrer';
-      anchor.download = `comprovante-stfc-${mes.toLowerCase()}.pdf`;
+      anchor.download = `${nomeComprovante}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -83,7 +95,7 @@ function ComprovanteSTFCDownload({ mes, link, onSaveLink, disabled }) {
       </button>
 
       <span style={{ fontSize: 15, color: '#1976d2', minWidth: 140 }}>
-        Comprovante STFC {mes}
+        {nomeComprovante}
       </span>
 
       {editando && !hasLink && (
@@ -307,7 +319,7 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
           </div>
           {!anosOcultos[ano] && (
             <React.Fragment>
-              {MESES.map(mes => (
+              {MESES.map((mes, idx) => (
                 <div key={mes} style={{ marginBottom: 18, borderBottom: '1px solid #e3e3e3', paddingBottom: 10 }}>
                   <div style={{ fontWeight: 500, marginBottom: 2, color: dados[ano][mes].checked ? '#43a047' : undefined }}>{mes}</div>
                   <label style={{ display: 'block', marginBottom: 4 }}>
@@ -320,7 +332,10 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
                            <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Comprovante</span>
                   </label>
                   <ComprovanteSTFCDownload
+                    ano={ano}
                     mes={mes}
+                    mesNumero={idx + 1}
+                    razaoSocial={razaoSocial}
                     link={dados[ano][mes].link}
                     onSaveLink={url => handleLinkChange(ano, mes, url)}
                     disabled={anosDesligados[ano] || salvando}
