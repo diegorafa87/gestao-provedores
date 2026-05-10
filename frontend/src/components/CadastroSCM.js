@@ -1,7 +1,7 @@
 import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
-import { getSCMHistoricoCSV, addSCMHistoricoCSV } from '../services/scmHistorico';
+import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 
 const campos = [
   // { name: 'CNPJ', label: 'CNPJ', required: false }, // Não exibe campo de preenchimento de CNPJ
@@ -33,6 +33,23 @@ const ordemCSV = [
   'CNPJ','ANO','MES','COD_IBGE','TIPO_CLIENTE','TIPO_ATENDIMENTO','TIPO_MEIO','TIPO_PRODUTO','TIPO_TECNOLOGIA','VELOCIDADE','ACESSOS'
 ];
 
+function obterNomeArquivoHistorico(item) {
+  return item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
+}
+
+function deduplicarHistorico(lista = [], cnpj = '') {
+  const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+  const filtrado = lista.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo);
+  const ordenado = [...filtrado].sort((a, b) => new Date(b?.data || 0).getTime() - new Date(a?.data || 0).getTime());
+  const vistos = new Set();
+  return ordenado.filter(item => {
+    const chave = `${obterNomeArquivoHistorico(item)}|${(item.usuario || '').replace(/\D/g, '')}`;
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+}
+
 
 
 // Função para gerar CSV com separador vírgula, CRLF e sem linha em branco final
@@ -55,13 +72,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
   useEffect(() => {
     getSCMHistoricoCSV()
       .then(data => {
-        // Filtra apenas arquivos do CNPJ atual, se houver
-        if (cnpj) {
-          const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-          setHistorico(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
-        } else {
-          setHistorico(data);
-        }
+        setHistorico(deduplicarHistorico(data, cnpj));
       })
       .catch(() => setHistorico([]));
   }, [cnpj]);
@@ -160,11 +171,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       await addSCMHistoricoCSV(novaEntrada);
       // Atualiza histórico local após salvar
       const data = await getSCMHistoricoCSV();
-      if (cnpj) {
-        setHistorico(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
-      } else {
-        setHistorico(data);
-      }
+      setHistorico(deduplicarHistorico(data, cnpj));
     } catch {}
     // Log da ação no backend (mantém para compatibilidade)
     fetch(`${API_URL}/api/acao`, {
@@ -178,12 +185,23 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     });
   };
 
-  // Atualiza o localStorage ao excluir do histórico
-  // Exclusão local apenas (não remove do backend global)
-  const handleExcluirHistorico = idx => {
-    if (window.confirm('Tem certeza que deseja excluir este arquivo CSV do histórico local? (Não remove do backend global)')) {
-      const novo = historico.filter((_, i) => i !== idx);
-      setHistorico(novo);
+  // Exclusão permanente: remove do backend e recarrega o histórico
+  const handleExcluirHistorico = async (item) => {
+    if (!window.confirm('Tem certeza que deseja excluir este arquivo CSV do histórico? Esta ação é permanente.')) {
+      return;
+    }
+
+    try {
+      await deleteSCMHistoricoCSV({
+        nome: item?.nome,
+        nomeDetalhes: item?.detalhes?.nomeArquivo,
+        data: item?.data,
+        usuario: item?.usuario
+      });
+      const data = await getSCMHistoricoCSV();
+      setHistorico(deduplicarHistorico(data, cnpj));
+    } catch {
+      alert('Erro ao excluir arquivo do histórico.');
     }
   };
 
@@ -381,7 +399,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
             <tbody>
               {historico.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
-                  <td style={{padding:'4px 8px'}}>{item.nome}</td>
+                  <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
@@ -398,14 +416,14 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                       const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
                       link.href = URL.createObjectURL(blob);
-                      link.setAttribute('download', item.nome);
+                      link.setAttribute('download', obterNomeArquivoHistorico(item));
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Baixar arquivo" aria-label="Baixar arquivo">
                       <IconDownload />
                     </button>
-                    <button onClick={() => handleExcluirHistorico(idx)} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
+                    <button onClick={() => handleExcluirHistorico(item)} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
                       <IconTrash />
                     </button>
                   </td>

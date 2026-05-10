@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
-import { carregarHistoricoPostesDoStorage } from '../utils/localStorageHistoricoPostes';
+import { carregarHistoricoPostesDoStorage, criarBlobCSV } from '../utils/localStorageHistoricoPostes';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const CAMPOS = ['Contrato processado na Coleta Anatel'];
@@ -383,9 +383,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
                   <td style={{ textAlign: 'center', padding: '4px 8px' }}>
                     <button
                       onClick={() => {
-                        const BOM = '\uFEFF';
-                        const conteudo = item?.conteudo || '';
-                        const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
+                        const blob = criarBlobCSV(item?.conteudo || '');
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
                         link.setAttribute('download', item?.nome || 'postes.csv');

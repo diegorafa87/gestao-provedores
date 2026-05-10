@@ -1,7 +1,7 @@
 import API_URL from '../services/api';
 import React, { useEffect, useRef, useState } from 'react';
 import { IconDownload } from '../components/IconsHistorico';
-import { salvarHistoricoPostesNoStorage, carregarHistoricoPostesDoStorage } from '../utils/localStorageHistoricoPostes';
+import { salvarHistoricoPostesNoStorage, carregarHistoricoPostesDoStorage, normalizarConteudoCSV, criarBlobCSV } from '../utils/localStorageHistoricoPostes';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
 
@@ -325,7 +325,7 @@ export default function CompartilhamentoPostesPage() {
                   linha.icControversiaJudAdm || '',
                   linha.observacoes || ''
                 ].map(v => v.toString().replace(/;/g, ',')).join(';'));
-                const csv = [header.join(';'), ...linhas].join('\r\n');
+                const csv = normalizarConteudoCSV([header.join(';'), ...linhas].join('\r\n'));
                 // Nome: POSTES_ANO_RAZAOSOCIAL.csv
                 let ano = '';
                 if (historicoLinhas.length > 0) {
@@ -349,7 +349,7 @@ export default function CompartilhamentoPostesPage() {
                 const novoArquivo = {
                   nome,
                   data: dataAtual,
-                  conteudo: '\uFEFF' + csv // UTF-8 BOM para Excel
+                  conteudo: csv
                 };
                 setHistoricoArquivos(h => {
                   const novo = [novoArquivo, ...h];
@@ -410,7 +410,7 @@ export default function CompartilhamentoPostesPage() {
                       title="Baixar arquivo"
                       aria-label="Baixar arquivo"
                       onClick={() => {
-                        const blob = new Blob([arq.conteudo], { type: 'text/csv' });
+                        const blob = criarBlobCSV(arq.conteudo);
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
                         link.download = arq.nome;
