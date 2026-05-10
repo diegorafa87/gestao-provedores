@@ -142,6 +142,8 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
 
+  const obterNomeArquivoHistorico = (item) => item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
+
   // Histórico de arquivos CSV gerados (global, backend)
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
   useEffect(() => {
@@ -404,7 +406,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
             <tbody>
               {historicoArquivos.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
-                  <td style={{padding:'4px 8px'}}>{item.nome}</td>
+                  <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{padding:'4px 8px'}}>{item.usuario}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
@@ -422,7 +424,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
                       link.href = URL.createObjectURL(blob);
-                      link.setAttribute('download', item.nome);
+                      link.setAttribute('download', obterNomeArquivoHistorico(item));
                       document.body.appendChild(link);
                       link.click();
                       document.body.removeChild(link);
@@ -434,7 +436,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       <button onClick={async () => {
                         if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           try {
-                            await deleteSCMHistoricoCSV({ nome: item.nome, data: item.data, usuario: item.usuario });
+                            await deleteSCMHistoricoCSV({ nome: obterNomeArquivoHistorico(item), data: item.data, usuario: item.usuario });
                             const data = await getSCMHistoricoCSV();
                             const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
                             setHistoricoArquivos(
