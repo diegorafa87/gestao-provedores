@@ -20,16 +20,24 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
   const novaLista = logs.filter(item => {
     if (item.acao !== 'GERAR_CSV_SCM') return true;
 
+    if (!nomeAlvo && !dataAlvo && !usuarioAlvo) {
+      return true;
+    }
+
     const nomeItem = normalizarTexto(obterNomeArquivo(item));
     const dataItem = normalizarTexto(item.data || '');
     const usuarioItem = normalizarTexto(item.usuario || '');
 
-    const mesmoNome = nomeAlvo ? nomeItem === nomeAlvo : true;
+    const mesmoNome = nomeAlvo ? nomeItem === nomeAlvo : false;
     const mesmaData = dataAlvo ? dataItem === dataAlvo : true;
     const mesmoUsuario = usuarioAlvo ? usuarioItem === usuarioAlvo : true;
 
-    // Remove o item exato com suporte a legado (nome em item.nome ou em item.detalhes.nomeArquivo)
-    return !(mesmoNome && mesmaData && mesmoUsuario);
+    const removerExato = mesmoNome && mesmaData && mesmoUsuario;
+    const removerDuplicadoMesmoArquivo = mesmoNome && mesmoUsuario;
+
+    // Remove o item exato e também entradas duplicadas do mesmo arquivo
+    // com suporte a legado (nome em item.nome ou em item.detalhes.nomeArquivo).
+    return !(removerExato || removerDuplicadoMesmoArquivo);
   });
   try {
     fs.writeFileSync(dbPath, JSON.stringify(novaLista, null, 2));
