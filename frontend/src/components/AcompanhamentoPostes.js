@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import { carregarHistoricoPostesDoStorage } from '../utils/localStorageHistoricoPostes';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const CAMPOS = ['Contrato processado na Coleta Anatel'];
@@ -135,6 +136,19 @@ function ComprovantePostesDownload({ ano, razaoSocial, link, onSaveLink, disable
 
 export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
+  const [historicoArquivosPostes, setHistoricoArquivosPostes] = useState([]);
+
+  // Carrega histórico de CSV de POSTES salvo na tela de Compartilhamento
+  useEffect(() => {
+    const carregarHistorico = () => {
+      setHistoricoArquivosPostes(carregarHistoricoPostesDoStorage(cnpj));
+    };
+
+    carregarHistorico();
+    window.addEventListener('storage', carregarHistorico);
+    return () => window.removeEventListener('storage', carregarHistorico);
+  }, [cnpj]);
+
   // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
     if (!cnpj) return;
@@ -344,6 +358,54 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
           )}
         </div>
       ))}
+
+      {/* Histórico de arquivos CSV POSTES */}
+      <div style={{ marginTop: 40 }}>
+        <h3>Histórico de arquivos CSV POSTES</h3>
+        {historicoArquivosPostes.length === 0 ? (
+          <div style={{ color: '#888' }}>Nenhum arquivo CSV gerado ainda.</div>
+        ) : (
+          <table style={{ width: '100%', background: '#f4f4f4', borderRadius: 6, padding: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Nome do Arquivo</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Data</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Usuário/CNPJ</th>
+                <th style={{ textAlign: 'center', padding: '4px 8px' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historicoArquivosPostes.map((item, idx) => (
+                <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
+                  <td style={{ padding: '4px 8px' }}>{item?.nome || 'postes.csv'}</td>
+                  <td style={{ padding: '4px 8px' }}>{item?.data || '-'}</td>
+                  <td style={{ padding: '4px 8px' }}>{cnpj || '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                    <button
+                      onClick={() => {
+                        const BOM = '\uFEFF';
+                        const conteudo = item?.conteudo || '';
+                        const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.setAttribute('download', item?.nome || 'postes.csv');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                      title="Baixar arquivo"
+                      aria-label="Baixar arquivo"
+                    >
+                      <span role="img" aria-label="download">⬇️</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
