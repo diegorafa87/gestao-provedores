@@ -21,6 +21,107 @@ function initialData() {
   return data;
 }
 
+function ComprovantePostesDownload({ campo, link, onSaveLink, disabled }) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState('');
+  const hasLink = Boolean(link && link.trim());
+
+  useEffect(() => {
+    if (!hasLink) {
+      setValor('');
+    }
+  }, [hasLink]);
+
+  const baixarPdf = () => {
+    try {
+      const anchor = document.createElement('a');
+      anchor.href = link;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.download = `comprovante-postes-${campo.toLowerCase().replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    } catch {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleArrowClick = () => {
+    if (disabled) return;
+    if (!hasLink) {
+      setEditando(true);
+      return;
+    }
+    baixarPdf();
+  };
+
+  const handleSalvar = () => {
+    const url = valor.trim();
+    if (!url) return;
+    onSaveLink(url);
+    setEditando(false);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <button
+        onClick={handleArrowClick}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center'
+        }}
+        title={hasLink ? 'Baixar comprovante PDF' : 'Inserir link do PDF'}
+        disabled={disabled}
+      >
+        <IconDownload size={22} color={hasLink ? '#43a047' : '#1976d2'} title={hasLink ? 'Baixar comprovante PDF' : 'Inserir link do PDF'} />
+      </button>
+
+      <span style={{ fontSize: 15, color: '#1976d2', minWidth: 240 }}>
+        Comprovante de Postes ({campo})
+      </span>
+
+      {editando && !hasLink && (
+        <>
+          <input
+            type="text"
+            value={valor}
+            onChange={e => setValor(e.target.value)}
+            placeholder="Cole o link do PDF"
+            style={{ width: 280, padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
+            autoFocus
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSalvar();
+            }}
+            disabled={disabled}
+          />
+          <button
+            onClick={handleSalvar}
+            style={{ marginLeft: 4, background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer' }}
+            disabled={disabled}
+          >
+            Salvar
+          </button>
+          <button
+            onClick={() => {
+              setEditando(false);
+              setValor('');
+            }}
+            style={{ marginLeft: 2, background: '#eee', color: '#1976d2', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer' }}
+            disabled={disabled}
+          >
+            Cancelar
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
   // Carregar dados do backend ao montar ou mudar cnpj
@@ -219,24 +320,12 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
                     />{' '}
                     {campo}
                   </label>
-                  <input
-                    type="text"
-                    value={dados[ano][campo].link}
-                    onChange={e => handleLinkChange(ano, campo, e.target.value)}
-                    placeholder="Comprovante (link Cloudflare)"
-                    style={{ width: 400, maxWidth: '100%' }}
+                  <ComprovantePostesDownload
+                    campo={campo}
+                    link={dados[ano][campo].link}
+                    onSaveLink={url => handleLinkChange(ano, campo, url)}
                     disabled={anosDesligados[ano]}
                   />
-                  {dados[ano][campo].link && (
-                    <a
-                      href={dados[ano][campo].link}
-                      download
-                      style={{ marginLeft: 8, fontSize: 18, verticalAlign: 'middle', display: 'inline-block' }}
-                      title="Baixar comprovante"
-                    >
-                      <IconDownload size={22} color="#1976d2" />
-                    </a>
-                  )}
                 </div>
               ))}
             </>
