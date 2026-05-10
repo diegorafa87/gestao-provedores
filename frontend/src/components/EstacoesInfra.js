@@ -21,6 +21,18 @@ async function fetchMunicipios() {
   }
 }
 
+function normalizarConteudoCSV(conteudo = '') {
+  let texto = String(conteudo).replace(/^\s+/, '');
+  texto = texto.replace(/([^\r])\n/g, '$1\r\n');
+  texto = texto.replace(/(\r\n)+$/g, '');
+  return texto + '\r\n';
+}
+
+function criarBlobCSV(conteudo = '') {
+  const BOM = '\uFEFF';
+  return new Blob([BOM + normalizarConteudoCSV(conteudo)], { type: 'text/csv;charset=utf-8;' });
+}
+
 const campos = [
   'Ano',
   'Nome da Estação',
@@ -536,7 +548,7 @@ export default function EstacoesInfra() {
               })
             ];
             // Usa CRLF como quebra de linha e garante CRLF ao final
-            const csvContent = csvRows.join('\r\n') + '\r\n';
+            const csvContent = normalizarConteudoCSV(csvRows.join('\r\n'));
             // Salvar histórico no localStorage (NÃO FAZ DOWNLOAD DIRETO)
             const data = new Date();
             // Recuperar razão social do cliente selecionado
@@ -553,7 +565,7 @@ export default function EstacoesInfra() {
             const nomeArquivo = `ESTACOES_${razaoSocial}_${ano}_${mes}.csv`;
             const historicoItem = {
               nome: nomeArquivo,
-              conteudo: csvContent,
+                conteudo: csvContent,
               data: data.toLocaleString()
             };
             let novoHistorico = [historicoItem, ...csvHistorico];
@@ -578,7 +590,7 @@ export default function EstacoesInfra() {
                   style={{background:'#1976d2', color:'#fff', border:'none', borderRadius:3, padding:'2px 10px', fontSize:13, cursor:'pointer', marginLeft:4}}
                   title="Baixar este CSV"
                   onClick={() => {
-                    const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });
+                    const blob = criarBlobCSV(item.conteudo);
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
