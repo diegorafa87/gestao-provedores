@@ -68,20 +68,9 @@ exports.getSCMHistoricoCSV = (req, res) => {
     const json = JSON.parse(data);
     // Suporta tanto array quanto objeto (compatibilidade)
     const logs = Array.isArray(json) ? json : (json.logs || []);
-    historico = logs.filter((item) => item.acao === 'GERAR_CSV_SCM');
-    // Se algum registro não tiver o campo conteudo, tenta buscar o arquivo correspondente (retrocompatibilidade)
-    historico = historico.map(item => {
-      if (!item.conteudo && item.detalhes && item.detalhes.nomeArquivo) {
-        // Tenta buscar o conteúdo do arquivo salvo (se existir)
-        try {
-          const csvPath = path.join(__dirname, '../pdfs/', item.detalhes.nomeArquivo.replace('.csv', '.csv'));
-          if (fs.existsSync(csvPath)) {
-            item.conteudo = fs.readFileSync(csvPath, 'utf8');
-          }
-        } catch {}
-      }
-      return item;
-    });
+    historico = logs.filter(
+      (item) => item.acao === 'GERAR_CSV_SCM'
+    );
   } catch (e) {}
   res.json(historico);
 };
@@ -97,13 +86,6 @@ exports.addSCMHistoricoCSV = (req, res) => {
   } catch (e) {}
   const novaEntrada = req.body;
   logs.push(novaEntrada);
-  // Salva o conteúdo do CSV em arquivo separado para garantir persistência
-  if (novaEntrada.conteudo && novaEntrada.detalhes && novaEntrada.detalhes.nomeArquivo) {
-    try {
-      const csvPath = path.join(__dirname, '../pdfs/', novaEntrada.detalhes.nomeArquivo.replace('.csv', '.csv'));
-      fs.writeFileSync(csvPath, novaEntrada.conteudo, 'utf8');
-    } catch (e) {}
-  }
   try {
     fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
     res.json({ success: true });

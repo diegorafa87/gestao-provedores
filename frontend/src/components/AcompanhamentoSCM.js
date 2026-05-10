@@ -23,6 +23,107 @@ function initialData() {
   return data;
 }
 
+function ComprovanteSCMDownload({ mes, link, onSaveLink, disabled }) {
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState('');
+  const hasLink = Boolean(link && link.trim());
+
+  useEffect(() => {
+    if (!link) {
+      setValor('');
+    }
+  }, [link]);
+
+  const baixarPdf = () => {
+    try {
+      const anchor = document.createElement('a');
+      anchor.href = link;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.download = `comprovante-scm-${mes.toLowerCase()}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    } catch {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleArrowClick = () => {
+    if (disabled) return;
+    if (!hasLink) {
+      setEditando(true);
+      return;
+    }
+    baixarPdf();
+  };
+
+  const handleSalvar = () => {
+    const url = valor.trim();
+    if (!url) return;
+    onSaveLink(url);
+    setEditando(false);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <button
+        onClick={handleArrowClick}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center'
+        }}
+        title={hasLink ? 'Baixar comprovante PDF' : 'Inserir link do PDF'}
+        disabled={disabled}
+      >
+        <IconDownload color={hasLink ? '#43a047' : '#1976d2'} title={hasLink ? 'Baixar comprovante PDF' : 'Inserir link do PDF'} />
+      </button>
+
+      <span style={{ fontSize: 15, color: '#1976d2', minWidth: 140 }}>
+        Comprovante SCM {mes}
+      </span>
+
+      {editando && !hasLink && (
+        <>
+          <input
+            type="text"
+            value={valor}
+            onChange={e => setValor(e.target.value)}
+            placeholder="Cole o link do PDF"
+            style={{ width: 260, padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
+            autoFocus
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSalvar();
+            }}
+            disabled={disabled}
+          />
+          <button
+            onClick={handleSalvar}
+            style={{ marginLeft: 4, background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer' }}
+            disabled={disabled}
+          >
+            Salvar
+          </button>
+          <button
+            onClick={() => {
+              setEditando(false);
+              setValor('');
+            }}
+            style={{ marginLeft: 2, background: '#eee', color: '#1976d2', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer' }}
+            disabled={disabled}
+          >
+            Cancelar
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
   const [loading, setLoading] = useState(false);
@@ -254,19 +355,15 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       />
                       <span style={{ color: dados[ano][mes].checked ? '#43a047' : undefined }}>Comprovante</span>
                     </label>
-                    <input
-                      type="text"
-                      value={dados[ano][mes].link}
-                      onChange={e => handleLinkChange(ano, mes, e.target.value)}
-                      placeholder="Link do documento"
-                      style={{ width: '100%', padding: 6, borderRadius: 4, border: '1px solid #ccc' }}
+
+
+                    <ComprovanteSCMDownload
+                      mes={mes}
+                      link={dados[ano][mes].link}
+                      onSaveLink={url => handleLinkChange(ano, mes, url)}
                       disabled={anosDesligados[ano] || salvando}
                     />
-                    {dados[ano][mes].link && (
-                      <a href={dados[ano][mes].link} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, fontSize: 12 }}>
-                        Visualizar
-                      </a>
-                    )}
+
                   </div>
                 ))}
               </div>
