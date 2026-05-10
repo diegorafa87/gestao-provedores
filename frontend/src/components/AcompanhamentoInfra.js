@@ -141,9 +141,29 @@ function ComprovanteInfraDownload({ ano, item, razaoSocial, link, onSaveLink, di
 
 export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
   const [dados, setDados] = useState(initialData());
+  const [historicoArquivosInfra, setHistoricoArquivosInfra] = useState([]);
   const [loading, setLoading] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
+
+  // Carregar histórico de CSV INFRA (Estações) salvo por cliente
+  useEffect(() => {
+    const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
+    const chaveHistorico = cnpjLimpo ? `historicoCsvEstacoes_${cnpjLimpo}` : 'historicoCsvEstacoes_semcnpj';
+
+    const carregarHistorico = () => {
+      try {
+        const salvo = localStorage.getItem(chaveHistorico);
+        setHistoricoArquivosInfra(salvo ? JSON.parse(salvo) : []);
+      } catch {
+        setHistoricoArquivosInfra([]);
+      }
+    };
+
+    carregarHistorico();
+    window.addEventListener('storage', carregarHistorico);
+    return () => window.removeEventListener('storage', carregarHistorico);
+  }, [cnpj]);
 
   // Carregar dados do backend ao montar ou mudar cnpj
   useEffect(() => {
@@ -359,6 +379,53 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
           )}
         </div>
       ))}
+
+      {/* Histórico de arquivos CSV INFRA */}
+      <div style={{ marginTop: 40 }}>
+        <h3>Histórico de arquivos CSV INFRA</h3>
+        {historicoArquivosInfra.length === 0 ? (
+          <div style={{ color: '#888' }}>Nenhum arquivo CSV gerado ainda.</div>
+        ) : (
+          <table style={{ width: '100%', background: '#f4f4f4', borderRadius: 6, padding: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Nome do Arquivo</th>
+                <th style={{ textAlign: 'left', padding: '4px 8px' }}>Data</th>
+                <th style={{ textAlign: 'center', padding: '4px 8px' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {historicoArquivosInfra.map((item, idx) => (
+                <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
+                  <td style={{ padding: '4px 8px' }}>{item?.nome || 'infra.csv'}</td>
+                  <td style={{ padding: '4px 8px' }}>{item?.data || '-'}</td>
+                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                    <button
+                      onClick={() => {
+                        const BOM = '\uFEFF';
+                        const conteudo = item?.conteudo || '';
+                        const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.setAttribute('download', item?.nome || 'infra.csv');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                      title="Baixar arquivo"
+                      aria-label="Baixar arquivo"
+                    >
+                      <span role="img" aria-label="download">⬇️</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {erro && <div style={{ color: 'red', marginTop: 16 }}>{erro}</div>}
       {salvando && <div style={{ color: '#1976d2', marginTop: 8 }}>Salvando alterações...</div>}
     </div>
