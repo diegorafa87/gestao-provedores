@@ -1,6 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { getMesesComDados } from '../services/clienteMeses';
 
+const STORAGE_KEY_PREFIX = 'checksMesesCliente:';
+
+function normalizarCNPJ(cnpj = '') {
+  return String(cnpj).replace(/\D/g, '');
+}
+
+function obterStorageKey(cnpj) {
+  return `${STORAGE_KEY_PREFIX}${normalizarCNPJ(cnpj)}`;
+}
+
+function carregarMesesSalvos(cnpj) {
+  try {
+    const raw = localStorage.getItem(obterStorageKey(cnpj));
+    if (!raw) return new Set();
+    const lista = JSON.parse(raw);
+    if (!Array.isArray(lista)) return new Set();
+    return new Set(
+      lista
+        .map(Number)
+        .filter((mes) => Number.isInteger(mes) && mes >= 1 && mes <= 12)
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function salvarMesesSalvos(cnpj, mesesSet) {
+  try {
+    const meses = Array.from(mesesSet)
+      .map(Number)
+      .filter((mes) => Number.isInteger(mes) && mes >= 1 && mes <= 12)
+      .sort((a, b) => a - b);
+    localStorage.setItem(obterStorageKey(cnpj), JSON.stringify(meses));
+  } catch {
+    // mantém silencioso para não quebrar a UI se storage estiver indisponível
+  }
+}
+
 /**
  * Componente que exibe quais meses têm dados preenchidos para um cliente
  * Com checkboxes interativas
@@ -20,6 +58,25 @@ export default function MesesComDadosIndicador({ clienteCNPJ }) {
       setCarregando(true);
       const dados = await getMesesComDados(clienteCNPJ);
       setMeses(dados);
+
+      const mesesComDados = Array.from(
+        new Set(
+          Object.values(dados || {})
+            .flatMap((lista) => lista || [])
+            .map(Number)
+            .filter((mes) => Number.isInteger(mes) && mes >= 1 && mes <= 12)
+        )
+      );
+
+      const mesesSalvos = carregarMesesSalvos(clienteCNPJ);
+      if (mesesSalvos.size > 0) {
+        setMesesMarcados(mesesSalvos);
+      } else {
+        const inicial = new Set(mesesComDados);
+        setMesesMarcados(inicial);
+        salvarMesesSalvos(clienteCNPJ, inicial);
+      }
+
       setCarregando(false);
     };
     
@@ -29,13 +86,16 @@ export default function MesesComDadosIndicador({ clienteCNPJ }) {
   }, [clienteCNPJ]);
 
   const handleToggleMes = (mesNum) => {
-    const novosMarcados = new Set(mesesMarcados);
-    if (novosMarcados.has(mesNum)) {
-      novosMarcados.delete(mesNum);
-    } else {
-      novosMarcados.add(mesNum);
-    }
-    setMesesMarcados(novosMarcados);
+    setMesesMarcados((anteriores) => {
+      const novosMarcados = new Set(anteriores);
+      if (novosMarcados.has(mesNum)) {
+        novosMarcados.delete(mesNum);
+      } else {
+        novosMarcados.add(mesNum);
+      }
+      salvarMesesSalvos(clienteCNPJ, novosMarcados);
+      return novosMarcados;
+    });
   };
 
   if (carregando) {
