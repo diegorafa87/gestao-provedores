@@ -14,15 +14,14 @@ const camposCSV = [
 ];
 
 function normalizarConteudoCsvTVPA(conteudo = '') {
-  const header = camposCSV.join(';');
   let csv = String(conteudo || '')
     .replace(/^\uFEFF/, '')
     .replace(/^\s+/, '');
 
-  const linhas = csv.split(/\r?\n/);
-  linhas[0] = header;
+  csv = csv.replace(/([^\r])\n/g, '$1\r\n');
+  csv = csv.replace(/(\r\n)+$/g, '');
 
-  csv = linhas.join('\r\n') + '\r\n';
+  csv = csv + '\r\n';
   csv = csv.replace(/([^\r])\n/g, '$1\r\n');
   return csv;
 }

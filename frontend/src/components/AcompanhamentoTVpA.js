@@ -10,17 +10,16 @@ const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
-const TVPA_CSV_HEADER = 'CNPJ;ANO;MES;TIPO_CLIENTE;TIPO_MEIO;TIPO_TECNOLOGIA;ACESSOS';
 
 function normalizarConteudoCsvTVPA(conteudo = '') {
   let csv = String(conteudo || '')
     .replace(/^\uFEFF/, '')
     .replace(/^\s+/, '');
 
-  const linhas = csv.split(/\r?\n/);
-  linhas[0] = TVPA_CSV_HEADER;
+  csv = csv.replace(/([^\r])\n/g, '$1\r\n');
+  csv = csv.replace(/(\r\n)+$/g, '');
 
-  csv = linhas.join('\r\n') + '\r\n';
+  csv = csv + '\r\n';
   csv = csv.replace(/([^\r])\n/g, '$1\r\n');
   return csv;
 }
