@@ -67,11 +67,24 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
   const [historico, setHistorico] = useState([]);
 
+  const obterCnpjAtual = () => {
+    const cnpjProp = (cnpj || '').trim();
+    if (cnpjProp) return cnpjProp;
+    try {
+      const salvo = localStorage.getItem('clienteSelecionado');
+      if (salvo) {
+        const obj = JSON.parse(salvo);
+        return (obj?.cnpj || '').trim();
+      }
+    } catch {}
+    return '';
+  };
+
   // Busca histórico global do backend ao montar
   useEffect(() => {
     getSCMHistoricoCSV()
       .then(data => {
-        setHistorico(deduplicarHistorico(data, cnpj));
+        setHistorico(deduplicarHistorico(data, obterCnpjAtual()));
       })
       .catch(() => setHistorico([]));
   }, [cnpj]);
@@ -121,10 +134,16 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
   const handleGerarCSV = async () => {
     if (linhas.length === 0) return;
+    const cnpjAtual = obterCnpjAtual();
+    const cnpjNumerico = cnpjAtual.replace(/\D/g, '');
+    if (!cnpjNumerico) {
+      alert('Não foi possível identificar o CNPJ do cliente. Reabra o cliente e tente novamente.');
+      return;
+    }
     const header = ordemCSV.join(';');
     // Insere o CNPJ do cliente em cada linha, apenas números
     // CNPJ: só números, 14 dígitos com zeros à esquerda
-    const cnpjLimpo = (cnpj || '').replace(/\D/g, '').padStart(14, '0');
+    const cnpjLimpo = cnpjNumerico.padStart(14, '0');
     const linhasComCnpj = linhas.map(linha => {
       // VELOCIDADE: só vírgula, sem ponto
       let velocidade = (linha.VELOCIDADE || '').replace(/\./g, '');
@@ -162,7 +181,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       nome: nomeArquivo,
       conteudo: csvContent,
       data: new Date().toLocaleString(),
-      usuario: cnpj || 'desconhecido',
+      usuario: cnpjAtual,
       detalhes: { nomeArquivo, ano, mes, razaoSocial: nomeRazao },
       acao: 'GERAR_CSV_SCM'
     };
