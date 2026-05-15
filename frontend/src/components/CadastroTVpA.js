@@ -2,11 +2,12 @@ import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 
-// Ordem e nomes dos campos para o CSV padrão ANSAT (sem COD_IBGE)
+// Ordem e nomes dos campos para o CSV padrão ANSAT
 const camposCSV = [
   'CNPJ',
   'ANO',
   'MES',
+  'COD_IBGE',
   'TIPO_CLIENTE',
   'TIPO_MEIO',
   'TIPO_TECNOLOGIA',
@@ -32,7 +33,7 @@ const camposTVPA = [
   { name: 'MES', label: 'Mês', required: true, type: 'select', options: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
   { name: 'UF', label: 'Estado', required: true, type: 'select', options: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] },
   { name: 'MUNICIPIO', label: 'Município', required: true },
-  // { name: 'COD_IBGE', label: 'Código IBGE', required: true }, // Removido do CSV
+  // COD_IBGE é preenchido automaticamente a partir do município selecionado
   { name: 'TIPO_CLIENTE', label: 'Tipo Cliente', required: true, type: 'select', options: ['PF', 'PJ'] },
   { name: 'TIPO_MEIO', label: 'Tipo Meio', required: true, type: 'select', options: ['cabo_coaxial', 'cabo_metalico', 'satelite', 'radio', 'fibra'] },
   { name: 'TIPO_TECNOLOGIA', label: 'Tipo Tecnologia', required: true, type: 'select', options: ['FTTH', 'ETHERNET'] },
