@@ -1,4 +1,3 @@
-import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
@@ -173,16 +172,6 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       const data = await getSCMHistoricoCSV();
       setHistorico(deduplicarHistorico(data, cnpj));
     } catch {}
-    // Log da ação no backend (mantém para compatibilidade)
-    fetch(`${API_URL}/api/acao`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        acao: 'GERAR_CSV_SCM',
-        usuario: cnpj || 'desconhecido',
-        detalhes: { nomeArquivo, ano, mes, razaoSocial: nomeRazao }
-      })
-    });
   };
 
   // Exclusão permanente: remove do backend e recarrega o histórico

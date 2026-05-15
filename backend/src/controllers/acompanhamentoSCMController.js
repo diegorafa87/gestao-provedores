@@ -94,9 +94,9 @@ exports.getSCMHistoricoCSV = (req, res) => {
     const json = JSON.parse(data);
     // Suporta tanto array quanto objeto (compatibilidade)
     const logs = Array.isArray(json) ? json : (json.logs || []);
-    historico = logs.filter(
-      (item) => item.acao === 'GERAR_CSV_SCM'
-    );
+    historico = logs
+      .filter((item) => item.acao === 'GERAR_CSV_SCM')
+      .sort((a, b) => new Date(b?.data || 0).getTime() - new Date(a?.data || 0).getTime());
   } catch (e) {}
   res.json(historico);
 };
@@ -110,8 +110,13 @@ exports.addSCMHistoricoCSV = (req, res) => {
     const json = JSON.parse(data);
     logs = Array.isArray(json) ? json : (json.logs || []);
   } catch (e) {}
-  const novaEntrada = req.body;
-  logs.push(novaEntrada);
+  const novaEntrada = {
+    ...req.body,
+    acao: req.body?.acao || 'GERAR_CSV_SCM',
+    data: req.body?.data || new Date().toISOString()
+  };
+  // Mantém entradas mais recentes no topo para compatibilidade com o logger global.
+  logs.unshift(novaEntrada);
   try {
     fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
     res.json({ success: true });

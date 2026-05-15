@@ -4,6 +4,10 @@ import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
 
+function obterNomeArquivoHistorico(item) {
+  return item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
+}
+
 export default function HistoricoSCMPage() {
   const [clienteSelecionado, setClienteSelecionado] = useState({ cnpj: 'semcnpj', razaoSocial: '' });
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
@@ -51,7 +55,7 @@ export default function HistoricoSCMPage() {
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>
-                      {arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
+                      {obterNomeArquivoHistorico(arq)} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
                     </span>
                     <button
                       style={{ marginLeft: 12, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
@@ -61,7 +65,7 @@ export default function HistoricoSCMPage() {
                         const blob = new Blob([arq.conteudo], { type: 'text/csv' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
-                        link.download = arq.nome;
+                        link.download = obterNomeArquivoHistorico(arq);
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -74,7 +78,12 @@ export default function HistoricoSCMPage() {
                       onClick={async () => {
                         if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           try {
-                            await deleteSCMHistoricoCSV({ nome: arq.nome, data: arq.data, usuario: arq.usuario });
+                            await deleteSCMHistoricoCSV({
+                              nome: arq?.nome,
+                              nomeDetalhes: arq?.detalhes?.nomeArquivo,
+                              data: arq?.data,
+                              usuario: arq?.usuario
+                            });
                             // Atualiza histórico após exclusão
                             const data = await getSCMHistoricoCSV();
                             const cnpjLimpo = (clienteSelecionado.cnpj || '').replace(/\D/g, '');
