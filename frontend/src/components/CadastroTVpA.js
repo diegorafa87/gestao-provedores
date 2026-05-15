@@ -13,6 +13,20 @@ const camposCSV = [
   'ACESSOS',
 ];
 
+function normalizarConteudoCsvTVPA(conteudo = '') {
+  const header = camposCSV.join(';');
+  let csv = String(conteudo || '')
+    .replace(/^\uFEFF/, '')
+    .replace(/^\s+/, '');
+
+  const linhas = csv.split(/\r?\n/);
+  linhas[0] = header;
+
+  csv = linhas.join('\r\n') + '\r\n';
+  csv = csv.replace(/([^\r])\n/g, '$1\r\n');
+  return csv;
+}
+
 // Campos para o formulário (mantém os labels para o usuário)
 const camposTVPA = [
   { name: 'ANO', label: 'Ano', required: true, type: 'select', options: ['2024', '2025', '2026'] },
@@ -81,8 +95,8 @@ const CadastroTVpA = ({ cnpj }) => {
         return linha[campo] || '';
       }).join(';');
     });
-    // Usa CRLF como quebra de linha e garante CRLF ao final
-    const csvContent = [header, ...rows].join('\r\n') + '\r\n';
+    const csvBase = [header, ...rows].join('\r\n');
+    const csvContent = normalizarConteudoCsvTVPA(csvBase);
     // Nome do arquivo
     let razao = '';
     let ano = '';
@@ -266,7 +280,9 @@ const CadastroTVpA = ({ cnpj }) => {
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
-                      const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });
+                      const BOM = '\uFEFF';
+                      const conteudo = normalizarConteudoCsvTVPA(item.conteudo || '');
+                      const blob = new Blob([BOM + conteudo], { type: 'text/csv;charset=utf-8;' });
                       const link = document.createElement('a');
                       link.href = URL.createObjectURL(blob);
                       link.setAttribute('download', item.nome);
