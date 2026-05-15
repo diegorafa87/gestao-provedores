@@ -3,7 +3,7 @@ import { getMesesComDados } from '../services/clienteMeses';
 
 /**
  * Componente que exibe quais meses têm dados preenchidos para um cliente
- * Mostra apenas um grid visual dos meses (1-12) com cores indicando se há dados
+ * Com checkboxes interativas
  * 
  * Props:
  * - clienteCNPJ: CNPJ do cliente para buscar dados
@@ -11,8 +11,9 @@ import { getMesesComDados } from '../services/clienteMeses';
 export default function MesesComDadosIndicador({ clienteCNPJ }) {
   const [meses, setMeses] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [mesesMarcados, setMesesMarcados] = useState(new Set());
 
-  const mesesNomes = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+  const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
   useEffect(() => {
     const buscarMeses = async () => {
@@ -27,6 +28,16 @@ export default function MesesComDadosIndicador({ clienteCNPJ }) {
     }
   }, [clienteCNPJ]);
 
+  const handleToggleMes = (mesNum) => {
+    const novosMarcados = new Set(mesesMarcados);
+    if (novosMarcados.has(mesNum)) {
+      novosMarcados.delete(mesNum);
+    } else {
+      novosMarcados.add(mesNum);
+    }
+    setMesesMarcados(novosMarcados);
+  };
+
   if (carregando) {
     return <div style={{ fontSize: '12px', color: '#999' }}>↻</div>;
   }
@@ -37,9 +48,10 @@ export default function MesesComDadosIndicador({ clienteCNPJ }) {
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(6, 1fr)',
-      gap: '4px'
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginTop: '0.5rem'
     }}>
       {mesesNomes.map((mes, idx) => {
         const mesNum = idx + 1;
@@ -47,31 +59,39 @@ export default function MesesComDadosIndicador({ clienteCNPJ }) {
         const temDados = Object.values(meses).some(mesesModulo => 
           mesesModulo.includes(mesNum)
         );
+        const marcado = mesesMarcados.has(mesNum);
 
         return (
-          <div
+          <label
             key={mesNum}
             style={{
-              width: '20px',
-              height: '18px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '3px',
-              background: temDados ? '#388e3c' : '#e0e0e0',
-              color: temDados ? '#fff' : '#999',
-              fontWeight: temDados ? 'bold' : 'normal',
-              border: temDados ? '1px solid #2e7d32' : '1px solid #bbb',
-              fontSize: '11px',
-              cursor: 'default'
+              gap: '4px',
+              cursor: 'pointer',
+              opacity: temDados ? 1 : 0.6
             }}
-            title={`Mês ${mesNum}${Object.keys(meses)
-              .filter(mod => meses[mod].includes(mesNum)).length > 0 
-              ? ' - com dados' 
-              : ' - sem dados'}`}
           >
-            {mes}
-          </div>
+            <input
+              type="checkbox"
+              checked={marcado}
+              onChange={() => handleToggleMes(mesNum)}
+              style={{
+                cursor: 'pointer',
+                width: '16px',
+                height: '16px'
+              }}
+              title={temDados ? `${mes} - com dados` : `${mes} - sem dados`}
+            />
+            <span style={{
+              fontSize: '13px',
+              color: '#333',
+              userSelect: 'none',
+              fontWeight: temDados ? 'normal' : '500'
+            }}>
+              {mes}
+            </span>
+          </label>
         );
       })}
     </div>
