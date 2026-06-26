@@ -5,6 +5,7 @@ import {
   criarUsuarioNeto,
   criarLoginClienteExistente,
   listarUsuariosGerenciaveis,
+  listarTodosUsuarios,
   editarUsuarioGerenciavel,
   inativarOuAtivarUsuario,
   resetarSenhaNetoExistente,
@@ -19,6 +20,7 @@ export default function GerenciarUsuarios({ actorEmail }) {
   const [clientes, setClientes] = useState([]);
   const [msg, setMsg] = useState('');
   const [usuarios, setUsuarios] = useState([]);
+  const [todosUsuarios, setTodosUsuarios] = useState([]);
   const [editId, setEditId] = useState('');
   const [editForm, setEditForm] = useState({ nome: '', login: '', email: '', consultoria: '', clienteId: '' });
 
@@ -51,6 +53,13 @@ export default function GerenciarUsuarios({ actorEmail }) {
       setUsuarios(Array.isArray(data) ? data : []);
     } catch {
       setUsuarios([]);
+    }
+
+    try {
+      const all = await listarTodosUsuarios();
+      setTodosUsuarios(all);
+    } catch {
+      setTodosUsuarios([]);
     }
   };
 
@@ -366,6 +375,28 @@ export default function GerenciarUsuarios({ actorEmail }) {
                 </div>
               </div>
             )}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 16, background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0' }}>
+        <h3 style={{ marginTop: 0 }}>Todos os usuários existentes</h3>
+        {todosUsuarios.length === 0 && <p>Nenhum usuário encontrado.</p>}
+        {todosUsuarios.map((u) => (
+          <div
+            key={`all-${u.id || u._id || u.email}`}
+            style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: 8,
+              padding: 10,
+              marginBottom: 8,
+              background: u.ativo === false ? '#fef2f2' : '#f8fafc',
+            }}
+          >
+            <div><b>{u.role || '-'}</b> • {u.nome || '(sem nome)'}</div>
+            <div>Login: <b>{u.login || '-'}</b> • E-mail: {u.email || '-'}</div>
+            <div>Consultoria: <b>{u.consultoria || '-'}</b> • ClienteId: {u.clienteId || '-'}</div>
+            <div>Status: <b style={{ color: u.ativo === false ? '#b91c1c' : '#166534' }}>{u.ativo === false ? 'Inativo' : 'Ativo'}</b></div>
           </div>
         ))}
       </div>

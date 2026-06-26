@@ -76,6 +76,15 @@ export async function listarUsuariosGerenciaveis(actorEmail) {
   return data;
 }
 
+export async function listarTodosUsuarios() {
+  const res = await fetch(`${API_URL}/api/user/all`);
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || 'Erro ao listar todos os usuários');
+  }
+  return Array.isArray(data) ? data : [];
+}
+
 export async function editarUsuarioGerenciavel(id, payload) {
   const res = await fetch(`${API_URL}/api/user/managed/${id}`, {
     method: 'PUT',
