@@ -353,3 +353,42 @@ exports.toggleManagedUserActive = async (req, res) => {
     return res.status(500).json({ error: 'Erro ao atualizar status do usuário.', details: err.message });
   }
 };
+
+exports.resetPasswordNeto = async (req, res) => {
+  try {
+    const { actorEmail, clienteId, novaSenha } = req.body;
+
+    if (!actorEmail || !clienteId || !novaSenha) {
+      return res.status(400).json({
+        error: 'actorEmail, clienteId e novaSenha são obrigatórios.',
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clienteId)) {
+      return res.status(400).json({ error: 'clienteId inválido.' });
+    }
+
+    const adminCheck = await ensureActorAdmin(actorEmail);
+    if (!adminCheck.ok) {
+      return res.status(adminCheck.status).json({ error: adminCheck.error });
+    }
+
+    // Busca usuário NETO associado a esse cliente
+    const netoUser = await User.findOne({ clienteId, role: 'NETO' });
+    if (!netoUser) {
+      return res.status(404).json({ error: 'Usuário cliente não encontrado para esse cliente.' });
+    }
+
+    // Atualiza senha
+    const passwordHash = await bcrypt.hash(novaSenha, 10);
+    netoUser.passwordHash = passwordHash;
+    await netoUser.save();
+
+    return res.json({ 
+      message: 'Senha resetada com sucesso!',
+      user: sanitizeUser(netoUser) 
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao resetar senha.', details: err.message });
+  }
+};

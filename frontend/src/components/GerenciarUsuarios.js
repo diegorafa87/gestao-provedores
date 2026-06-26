@@ -6,6 +6,7 @@ import {
   listarUsuariosGerenciaveis,
   editarUsuarioGerenciavel,
   inativarOuAtivarUsuario,
+  resetarSenhaNetoExistente,
 } from '../services/user';
 
 function baseStyle() {
@@ -22,6 +23,7 @@ export default function GerenciarUsuarios({ actorEmail }) {
 
   const [filho, setFilho] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '' });
   const [neto, setNeto] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
+  const [resetSenha, setResetSenha] = useState({ clienteId: '', novaSenha: '', confirmaSenha: '' });
 
   useEffect(() => {
     const emailHeader = localStorage.getItem('emailUsuario') || '';
@@ -79,6 +81,29 @@ export default function GerenciarUsuarios({ actorEmail }) {
       setMsg('✅ Usuário neto criado com sucesso.');
       setNeto({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
       carregarUsuarios();
+    } catch (err) {
+      setMsg(`❌ ${err.message}`);
+    }
+  };
+
+  const onResetarSenha = async (e) => {
+    e.preventDefault();
+    setMsg('');
+    
+    if (resetSenha.novaSenha !== resetSenha.confirmaSenha) {
+      setMsg('❌ As senhas não conferem.');
+      return;
+    }
+    
+    if (!resetSenha.novaSenha || resetSenha.novaSenha.length < 6) {
+      setMsg('❌ A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    try {
+      await resetarSenhaNetoExistente(actorEmail, resetSenha.clienteId, resetSenha.novaSenha);
+      setMsg('✅ Senha resetada com sucesso!');
+      setResetSenha({ clienteId: '', novaSenha: '', confirmaSenha: '' });
     } catch (err) {
       setMsg(`❌ ${err.message}`);
     }
@@ -168,6 +193,41 @@ export default function GerenciarUsuarios({ actorEmail }) {
       </div>
 
       {msg && <p style={{ marginTop: 10, fontWeight: 600 }}>{msg}</p>}
+
+      <div style={{ marginTop: 16, background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0' }}>
+        <form onSubmit={onResetarSenha} style={{ display: 'grid', gap: 8 }}>
+          <h3 style={{ margin: 0 }}>Resetar Senha de Cliente NETO</h3>
+          <p style={{ marginTop: 0, fontSize: '0.9rem', color: '#666' }}>
+            Use este formulário para resetar a senha de um cliente que já possui acesso cadastrado.
+          </p>
+          <select 
+            style={baseStyle()} 
+            required 
+            value={resetSenha.clienteId} 
+            onChange={e => setResetSenha(v => ({ ...v, clienteId: e.target.value }))}
+          >
+            <option value="">Selecione o cliente</option>
+            {clientes.map(c => <option key={c._id} value={c._id}>{c.razaoSocial} ({c.cnpj})</option>)}
+          </select>
+          <input 
+            style={baseStyle()} 
+            placeholder="Nova Senha" 
+            required 
+            type="password" 
+            value={resetSenha.novaSenha} 
+            onChange={e => setResetSenha(v => ({ ...v, novaSenha: e.target.value }))} 
+          />
+          <input 
+            style={baseStyle()} 
+            placeholder="Confirmar Senha" 
+            required 
+            type="password" 
+            value={resetSenha.confirmaSenha} 
+            onChange={e => setResetSenha(v => ({ ...v, confirmaSenha: e.target.value }))} 
+          />
+          <button type="submit" style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 'bold' }}>Resetar Senha</button>
+        </form>
+      </div>
 
       <div style={{ marginTop: 16, background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0' }}>
         <h3 style={{ marginTop: 0 }}>Usuários Filho/Neto cadastrados</h3>

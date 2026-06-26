@@ -14,5 +14,6 @@ router.post('/create-grandchild', userController.createGrandchildUser);
 router.get('/managed', userController.listManagedUsers);
 router.put('/managed/:id', userController.updateManagedUser);
 router.patch('/managed/:id/active', userController.toggleManagedUserActive);
+router.post('/reset-password-neto', userController.resetPasswordNeto);
 
 module.exports = router;
