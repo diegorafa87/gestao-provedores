@@ -1,4 +1,4 @@
-let API_URL = 'https://provedordoc-1.onrender.com';
+let API_URL = 'https://backend-gestao-provedores.onrender.com';
 // Durante desenvolvimento local ou quando o app é servido em localhost/127.0.0.1,
 // usar o backend local em uma porta alternativa porque 5000 já está ocupada.
 const isLocalHost = typeof window !== 'undefined' &&
