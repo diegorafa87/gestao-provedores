@@ -2,16 +2,22 @@ services:
   # Frontend React
   - type: web
     name: frontend-gestao-provedores
-    env: static
+    env: node
+    region: oregon
     plan: free
     buildCommand: cd frontend && npm install && npm run build
-    startCommand: npm start
-    staticPublishPath: frontend/build
+    startCommand: cd frontend && node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
 
   # Backend Node.js
   - type: web
     name: backend-gestao-provedores
     env: node
+    region: oregon
     plan: free
     buildCommand: cd backend && npm install
     startCommand: cd backend && node src/index.js
