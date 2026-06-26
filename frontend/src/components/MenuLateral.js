@@ -38,7 +38,7 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
   let idCliente = params.get('id');
   if (!idCliente) {
     // Tenta extrair da rota tipo /cliente/:id
-    const match = location.pathname.match(/cliente\/(\d+)/);
+    const match = location.pathname.match(/cliente\/([^/]+)/);
     if (match) idCliente = match[1];
   }
 
@@ -49,7 +49,7 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       // Sempre tenta obter o idCliente da URL
       let id = idCliente;
       if (!id) {
-        const match = location.pathname.match(/cliente\/(\d+)/);
+        const match = location.pathname.match(/cliente\/([^/]+)/);
         if (match && match[1]) id = match[1];
       }
       navigate(`/scm/cadastro${id ? `?id=${id}` : ''}`);

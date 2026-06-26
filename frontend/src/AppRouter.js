@@ -36,9 +36,30 @@ const RequireAuth = ({ children }) => {
   }
 
   if (user.role === 'NETO' && user.clienteId) {
-    const rotaPermitida = `/cliente/${user.clienteId}`;
-    if (location !== rotaPermitida) {
-      return <Navigate to={rotaPermitida} replace />;
+    const clienteRoute = `/cliente/${user.clienteId}`;
+    const editarPerfilRoute = `/editar-perfil/${user.clienteId}`;
+    const rotasPermitidasNeto = new Set([
+      clienteRoute,
+      '/scm/cadastro',
+      '/tvpa/cadastro',
+      '/stfc/cadastro',
+      '/relatorio-economico/primeiro-semestre',
+      '/relatorio-economico/segundo-semestre',
+      '/infra/estacoes',
+      '/infra/enlaces-proprios',
+      '/infra/enlaces-contratados',
+      '/postes/compartilhamento',
+      '/gerenciador/acesso',
+      editarPerfilRoute,
+    ]);
+
+    const rotaBloqueada =
+      location === '/' ||
+      location.startsWith('/admin') ||
+      location === '/cadastro-cliente';
+
+    if (rotaBloqueada || !rotasPermitidasNeto.has(location)) {
+      return <Navigate to={clienteRoute} replace />;
     }
   }
 
