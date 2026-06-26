@@ -25,6 +25,12 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
     } catch {}
     return null;
   });
+
+  // Filtrar itens ocultos
+  const itensVisiveis = React.useMemo(() => {
+    return itens.filter(item => !hiddenLabels.includes(item.label));
+  }, [hiddenLabels]);
+
   useEffect(() => {
     // Sempre que a rota mudar, recarrega o cliente selecionado do localStorage
     try {
@@ -32,10 +38,8 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       if (salvo) setClienteInfoPersistente(JSON.parse(salvo));
     } catch {}
   }, [location]);
-  const navigate = useNavigate();
-  const itensVisiveis = itens.filter(item => !hiddenLabels.includes(item.label));
 
-  // Busca id do cliente selecionado na URL (query ou rota)
+  const navigate = useNavigate();
   const search = location.search;
   const params = new URLSearchParams(search);
   let idCliente = params.get('id');
