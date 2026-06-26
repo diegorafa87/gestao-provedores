@@ -501,6 +501,41 @@ exports.toggleManagedUserActive = async (req, res) => {
   }
 };
 
+exports.deleteManagedUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { actorEmail } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'id inválido.' });
+    }
+
+    const adminCheck = await ensureActorAdmin(actorEmail);
+    if (!adminCheck.ok) {
+      return res.status(adminCheck.status).json({ error: adminCheck.error });
+    }
+
+    const target = await User.findById(id);
+    if (!target) {
+      return res.status(404).json({ error: 'Usuário não encontrado.' });
+    }
+
+    if (String(target._id) === String(adminCheck.actor._id)) {
+      return res.status(403).json({ error: 'Você não pode excluir seu próprio usuário.' });
+    }
+
+    if (resolveRole(target) === 'ADMIN') {
+      return res.status(403).json({ error: 'Não é permitido excluir usuários ADMIN por esta tela.' });
+    }
+
+    await User.deleteOne({ _id: target._id });
+
+    return res.json({ success: true, message: 'Usuário excluído com sucesso.' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao excluir usuário.', details: err.message });
+  }
+};
+
 exports.resetPasswordNeto = async (req, res) => {
   try {
     const { actorEmail, clienteId, novaSenha } = req.body;

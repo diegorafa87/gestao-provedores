@@ -111,6 +111,19 @@ export async function inativarOuAtivarUsuario(id, actorEmail, ativo) {
   return data.user;
 }
 
+export async function excluirUsuarioGerenciavel(id, actorEmail) {
+  const res = await fetch(`${API_URL}/api/user/managed/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ actorEmail }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || 'Erro ao excluir usuário');
+  }
+  return data;
+}
+
 export async function resetarSenhaNetoExistente(actorEmail, clienteId, novaSenha) {
   const res = await fetch(`${API_URL}/api/user/reset-password-neto`, {
     method: 'POST',

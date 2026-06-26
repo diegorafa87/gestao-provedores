@@ -8,6 +8,7 @@ import {
   listarTodosUsuarios,
   editarUsuarioGerenciavel,
   inativarOuAtivarUsuario,
+  excluirUsuarioGerenciavel,
   resetarSenhaNetoExistente,
 } from '../services/user';
 
@@ -204,6 +205,20 @@ export default function GerenciarUsuarios({ actorEmail }) {
     }
   };
 
+  const excluirUsuario = async (u) => {
+    const nomeRef = u?.nome || u?.login || u?.email || 'usuário';
+    const confirmado = window.confirm(`Tem certeza que deseja excluir ${nomeRef}?`);
+    if (!confirmado) return;
+
+    try {
+      await excluirUsuarioGerenciavel(u.id || u._id, actorEmail);
+      setMsg('✅ Usuário excluído com sucesso.');
+      carregarUsuarios();
+    } catch (err) {
+      setMsg(`❌ ${err.message}`);
+    }
+  };
+
   return (
     <div style={{ background: '#f8fafc', borderRadius: 10, padding: '1rem', marginBottom: '1rem', border: '1px solid #e2e8f0' }}>
       <h2 style={{ marginTop: 0, color: '#153a6b' }}>Gerenciamento de Acessos (Admin)</h2>
@@ -372,6 +387,9 @@ export default function GerenciarUsuarios({ actorEmail }) {
                   <button onClick={() => alternarAtivo(u)} style={{ background: u.ativo ? '#dc2626' : '#16a34a', color: '#fff', border: 'none', borderRadius: 6, padding: '0.5rem 0.9rem', fontWeight: 'bold' }}>
                     {u.ativo ? 'Inativar' : 'Ativar'}
                   </button>
+                  <button onClick={() => excluirUsuario(u)} style={{ background: '#991b1b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.5rem 0.9rem', fontWeight: 'bold' }}>
+                    Excluir
+                  </button>
                 </div>
               </div>
             )}
@@ -397,6 +415,24 @@ export default function GerenciarUsuarios({ actorEmail }) {
             <div>Login: <b>{u.login || '-'}</b> • E-mail: {u.email || '-'}</div>
             <div>Consultoria: <b>{u.consultoria || '-'}</b> • ClienteId: {u.clienteId || '-'}</div>
             <div>Status: <b style={{ color: u.ativo === false ? '#b91c1c' : '#166534' }}>{u.ativo === false ? 'Inativo' : 'Ativo'}</b></div>
+            <div style={{ marginTop: 8 }}>
+              <button
+                onClick={() => excluirUsuario(u)}
+                disabled={(u.role || '').toUpperCase() === 'ADMIN'}
+                style={{
+                  background: (u.role || '').toUpperCase() === 'ADMIN' ? '#94a3b8' : '#991b1b',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '0.45rem 0.75rem',
+                  fontWeight: 'bold',
+                  cursor: (u.role || '').toUpperCase() === 'ADMIN' ? 'not-allowed' : 'pointer',
+                }}
+                title={(u.role || '').toUpperCase() === 'ADMIN' ? 'Usuários ADMIN não podem ser excluídos por esta tela' : 'Excluir usuário'}
+              >
+                Excluir
+              </button>
+            </div>
           </div>
         ))}
       </div>
