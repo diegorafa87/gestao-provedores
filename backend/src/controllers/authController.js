@@ -52,3 +52,31 @@ exports.login = async (req, res) => {
     return res.status(500).json({ error: 'Erro ao autenticar usuário.', details: err.message });
   }
 };
+
+exports.setupAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email e password são obrigatórios.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.findOneAndUpdate(
+      { email },
+      {
+        email,
+        login: email,
+        nome: 'Admin',
+        role: 'ADMIN',
+        passwordHash,
+        ativo: true,
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return res.json({ message: 'Admin criado/atualizado com sucesso!', user: sanitizeUser(user) });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao criar admin.', details: err.message });
+  }
+};
