@@ -49,9 +49,10 @@ const codUfToSigla = {
 };
 
 const CadastroTVpA = ({ cnpj }) => {
-  // Remove pontuação do CNPJ
+  // Normaliza o CNPJ removendo formatação para usar como chave de localStorage
+  const cnpjNormalizado = (cnpj || '').replace(/[^\d]/g, '');
+  const historicoKey = `historicoTVpA_${cnpjNormalizado}`;
   const [form, setForm] = useState({});
-  const historicoKey = `historicoTVpA_${cnpj}`;
   const [historico, setHistorico] = useState(() => {
     const salvo = localStorage.getItem(historicoKey);
     return salvo ? JSON.parse(salvo) : [];
