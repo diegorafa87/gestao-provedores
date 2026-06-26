@@ -1,13 +1,24 @@
 services:
+  # Frontend React
+  - type: web
+    name: frontend-gestao-provedores
+    env: static
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: npm start
+    staticPublishPath: frontend/build
+
+  # Backend Node.js
   - type: web
     name: backend-gestao-provedores
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: node src/index.js
-    rootDir: backend
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node src/index.js
     envVars:
       - key: MONGODB_URI
-        sync: false
+        value: ${MONGODB_URI}
       - key: PORT
-        sync: false
+        value: 5001
+      - key: NODE_ENV
+        value: production

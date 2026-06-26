@@ -25,23 +25,35 @@ const DetalheCliente = () => {
   const [erro, setErro] = useState(null);
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({ razaoSocial: '', cnpj: '', email: '', telefone: '', consultoria: '' });
+  const roleUsuario = (localStorage.getItem('roleUsuario') || '').toUpperCase();
+  const hiddenLabels = ['FINANCEIRO', 'CONTRATOS E CERTIDÕES'];
+
+  const handleSair = () => {
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('consultoriaUsuario');
+    localStorage.removeItem('emailUsuario');
+    localStorage.removeItem('roleUsuario');
+    localStorage.removeItem('clienteIdUsuario');
+    localStorage.removeItem('clienteSelecionado');
+    navigate('/login');
+  };
 
   useEffect(() => {
     setLoading(true);
     setErro(null);
     console.log('Buscando cliente para id:', id);
-    fetch(`${API_URL}/api/clientes/${id}`)
+    const emailUsuario = localStorage.getItem('emailUsuario') || '';
+    fetch(`${API_URL}/api/clientes/${id}`, {
+      headers: emailUsuario ? { 'x-user-email': emailUsuario } : {},
+    })
       .then(async resp => {
+        return { resp, data: await resp.json().catch(() => null) };
+      })
+      .then(({ resp, data }) => {
         console.log('Status da resposta:', resp.status);
-        let data = null;
-        try {
-          data = await resp.json();
-        } catch (e) {
-          console.log('Erro ao fazer parse do JSON:', e);
-        }
         console.log('Corpo da resposta:', data);
         if (!resp.ok) {
-          setErro('Cliente não encontrado.');
+          setErro(data?.error || 'Cliente não encontrado.');
           setCliente(null);
           setLoading(false);
           return;
@@ -79,9 +91,13 @@ const DetalheCliente = () => {
 
   const handleSalvar = async e => {
     e.preventDefault();
+    const emailUsuario = localStorage.getItem('emailUsuario') || '';
     const resp = await fetch(`${API_URL}/api/clientes/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(emailUsuario ? { 'x-user-email': emailUsuario } : {}),
+      },
       body: JSON.stringify(form)
     });
     if (resp.ok) {
@@ -98,8 +114,17 @@ const DetalheCliente = () => {
 
   return (
     <div style={{display:'flex', position: 'relative'}}>
+      <div style={{ position: 'absolute', right: 18, top: 18, zIndex: 30 }}>
+        <button
+          onClick={handleSair}
+          style={{ background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.9rem', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          Sair
+        </button>
+      </div>
       <MenuLateral
-        voltarLink={<Link to="/" style={{textDecoration:'none',color:'#1976d2',fontWeight:'bold',fontSize:'1.1rem',display:'block',marginBottom:'1.5rem',marginTop:'2.5rem'}}>&larr; Voltar</Link>}
+        hiddenLabels={hiddenLabels}
+        voltarLink={roleUsuario === 'NETO' ? null : <Link to="/" style={{textDecoration:'none',color:'#1976d2',fontWeight:'bold',fontSize:'1.1rem',display:'block',marginBottom:'1.5rem',marginTop:'2.5rem'}}>&larr; Voltar</Link>}
         clienteInfo={
           <div style={{marginBottom: 16, textAlign: 'center'}}>
             <div style={{fontWeight:700, fontSize: '1.1rem', color: '#fff'}}>{cliente.razaoSocial}</div>

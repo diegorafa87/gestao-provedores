@@ -8,5 +8,11 @@ router.get('/all', userController.listAllUsers);
 // Rota para criar/atualizar consultoria do usuário
 router.post('/set-consultoria', userController.setUserConsultoria);
 router.get('/consultoria', userController.getUserConsultoria);
+router.get('/scope', userController.getUserScope);
+router.post('/create-child', userController.createChildUser);
+router.post('/create-grandchild', userController.createGrandchildUser);
+router.get('/managed', userController.listManagedUsers);
+router.put('/managed/:id', userController.updateManagedUser);
+router.patch('/managed/:id/active', userController.toggleManagedUserActive);
 
 module.exports = router;

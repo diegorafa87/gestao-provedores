@@ -37,9 +37,13 @@ const CadastroCliente = ({ onClienteCadastrado }) => {
     e.preventDefault();
     setMensagem('');
     try {
+      const userEmail = localStorage.getItem('emailUsuario') || '';
           const resp = await fetch(`${API_URL}/api/clientes`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userEmail ? { 'x-user-email': userEmail } : {}),
+        },
         body: JSON.stringify(form)
       });
       if (resp.ok) {

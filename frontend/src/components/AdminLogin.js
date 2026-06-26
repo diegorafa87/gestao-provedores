@@ -1,7 +1,10 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { loginComSenha } from '../services/user';
 
 const AdminLogin = ({ onLogin }) => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,31 +14,21 @@ const AdminLogin = ({ onLogin }) => {
     setErro('');
     setLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      // Buscar consultoria do usuário
-      let consultoria = '';
-      try {
-        consultoria = await getUserConsultoria(userCredential.user.email);
-        if (!consultoria) throw new Error('Usuário sem consultoria cadastrada.');
-      } catch (errConsultoria) {
-        setErro('Seu usuário não está vinculado a nenhuma consultoria. Fale com o administrador.');
-        await signOut(auth);
-        localStorage.removeItem('consultoriaUsuario');
-        localStorage.removeItem('emailUsuario');
-        setLoading(false);
-        return;
+      const user = await loginComSenha(login, senha);
+      localStorage.setItem('authUser', JSON.stringify(user));
+      localStorage.setItem('consultoriaUsuario', user.consultoria || '');
+      localStorage.setItem('emailUsuario', user.email || '');
+      localStorage.setItem('roleUsuario', user.role || '');
+      localStorage.setItem('clienteIdUsuario', user.clienteId || '');
+
+      onLogin && onLogin(user);
+      if (user.role === 'NETO' && user.clienteId) {
+        navigate(`/cliente/${user.clienteId}`);
+      } else {
+        navigate('/');
       }
-      localStorage.setItem('consultoriaUsuario', consultoria);
-      localStorage.setItem('emailUsuario', userCredential.user.email);
-      onLogin && onLogin(userCredential.user);
-      navigate('/'); // Redireciona para a página principal após login
     } catch (err) {
-      setErro('E-mail ou senha inválidos.');
-      if (err && err.message) {
-        setErro(prev => prev + ' [' + err.message + ']');
-        // eslint-disable-next-line no-console
-        console.error('Erro Firebase:', err);
-      }
+      setErro(err?.message || 'Login ou senha inválidos.');
     }
     setLoading(false);
   };
@@ -46,10 +39,10 @@ const AdminLogin = ({ onLogin }) => {
       <h2 style={{textAlign:'center',color:'#1976d2',marginBottom:24}}>Login</h2>
       <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',gap:18}}>
         <input
-          type="email"
-          placeholder="E-mail do administrador"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
+          type="text"
+          placeholder="Login ou e-mail"
+          value={login}
+          onChange={e => setLogin(e.target.value)}
           required
           style={{fontSize:'1.1rem',padding:'0.7rem',borderRadius:6,border:'1.5px solid #1976d2'}}
         />
@@ -72,8 +65,3 @@ const AdminLogin = ({ onLogin }) => {
 };
 
 export default AdminLogin;
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { auth } from "../firebase";
-import { getUserConsultoria } from "../services/user";

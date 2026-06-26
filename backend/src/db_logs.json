@@ -1,5 +1,162 @@
 [
   {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "id": "6a3eb456964c517f8bda3c63",
+      "status": "ATIVO"
+    },
+    "data": "2026-06-26T17:35:04.559Z"
+  },
+  {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "id": "6a3eb456964c517f8bda3c63",
+      "status": "CORRIGIR"
+    },
+    "data": "2026-06-26T17:34:51.764Z"
+  },
+  {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "13.231.742/0001-70",
+    "detalhes": {
+      "id": "6a3eb801964c517f8bda3c64",
+      "status": "ATIVO"
+    },
+    "data": "2026-06-26T17:34:38.054Z"
+  },
+  {
+    "acao": "CADASTRAR_CLIENTE",
+    "usuario": "13.231.742/0001-70",
+    "detalhes": {
+      "razaoSocial": "Tercio Felipe Lourenço Pereira - ME",
+      "email": "financeiroiplug@gmail.com",
+      "telefone": "(83) 98738-1491",
+      "consultoria": "RENIO"
+    },
+    "data": "2026-06-26T17:33:53.385Z"
+  },
+  {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "id": "6a3eb456964c517f8bda3c63",
+      "status": "ATIVO"
+    },
+    "data": "2026-06-26T17:33:26.933Z"
+  },
+  {
+    "acao": "GERAR_CSV_TVPA",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "nomeArquivo": "TVpA_TAMISTALIEHLIMA_2026_4.csv",
+      "ano": "2026",
+      "mes": "4",
+      "razao": "TAMISTALIEHLIMA"
+    },
+    "data": "2026-06-26T17:30:22.788Z"
+  },
+  {
+    "acao": "GERAR_CSV_TVPA",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "nomeArquivo": "TVpA_TAMISTALIEHLIMA_2026_5.csv",
+      "ano": "2026",
+      "mes": "5",
+      "razao": "TAMISTALIEHLIMA"
+    },
+    "data": "2026-06-26T17:29:06.766Z"
+  },
+  {
+    "nome": "SCM_TAMIS_TALIEH_LIMA_2026_5.csv",
+    "conteudo": "CNPJ;ANO;MES;COD_IBGE;TIPO_CLIENTE;TIPO_ATENDIMENTO;TIPO_MEIO;TIPO_PRODUTO;TIPO_TECNOLOGIA;VELOCIDADE;ACESSOS\r\n29905470000186;2026;5;2507507;PF;URBANO;radio;internet;ETHERNET;10;25\r\n29905470000186;2026;5;2507507;PF;URBANO;fibra;internet;ETHERNET;10;35\r\n29905470000186;2026;5;2507507;PF;URBANO;fibra;internet;ETHERNET;20;28",
+    "data": "26/06/2026, 14:27:36",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "nomeArquivo": "SCM_TAMIS_TALIEH_LIMA_2026_5.csv",
+      "ano": "2026",
+      "mes": "5",
+      "razaoSocial": "TAMIS_TALIEH_LIMA"
+    },
+    "acao": "GERAR_CSV_SCM"
+  },
+  {
+    "acao": "CADASTRAR_CLIENTE",
+    "usuario": "29.905.470/0001-86",
+    "detalhes": {
+      "razaoSocial": "TAMIS TALIEH LIMA",
+      "email": "tamistaliehlima@hotmail.com",
+      "telefone": "(83) 98656-1734",
+      "consultoria": "RENIO"
+    },
+    "data": "2026-06-26T17:18:14.027Z"
+  },
+  {
+    "nome": "SCM_Empresa_CAIO_LTDA_2026_5.csv",
+    "conteudo": "CNPJ;ANO;MES;COD_IBGE;TIPO_CLIENTE;TIPO_ATENDIMENTO;TIPO_MEIO;TIPO_PRODUTO;TIPO_TECNOLOGIA;VELOCIDADE;ACESSOS\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;200,00;69\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;450,00;5\r\n11111111000111;2026;5;2412609;PF;URBANO;cabo_metalico;internet;ETHERNET;50,000;6\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;250,00;56\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;300,00;3\r\n11111111000111;2026;5;2411106;PF;URBANO;fibra;internet;FTTH;30,000;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;50,000;108\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;80,000;1\r\n11111111000111;2026;5;2408102;PJ;URBANO;fibra;internet;FTTH;1000,0;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;450,00;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;1000,0;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;103,71;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;50,000;2\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;70,000;3\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;400,00;1\r\n11111111000111;2026;5;2412708;PJ;URBANO;fibra;internet;FTTH;1024,0;1\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;50,000;353\r\n11111111000111;2026;5;2401909;PF;URBANO;fibra;internet;FTTH;50,000;8\r\n11111111000111;2026;5;2403251;PJ;URBANO;fibra;internet;FTTH;1024,0;1\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;100,00;9\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;600,00;2\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;600,00;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;150,00;13\r\n11111111000111;2026;5;2401909;PF;URBANO;cabo_metalico;internet;ETHERNET;20,000;15\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;200,00;2\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;600,00;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;500,00;3\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;100,00;7\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;300,00;1\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;100,00;73\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;300,00;7\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;30,000;93\r\n11111111000111;2026;5;2412005;PF;URBANO;cabo_metalico;internet;ETHERNET;300,00;3\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;60,000;1\r\n11111111000111;2026;5;2410900;PF;URBANO;cabo_metalico;internet;ETHERNET;40,000;1\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;50,000;15\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;250,00;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;30,000;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;200,00;13\r\n11111111000111;2026;5;2412609;PF;URBANO;cabo_metalico;internet;ETHERNET;300,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;cabo_metalico;internet;ETHERNET;30,000;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;30,000;9\r\n11111111000111;2026;5;2412005;PF;URBANO;cabo_metalico;internet;ETHERNET;30,000;1\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;20,000;7\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;250,00;48\r\n11111111000111;2026;5;2401909;PF;URBANO;fibra;internet;FTTH;30,000;13\r\n11111111000111;2026;5;2408102;PF;URBANO;cabo_metalico;internet;ETHERNET;80,000;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;80,000;3\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;600,00;6\r\n11111111000111;2026;5;2410900;PJ;URBANO;cabo_metalico;internet;ETHERNET;300,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;600,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;100,00;35\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;450,00;1\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;600,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;103,71;1\r\n11111111000111;2026;5;2403251;PJ;URBANO;fibra;internet;FTTH;30,000;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;50,000;56\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;600,00;5\r\n11111111000111;2026;5;2410900;PF;URBANO;radio;internet;ETHERNET;10,000;2\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;70,000;1\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;200,00;1\r\n11111111000111;2026;5;2403251;PJ;URBANO;fibra;internet;FTTH;50,000;1\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;500,00;4\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;200,00;7\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;500,00;6\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;30,000;5\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;500,00;7\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;300,00;8\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;100,00;21\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;150,00;3\r\n11111111000111;2026;5;2401909;PF;URBANO;fibra;internet;FTTH;100,00;1\r\n11111111000111;2026;5;2408102;PJ;URBANO;fibra;internet;FTTH;100,00;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;600,00;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;300,00;113\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;250,00;4\r\n11111111000111;2026;5;2406403;PF;RURAL;fibra;internet;FTTH;300,00;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;cabo_metalico;internet;ETHERNET;20,000;1\r\n11111111000111;2026;5;2408102;PJ;URBANO;fibra;internet;FTTH;1024,0;1\r\n11111111000111;2026;5;2410900;PF;URBANO;radio;internet;ETHERNET;12,000;2\r\n11111111000111;2026;5;2412609;PJ;URBANO;cabo_metalico;internet;ETHERNET;300,00;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;cabo_metalico;internet;ETHERNET;15,000;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;80,000;1\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;400,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;250,00;38\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;400,00;2\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;200,00;3\r\n11111111000111;2026;5;2403251;PF;URBANO;fibra;internet;FTTH;250,00;1\r\n11111111000111;2026;5;2412609;PF;URBANO;fibra;internet;FTTH;200,00;22\r\n11111111000111;2026;5;2408102;PJ;URBANO;cabo_metalico;internet;ETHERNET;40,000;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;100,00;2\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;100,00;1\r\n11111111000111;2026;5;2410900;PF;URBANO;cabo_metalico;internet;ETHERNET;20,000;91\r\n11111111000111;2026;5;2401909;PF;URBANO;radio;internet;ETHERNET;15,000;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;500,00;1\r\n11111111000111;2026;5;2401909;PF;URBANO;fibra;internet;FTTH;60,000;1\r\n11111111000111;2026;5;2412005;PJ;URBANO;fibra;internet;FTTH;1000,0;1\r\n11111111000111;2026;5;2410900;PF;URBANO;cabo_metalico;internet;ETHERNET;50,000;7\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;60,000;5\r\n11111111000111;2026;5;2410900;PF;URBANO;cabo_metalico;internet;ETHERNET;300,00;1\r\n11111111000111;2026;5;2401909;PF;URBANO;radio;internet;ETHERNET;10,000;5\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;30,000;1\r\n11111111000111;2026;5;2411106;PF;URBANO;fibra;internet;FTTH;20,000;2\r\n11111111000111;2026;5;2410900;PJ;URBANO;cabo_metalico;internet;ETHERNET;50,000;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;1024,0;1\r\n11111111000111;2026;5;2406403;PF;URBANO;fibra;internet;FTTH;250,00;8\r\n11111111000111;2026;5;2401909;PF;URBANO;fibra;internet;FTTH;20,000;4\r\n11111111000111;2026;5;2412005;PJ;URBANO;fibra;internet;FTTH;20,000;1\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;500,00;3\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;300,00;270\r\n11111111000111;2026;5;2412708;PF;URBANO;fibra;internet;FTTH;300,00;1\r\n11111111000111;2026;5;2408102;PF;URBANO;fibra;internet;FTTH;300,00;26\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;150,00;4\r\n11111111000111;2026;5;2411106;PF;URBANO;cabo_metalico;internet;ETHERNET;20,000;14\r\n11111111000111;2026;5;2408102;PJ;URBANO;fibra;internet;FTTH;50,000;2\r\n11111111000111;2026;5;2410900;PF;URBANO;fibra;internet;FTTH;450,00;12\r\n11111111000111;2026;5;2410900;PF;URBANO;cabo_metalico;internet;ETHERNET;30,000;6\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;100,00;4\r\n11111111000111;2026;5;2412609;PJ;URBANO;fibra;internet;FTTH;200,00;1\r\n11111111000111;2026;5;2410900;PJ;URBANO;fibra;internet;FTTH;50,000;2\r\n11111111000111;2026;5;2412005;PF;URBANO;fibra;internet;FTTH;50,000;25",
+    "data": "25/06/2026, 16:51:08",
+    "usuario": "11.111.111/0001-11",
+    "detalhes": {
+      "nomeArquivo": "SCM_Empresa_CAIO_LTDA_2026_5.csv",
+      "ano": "2026",
+      "mes": "5",
+      "razaoSocial": "Empresa_CAIO_LTDA"
+    },
+    "acao": "GERAR_CSV_SCM"
+  },
+  {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "11.111.111/0001-11",
+    "detalhes": {
+      "id": "6a3d843471e8034c2ed0ea7a",
+      "status": "ATIVO"
+    },
+    "data": "2026-06-25T19:46:51.022Z"
+  },
+  {
+    "acao": "ATUALIZAR_STATUS",
+    "usuario": "12.345.678/0001-00",
+    "detalhes": {
+      "id": "6a3d816a71e8034c2ed0ea79",
+      "status": "ATIVO"
+    },
+    "data": "2026-06-25T19:45:30.652Z"
+  },
+  {
+    "acao": "CADASTRAR_CLIENTE",
+    "usuario": "22.222.222/0002-22",
+    "detalhes": {
+      "razaoSocial": "Empresa RENIO LTDA",
+      "email": "renio@empresa.com",
+      "telefone": "(11) 99876-5432",
+      "consultoria": "RENIO"
+    },
+    "data": "2026-06-25T19:40:36.294Z"
+  },
+  {
+    "acao": "CADASTRAR_CLIENTE",
+    "usuario": "11.111.111/0001-11",
+    "detalhes": {
+      "razaoSocial": "Empresa CAIO LTDA",
+      "email": "caio@empresa.com",
+      "telefone": "(11) 98765-4321",
+      "consultoria": "CAIO"
+    },
+    "data": "2026-06-25T19:40:36.259Z"
+  },
+  {
+    "acao": "CADASTRAR_CLIENTE",
+    "usuario": "12.345.678/0001-00",
+    "detalhes": {
+      "razaoSocial": "Empresa Teste LTDA",
+      "email": "teste@example.com",
+      "telefone": "11999999999",
+      "consultoria": "CAINARA"
+    },
+    "data": "2026-06-25T19:28:42.483Z"
+  },
+  {
     "acao": "GERAR_CSV_SCM",
     "usuario": "40.219.880/0001-06",
     "detalhes": {
@@ -880,87 +1037,5 @@
       "razaoSocial": "LAVAMAIS HIGIENIZACAO"
     },
     "data": "2026-04-20T08:36:24.237Z"
-  },
-  {
-    "acao": "GERAR_CSV_STFC",
-    "usuario": "40.219.880/0001-06",
-    "detalhes": {
-      "nomeArquivo": "COLETA_STFC_2026-04-20T01-40-28-456Z.csv"
-    },
-    "data": "2026-04-20T01:40:28.463Z"
-  },
-  {
-    "acao": "GERAR_CSV_SCM",
-    "usuario": "desconhecido",
-    "detalhes": {
-      "nomeArquivo": "SCM_CLIENTE_2026_1.csv",
-      "ano": "2026",
-      "mes": "1"
-    },
-    "data": "2026-04-20T01:40:02.600Z"
-  },
-  {
-    "acao": "GERAR_CSV_TVPA",
-    "usuario": "40.219.880/0001-06",
-    "detalhes": {
-      "nomeArquivo": "TVpA_LAVAMAISHIGIENIZACAO_2026_1.csv",
-      "ano": "2026",
-      "mes": "1",
-      "razao": "LAVAMAISHIGIENIZACAO"
-    },
-    "data": "2026-04-20T01:39:32.565Z"
-  },
-  {
-    "acao": "EDITAR_CLIENTE",
-    "usuario": "40.219.880/0001-06",
-    "detalhes": {
-      "id": "1776375437487",
-      "razaoSocial": "LAVAMAIS HIGIENIZACAO",
-      "email": "lavamaishigienizacao@gmail.com",
-      "telefone": "84 994068574",
-      "consultoria": "DIEGO"
-    },
-    "data": "2026-04-19T16:41:32.858Z"
-  },
-  {
-    "acao": "EDITAR_CLIENTE",
-    "usuario": "40219880000106",
-    "detalhes": {
-      "id": "1776375437487",
-      "razaoSocial": "LAVAMAIS HIGIENIZACAO",
-      "email": "lavamaishigienizacao@gmail.com",
-      "telefone": "84 994068574",
-      "consultoria": "DIEGO"
-    },
-    "data": "2026-04-19T16:38:26.047Z"
-  },
-  {
-    "acao": "GERAR_CSV_STFC",
-    "usuario": "40219880000106",
-    "detalhes": {
-      "nomeArquivo": "COLETA_STFC_2026-04-19T16-09-51-696Z.csv"
-    },
-    "data": "2026-04-19T16:09:51.703Z"
-  },
-  {
-    "acao": "GERAR_CSV_TVPA",
-    "usuario": "40219880000106",
-    "detalhes": {
-      "nomeArquivo": "TVpA_LAVAMAISHIGIENIZACAO_2026_1.csv",
-      "ano": "2026",
-      "mes": "1",
-      "razao": "LAVAMAISHIGIENIZACAO"
-    },
-    "data": "2026-04-19T16:09:31.179Z"
-  },
-  {
-    "acao": "GERAR_CSV_SCM",
-    "usuario": "desconhecido",
-    "detalhes": {
-      "nomeArquivo": "SCM_CLIENTE_2026_1.csv",
-      "ano": "2026",
-      "mes": "1"
-    },
-    "data": "2026-04-19T16:09:12.186Z"
   }
 ]

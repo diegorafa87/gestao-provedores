@@ -1,7 +1,6 @@
 import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import CadastroSCM from '../components/CadastroSCM';
-import AcompanhamentoSCM from '../components/AcompanhamentoSCM';
 import MenuLateral from '../components/MenuLateral';
 import { useLocation } from 'react-router-dom';
 
@@ -54,11 +53,6 @@ const PaginaCadastroSCM = () => {
       }
     } catch {}
   }
-
-  // Exibição controlada por rota/submenu
-  const params = new URLSearchParams(location.search);
-  const aba = params.get('aba') === 'acompanhamento' ? 'acompanhamento' : 'relatorio';
-
   return (
     <div style={{display:'flex'}}>
       <MenuLateral
@@ -71,11 +65,7 @@ const PaginaCadastroSCM = () => {
         ) : null}
       />
       <div style={{marginLeft:200, flex:1, minHeight:'100vh', background:'#f8f9fb'}}>
-        {aba === 'acompanhamento' ? (
-          <AcompanhamentoSCM razaoSocial={razaoSocial} cnpj={cnpj} />
-        ) : (
-          <CadastroSCM cnpj={cnpj} razaoSocial={razaoSocial} />
-        )}
+        <CadastroSCM cnpj={cnpj} razaoSocial={razaoSocial} />
       </div>
     </div>
   );

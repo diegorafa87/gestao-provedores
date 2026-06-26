@@ -18,7 +18,7 @@ export async function saveAcompanhamento(tipo, cnpj, data, atualizadoPor) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, atualizadoPor })
+      body: JSON.stringify({ atualizadoPor })
     }
   );
   if (!res.ok) throw new Error('Erro ao salvar acompanhamento');

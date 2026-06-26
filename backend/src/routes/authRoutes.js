@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
 
-// Todas as rotas de autenticação removidas para migração ao Firebase
+router.post('/login', authController.login);
 
 module.exports = router;

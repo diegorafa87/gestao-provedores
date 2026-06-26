@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+motor
+pydantic
+python-dotenv
+bcrypt
+boto3
+python-multipart
+PyPDF2
+pytest
+requests

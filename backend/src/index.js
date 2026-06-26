@@ -1,6 +1,7 @@
 
 const acompanhamentoPostesRoutes = require('./routes/acompanhamentoPostesRoutes');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Entry point do backend
 require('dotenv').config();
@@ -17,7 +18,10 @@ connectDB();
 app.use(cors({
   origin: [
     'https://provedordoc-2.onrender.com',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001'
   ]
 }));
 app.use(express.json());
@@ -37,6 +41,7 @@ const gerenciadorAcessoRoutes = require('./routes/gerenciadorAcessoRoutes');
 
 
 app.use('/api', clienteRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', logRoutes);
 app.use('/api', acaoRoutes);

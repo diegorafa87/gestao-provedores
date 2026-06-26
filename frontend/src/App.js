@@ -1,8 +1,6 @@
 import API_URL from './services/api';
 
 import React, { useState } from 'react';
-import { signOut } from 'firebase/auth';
-import { auth } from './firebase';
 import { useNavigate } from 'react-router-dom';
 
 import CadastroCliente from './components/CadastroCliente';
@@ -15,20 +13,41 @@ function App() {
   const [pesquisaConfirmada, setPesquisaConfirmada] = useState('');
   const [consultorias, setConsultorias] = useState([]);
   const [consultoriaFiltro, setConsultoriaFiltro] = useState('');
+  const [menuAdminAberto, setMenuAdminAberto] = useState(false);
 
-  // Consultoria do usuário logado
-  const consultoriaUsuario = localStorage.getItem('consultoriaUsuario') || '';
-  const emailUsuario = localStorage.getItem('emailUsuario') || '';
-  const isAdmin = emailUsuario === 'diegorafa87@gmail.com';
+  // Contexto do usuário logado
+  let authUser = null;
+  try {
+    const raw = localStorage.getItem('authUser');
+    if (raw) authUser = JSON.parse(raw);
+  } catch {}
+
+  const consultoriaUsuario = authUser?.consultoria || localStorage.getItem('consultoriaUsuario') || '';
+  const emailUsuario = authUser?.email || localStorage.getItem('emailUsuario') || '';
+  const roleUsuario = authUser?.role || localStorage.getItem('roleUsuario') || '';
+  const clienteIdUsuario = authUser?.clienteId || localStorage.getItem('clienteIdUsuario') || '';
+  const isAdmin = roleUsuario === 'ADMIN' || emailUsuario === 'diegorafa87@gmail.com';
+  const isNeto = roleUsuario === 'NETO';
 
   // Buscar consultorias distintas dos clientes cadastrados (apenas para admin)
   React.useEffect(() => {
     if (isAdmin) {
-      fetch(`${API_URL}/api/clientes`)
-        .then(r => r.json())
-        .then(clientes => {
-          const unicos = [...new Set(clientes.map(c => c.consultoria).filter(Boolean))];
+      fetch(`${API_URL}/api/clientes`, {
+        headers: emailUsuario ? { 'x-user-email': emailUsuario } : {},
+      })
+        .then(async r => {
+          const data = await r.json();
+          if (!r.ok || !Array.isArray(data)) {
+            console.error('Erro ao carregar consultorias:', data);
+            setConsultorias([]);
+            return;
+          }
+          const unicos = [...new Set(data.map(c => c.consultoria).filter(Boolean))];
           setConsultorias(unicos);
+        })
+        .catch(err => {
+          console.error('Erro de rede ao carregar consultorias:', err);
+          setConsultorias([]);
         });
     }
   }, [atualizar, isAdmin]);
@@ -47,27 +66,59 @@ function App() {
 
   // Filtro a ser passado para ListaClientes
   let filtroFinal = isAdmin ? consultoriaFiltro : consultoriaUsuario;
-  if (emailUsuario === 'dijanjogador123@gmail.com') {
-    filtroFinal = 'CAINARA';
-  }
 
-  // Função de logout
-  const handleLogout = async () => {
-    await signOut(auth);
+  const handleSair = () => {
+    localStorage.removeItem('authUser');
     localStorage.removeItem('consultoriaUsuario');
     localStorage.removeItem('emailUsuario');
-    navigate('/admin-login');
+    localStorage.removeItem('roleUsuario');
+    localStorage.removeItem('clienteIdUsuario');
+    localStorage.removeItem('clienteSelecionado');
+    navigate('/login');
   };
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', position: 'relative' }}>
-      {/* Usuário logado no canto superior esquerdo */}
-      <div style={{ position: 'absolute', top: 16, left: 24, color: '#153a6b', fontWeight: 'bold', fontSize: 15, zIndex: 2 }}>
-        Usuário: {emailUsuario}
+      <div style={{ position: 'absolute', right: 0, top: 10, display: 'flex', gap: 8 }}>
+        {isAdmin && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setMenuAdminAberto(v => !v)}
+              style={{ background: '#0f172a', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Menu Admin ▾
+            </button>
+            {menuAdminAberto && (
+              <div style={{ position: 'absolute', right: 0, marginTop: 6, background: '#fff', border: '1px solid #cbd5e1', borderRadius: 8, minWidth: 190, boxShadow: '0 8px 24px #0000001a', zIndex: 20 }}>
+                <button
+                  onClick={() => {
+                    setMenuAdminAberto(false);
+                    navigate('/admin/usuarios');
+                  }}
+                  style={{ width: '100%', textAlign: 'left', padding: '0.65rem 0.8rem', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                >
+                  Gerenciar usuários
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          onClick={() => setAtualizar(a => a + 1)}
+          style={{ background: '#334155', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.8rem', cursor: 'pointer' }}
+        >
+          Atualizar
+        </button>
+        <button
+          onClick={handleSair}
+          style={{ background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.8rem', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          Sair
+        </button>
       </div>
-      <button onClick={handleLogout} style={{position:'absolute',top:24,right:24,background:'#d32f2f',color:'#fff',border:'none',borderRadius:6,padding:'0.5rem 1.2rem',fontWeight:'bold',fontSize:16,cursor:'pointer',zIndex:2}}>Sair</button>
       <h1 style={{ textAlign: 'center', color: '#153a6b' }}>DOC PROVEDOR</h1>
-      <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />
+
+      {!isNeto && <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />}
 
       {/* Campo de pesquisa por CNPJ ou Razão Social */}
       <div style={{ margin: '1rem 0', display: 'flex', justifyContent: 'center', gap: 8 }}>
@@ -88,7 +139,7 @@ function App() {
       </div>
 
       {/* Botões de filtro de consultoria - apenas para admin */}
-      {isAdmin && emailUsuario !== 'dijanjogador123@gmail.com' && (
+      {isAdmin && (
         <div style={{ display: 'flex', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap' }}>
           <button
             onClick={() => handleFiltroConsultoria('')}
@@ -108,7 +159,13 @@ function App() {
         </div>
       )}
 
-      <ListaClientes atualizar={atualizar} consultoriaFiltro={filtroFinal} pesquisa={pesquisaConfirmada} />
+      <ListaClientes
+        atualizar={atualizar}
+        consultoriaFiltro={filtroFinal}
+        pesquisa={pesquisaConfirmada}
+        userEmail={emailUsuario}
+        clienteIdUsuario={clienteIdUsuario}
+      />
     </div>
   );
 }

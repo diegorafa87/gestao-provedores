@@ -5,8 +5,7 @@
   "main": "src/App.js",
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "postinstall": "chmod +x node_modules/.bin/react-scripts || true"
+    "build": "react-scripts build"
   },
   "dependencies": {
     "axios": "^1.15.2",
