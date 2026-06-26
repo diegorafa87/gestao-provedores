@@ -11,8 +11,6 @@ const itens = [
   { label: 'INFRA', icon: '🏗️' },
   { label: 'POSTES', icon: '🪵' },
   { label: 'GERENCIADOR', icon: '👤' },
-  { label: 'FINANCEIRO', icon: '💲' },
-  { label: 'CONTRATOS E CERTIDÕES', icon: '📄' },
   { label: 'EDITAR PERFIL', icon: '✏️' },
 ];
 
@@ -25,11 +23,6 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
     } catch {}
     return null;
   });
-
-  // Filtrar itens ocultos
-  const itensVisiveis = React.useMemo(() => {
-    return itens.filter(item => !hiddenLabels.includes(item.label));
-  }, [hiddenLabels]);
 
   useEffect(() => {
     // Sempre que a rota mudar, recarrega o cliente selecionado do localStorage
@@ -188,7 +181,7 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       <div style={{marginBottom: 32, textAlign: 'center', marginTop: 110}}>
       </div>
       <nav style={{width: '100%'}}>
-        {itensVisiveis.map(item => (
+        {itens.map(item => (
           <div
             key={item.label}
             style={{

@@ -26,7 +26,6 @@ const DetalheCliente = () => {
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState({ razaoSocial: '', cnpj: '', email: '', telefone: '', consultoria: '' });
   const roleUsuario = (localStorage.getItem('roleUsuario') || '').toUpperCase();
-  const hiddenLabels = ['FINANCEIRO', 'CONTRATOS E CERTIDÕES'];
 
   const handleSair = () => {
     localStorage.removeItem('authUser');
@@ -123,7 +122,6 @@ const DetalheCliente = () => {
         </button>
       </div>
       <MenuLateral
-        hiddenLabels={hiddenLabels}
         voltarLink={roleUsuario === 'NETO' ? null : <Link to="/" style={{textDecoration:'none',color:'#1976d2',fontWeight:'bold',fontSize:'1.1rem',display:'block',marginBottom:'1.5rem',marginTop:'2.5rem'}}>&larr; Voltar</Link>}
         clienteInfo={
           <div style={{marginBottom: 16, textAlign: 'center'}}>
