@@ -274,6 +274,53 @@ exports.createClientLogin = async (req, res) => {
 
     const emailInUse = await User.findOne({ email: finalEmail });
     if (emailInUse) {
+      const role = resolveRole(emailInUse);
+
+      if (role === 'ADMIN') {
+        return res.status(409).json({ error: 'Esse e-mail já pertence a um usuário ADMIN.' });
+      }
+
+      if (role === 'FILHO') {
+        return res.status(409).json({ error: 'Esse e-mail já pertence a um usuário FILHO.' });
+      }
+
+      if (role === 'NETO') {
+        if (emailInUse.clienteId && String(emailInUse.clienteId) !== String(cliente._id)) {
+          return res.status(409).json({
+            error: 'Esse e-mail já está vinculado a outro cliente. Use outro e-mail ou ajuste o usuário existente.',
+          });
+        }
+
+        let finalLogin = (login || '').trim().toLowerCase();
+        if (finalLogin && finalLogin !== emailInUse.login) {
+          const loginInUse = await User.findOne({ login: finalLogin });
+          if (loginInUse) {
+            return res.status(409).json({ error: 'Já existe usuário com esse login.' });
+          }
+          emailInUse.login = finalLogin;
+        }
+
+        if (!finalLogin && !emailInUse.login) {
+          const baseLogin = buildLoginBaseFromCliente(cliente);
+          finalLogin = await generateUniqueLogin(baseLogin);
+          emailInUse.login = finalLogin;
+        }
+
+        emailInUse.role = 'NETO';
+        emailInUse.clienteId = cliente._id;
+        emailInUse.consultoria = cliente.consultoria || emailInUse.consultoria;
+        emailInUse.nome = (nome || emailInUse.nome || cliente.razaoSocial || '').trim();
+        emailInUse.parentUserId = emailInUse.parentUserId || adminCheck.actor._id;
+        emailInUse.ativo = true;
+        emailInUse.passwordHash = await bcrypt.hash(senha, 10);
+        await emailInUse.save();
+
+        return res.status(200).json({
+          message: 'Login existente vinculado ao cliente e senha definida com sucesso!',
+          user: sanitizeUser(emailInUse),
+        });
+      }
+
       return res.status(409).json({ error: 'Já existe usuário com esse e-mail.' });
     }
 
