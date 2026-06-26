@@ -41,6 +41,31 @@ async function ensureActorAdmin(actorEmail) {
   return { ok: true, actor };
 }
 
+function buildLoginBaseFromCliente(cliente) {
+  const cnpjDigits = String(cliente?.cnpj || '').replace(/\D/g, '');
+  if (cnpjDigits) return `cliente${cnpjDigits.slice(-8)}`;
+
+  const emailPrefix = String(cliente?.email || '')
+    .split('@')[0]
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  if (emailPrefix) return `cliente${emailPrefix}`;
+  return `cliente${Date.now()}`;
+}
+
+async function generateUniqueLogin(baseLogin) {
+  let candidate = baseLogin;
+  let suffix = 1;
+
+  while (await User.findOne({ login: candidate })) {
+    candidate = `${baseLogin}${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 // Endpoint temporário para listar todos os usuários
 exports.listAllUsers = async (req, res) => {
   try {
@@ -211,6 +236,81 @@ exports.createGrandchildUser = async (req, res) => {
   }
 };
 
+exports.createClientLogin = async (req, res) => {
+  try {
+    const { actorEmail, clienteId, senha, login, email, nome } = req.body;
+
+    if (!actorEmail || !clienteId || !senha) {
+      return res.status(400).json({ error: 'actorEmail, clienteId e senha são obrigatórios.' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(clienteId)) {
+      return res.status(400).json({ error: 'clienteId inválido.' });
+    }
+
+    if (String(senha).length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    }
+
+    const adminCheck = await ensureActorAdmin(actorEmail);
+    if (!adminCheck.ok) {
+      return res.status(adminCheck.status).json({ error: adminCheck.error });
+    }
+
+    const cliente = await Cliente.findById(clienteId);
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado.' });
+    }
+
+    const existingNeto = await User.findOne({ clienteId: cliente._id, role: 'NETO' });
+    if (existingNeto) {
+      return res.status(409).json({ error: 'Este cliente já possui login cadastrado.' });
+    }
+
+    const finalEmail = (email || cliente.email || '').trim().toLowerCase();
+    if (!finalEmail) {
+      return res.status(400).json({ error: 'E-mail é obrigatório para criar o login do cliente.' });
+    }
+
+    const emailInUse = await User.findOne({ email: finalEmail });
+    if (emailInUse) {
+      return res.status(409).json({ error: 'Já existe usuário com esse e-mail.' });
+    }
+
+    let finalLogin = (login || '').trim().toLowerCase();
+    if (finalLogin) {
+      const loginInUse = await User.findOne({ login: finalLogin });
+      if (loginInUse) {
+        return res.status(409).json({ error: 'Já existe usuário com esse login.' });
+      }
+    } else {
+      const baseLogin = buildLoginBaseFromCliente(cliente);
+      finalLogin = await generateUniqueLogin(baseLogin);
+    }
+
+    const passwordHash = await bcrypt.hash(senha, 10);
+
+    const netoUser = await User.create({
+      nome: (nome || cliente.razaoSocial || '').trim(),
+      login: finalLogin,
+      email: finalEmail,
+      role: 'NETO',
+      consultoria: cliente.consultoria || '',
+      clienteId: cliente._id,
+      parentUserId: adminCheck.actor._id,
+      ativo: true,
+      passwordHash,
+    });
+
+    return res.status(201).json({
+      message: 'Login do cliente criado com sucesso!',
+      user: sanitizeUser(netoUser),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Erro ao criar login do cliente.', details: err.message });
+  }
+};
+
 exports.listManagedUsers = async (req, res) => {
   try {
     const { actorEmail } = req.query;
@@ -373,16 +473,66 @@ exports.resetPasswordNeto = async (req, res) => {
       return res.status(adminCheck.status).json({ error: adminCheck.error });
     }
 
+    const cliente = await Cliente.findById(clienteId);
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente não encontrado.' });
+    }
+
+    let createdInReset = false;
+
     // Busca usuário NETO associado a esse cliente
-    const netoUser = await User.findOne({ clienteId, role: 'NETO' });
+    let netoUser = await User.findOne({ clienteId, role: 'NETO' });
+
+    // Compatibilidade: usuário antigo sem vínculo de cliente, mas com mesmo e-mail
+    if (!netoUser && cliente.email) {
+      const userByEmail = await User.findOne({ email: cliente.email });
+      if (userByEmail) {
+        const role = resolveRole(userByEmail);
+        if (role === 'ADMIN') {
+          return res.status(409).json({ error: 'E-mail do cliente já está vinculado a um usuário ADMIN.' });
+        }
+
+        userByEmail.role = 'NETO';
+        userByEmail.consultoria = cliente.consultoria || userByEmail.consultoria;
+        userByEmail.clienteId = cliente._id;
+        userByEmail.ativo = true;
+        netoUser = await userByEmail.save();
+      }
+    }
+
+    // Se não existir usuário para o cliente, cria automaticamente
     if (!netoUser) {
-      return res.status(404).json({ error: 'Usuário cliente não encontrado para esse cliente.' });
+      const baseLogin = buildLoginBaseFromCliente(cliente);
+      const login = await generateUniqueLogin(baseLogin);
+
+      const existingEmail = await User.findOne({ email: cliente.email });
+      if (existingEmail) {
+        return res.status(409).json({
+          error: 'Já existe usuário com o e-mail do cliente. Edite o usuário ou altere o e-mail do cliente para continuar.',
+        });
+      }
+
+      const initialPasswordHash = await bcrypt.hash(novaSenha, 10);
+      netoUser = await User.create({
+        nome: cliente.razaoSocial || '',
+        login,
+        email: cliente.email,
+        role: 'NETO',
+        consultoria: cliente.consultoria || '',
+        clienteId: cliente._id,
+        parentUserId: adminCheck.actor._id,
+        ativo: true,
+        passwordHash: initialPasswordHash,
+      });
+      createdInReset = true;
     }
 
     // Atualiza senha
-    const passwordHash = await bcrypt.hash(novaSenha, 10);
-    netoUser.passwordHash = passwordHash;
-    await netoUser.save();
+    if (!createdInReset) {
+      const passwordHash = await bcrypt.hash(novaSenha, 10);
+      netoUser.passwordHash = passwordHash;
+      await netoUser.save();
+    }
 
     return res.json({ 
       message: 'Senha resetada com sucesso!',

@@ -11,6 +11,7 @@ router.get('/consultoria', userController.getUserConsultoria);
 router.get('/scope', userController.getUserScope);
 router.post('/create-child', userController.createChildUser);
 router.post('/create-grandchild', userController.createGrandchildUser);
+router.post('/create-client-login', userController.createClientLogin);
 router.get('/managed', userController.listManagedUsers);
 router.put('/managed/:id', userController.updateManagedUser);
 router.patch('/managed/:id/active', userController.toggleManagedUserActive);

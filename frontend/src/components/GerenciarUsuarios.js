@@ -3,6 +3,7 @@ import API_URL from '../services/api';
 import {
   criarUsuarioFilho,
   criarUsuarioNeto,
+  criarLoginClienteExistente,
   listarUsuariosGerenciaveis,
   editarUsuarioGerenciavel,
   inativarOuAtivarUsuario,
@@ -23,6 +24,7 @@ export default function GerenciarUsuarios({ actorEmail }) {
 
   const [filho, setFilho] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '' });
   const [neto, setNeto] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
+  const [loginCliente, setLoginCliente] = useState({ clienteId: '', login: '', email: '', senha: '', confirmaSenha: '' });
   const [resetSenha, setResetSenha] = useState({ clienteId: '', novaSenha: '', confirmaSenha: '' });
 
   useEffect(() => {
@@ -60,6 +62,16 @@ export default function GerenciarUsuarios({ actorEmail }) {
     return clientes.filter(c => c.consultoria === neto.consultoria);
   }, [clientes, neto.consultoria]);
 
+  const clientesSemLogin = useMemo(() => {
+    const clienteIdsComNeto = new Set(
+      usuarios
+        .filter(u => u.role === 'NETO' && u.cliente?.id)
+        .map(u => String(u.cliente.id))
+    );
+
+    return clientes.filter(c => !clienteIdsComNeto.has(String(c._id)));
+  }, [clientes, usuarios]);
+
   const onCriarFilho = async (e) => {
     e.preventDefault();
     setMsg('');
@@ -80,6 +92,36 @@ export default function GerenciarUsuarios({ actorEmail }) {
       await criarUsuarioNeto({ ...neto, actorEmail });
       setMsg('✅ Usuário neto criado com sucesso.');
       setNeto({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
+      carregarUsuarios();
+    } catch (err) {
+      setMsg(`❌ ${err.message}`);
+    }
+  };
+
+  const onCriarLoginCliente = async (e) => {
+    e.preventDefault();
+    setMsg('');
+
+    if (loginCliente.senha !== loginCliente.confirmaSenha) {
+      setMsg('❌ As senhas do novo login não conferem.');
+      return;
+    }
+
+    if (!loginCliente.senha || loginCliente.senha.length < 6) {
+      setMsg('❌ A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    try {
+      await criarLoginClienteExistente({
+        actorEmail,
+        clienteId: loginCliente.clienteId,
+        login: loginCliente.login,
+        email: loginCliente.email,
+        senha: loginCliente.senha,
+      });
+      setMsg('✅ Login de cliente criado com sucesso.');
+      setLoginCliente({ clienteId: '', login: '', email: '', senha: '', confirmaSenha: '' });
       carregarUsuarios();
     } catch (err) {
       setMsg(`❌ ${err.message}`);
@@ -195,10 +237,61 @@ export default function GerenciarUsuarios({ actorEmail }) {
       {msg && <p style={{ marginTop: 10, fontWeight: 600 }}>{msg}</p>}
 
       <div style={{ marginTop: 16, background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0' }}>
+        <form onSubmit={onCriarLoginCliente} style={{ display: 'grid', gap: 8 }}>
+          <h3 style={{ margin: 0 }}>Criar Login para Cliente já Cadastrado</h3>
+          <p style={{ marginTop: 0, fontSize: '0.9rem', color: '#666' }}>
+            Selecione um cliente existente sem login e crie o primeiro acesso NETO dele.
+          </p>
+          <select
+            style={baseStyle()}
+            required
+            value={loginCliente.clienteId}
+            onChange={e => setLoginCliente(v => ({ ...v, clienteId: e.target.value }))}
+            disabled={clientesSemLogin.length === 0}
+          >
+            <option value="">{clientesSemLogin.length === 0 ? 'Todos os clientes já possuem login' : 'Selecione o cliente'}</option>
+            {clientesSemLogin.map(c => <option key={c._id} value={c._id}>{c.razaoSocial} ({c.cnpj})</option>)}
+          </select>
+          <input
+            style={baseStyle()}
+            placeholder="Login (opcional, sistema gera se vazio)"
+            value={loginCliente.login}
+            onChange={e => setLoginCliente(v => ({ ...v, login: e.target.value }))}
+          />
+          <input
+            style={baseStyle()}
+            placeholder="E-mail (opcional, usa o e-mail do cliente se vazio)"
+            type="email"
+            value={loginCliente.email}
+            onChange={e => setLoginCliente(v => ({ ...v, email: e.target.value }))}
+          />
+          <input
+            style={baseStyle()}
+            placeholder="Senha"
+            required
+            type="password"
+            value={loginCliente.senha}
+            onChange={e => setLoginCliente(v => ({ ...v, senha: e.target.value }))}
+          />
+          <input
+            style={baseStyle()}
+            placeholder="Confirmar senha"
+            required
+            type="password"
+            value={loginCliente.confirmaSenha}
+            onChange={e => setLoginCliente(v => ({ ...v, confirmaSenha: e.target.value }))}
+          />
+          <button type="submit" style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 'bold' }}>
+            Criar Login do Cliente
+          </button>
+        </form>
+      </div>
+
+      <div style={{ marginTop: 16, background: '#fff', borderRadius: 8, padding: 12, border: '1px solid #e2e8f0' }}>
         <form onSubmit={onResetarSenha} style={{ display: 'grid', gap: 8 }}>
           <h3 style={{ margin: 0 }}>Resetar Senha de Cliente NETO</h3>
           <p style={{ marginTop: 0, fontSize: '0.9rem', color: '#666' }}>
-            Use este formulário para resetar a senha de um cliente que já possui acesso cadastrado.
+            Use este formulário para resetar a senha. Se o cliente ainda não tiver login, o acesso NETO será criado automaticamente.
           </p>
           <select 
             style={baseStyle()} 

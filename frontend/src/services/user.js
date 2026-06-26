@@ -52,6 +52,21 @@ export async function criarUsuarioNeto(payload) {
   return data.user;
 }
 
+export async function criarLoginClienteExistente(payload) {
+  const res = await fetch(`${API_URL}/api/user/create-client-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error || 'Erro ao criar login para cliente');
+  }
+
+  return data.user;
+}
+
 export async function listarUsuariosGerenciaveis(actorEmail) {
   const res = await fetch(`${API_URL}/api/user/managed?actorEmail=${encodeURIComponent(actorEmail)}`);
   const data = await res.json();
