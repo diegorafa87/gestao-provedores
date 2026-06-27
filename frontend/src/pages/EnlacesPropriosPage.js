@@ -38,6 +38,18 @@ function getHistoricoKey() {
 const historicoKey = getHistoricoKey();
 
 export default function EnlacesPropriosPage() {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = authUser?.role || localStorage.getItem('roleUsuario') || '';
+  const email = authUser?.email || localStorage.getItem('emailUsuario') || '';
+  const isAdmin = role === 'ADMIN' || email === 'diegorafa87@gmail.com';
+
   const [ano, setAno] = useState('2024');
   const [form, setForm] = useState({
     ANO: '2024',
@@ -52,6 +64,68 @@ export default function EnlacesPropriosPage() {
   });
   const [linhas, setLinhas] = useState([]);
   const [historico, setHistorico] = useState([]);
+
+  function validarPdf(file) {
+    if (!file) return 'Nenhum arquivo selecionado.';
+    const nome = (file.name || '').toLowerCase();
+    const tipo = (file.type || '').toLowerCase();
+    if (tipo !== 'application/pdf' && !nome.endsWith('.pdf')) {
+      return 'Selecione um arquivo PDF válido.';
+    }
+    return null;
+  }
+
+  function fileParaDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo PDF.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function baixarComprovante(item) {
+    if (!item?.comprovanteDataUrl) {
+      alert('Comprovante não disponível para este arquivo.');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = item.comprovanteDataUrl;
+    a.download = item.comprovanteNome || `${(item.nome || 'comprovante').replace(/\.[^./]+$/, '')}_comprovante.pdf`;
+    a.click();
+  }
+
+  async function handleUploadComprovante(idx, file) {
+    const erroValidacao = validarPdf(file);
+    if (erroValidacao) {
+      alert(erroValidacao);
+      return;
+    }
+
+    try {
+      const dataUrl = await fileParaDataURL(file);
+      const agora = new Date().toLocaleString();
+      const usuario = localStorage.getItem('emailUsuario') || 'ADMIN';
+
+      setHistorico(prev => {
+        const novo = prev.map((item, i) => {
+          if (i !== idx) return item;
+          return {
+            ...item,
+            comprovanteDataUrl: dataUrl,
+            comprovanteNome: file.name || `${(item.nome || 'comprovante').replace(/\.[^./]+$/, '')}_comprovante.pdf`,
+            comprovanteAtualizadoEm: agora,
+            comprovanteAtualizadoPor: usuario
+          };
+        });
+        localStorage.setItem(getHistoricoKey(), JSON.stringify(novo));
+        return novo;
+      });
+      alert('Comprovante PDF enviado com sucesso!');
+    } catch (err) {
+      alert(err?.message || 'Erro ao enviar comprovante PDF.');
+    }
+  }
 
   // Carrega histórico do localStorage ao iniciar e sempre que o cliente mudar
   useEffect(() => {
@@ -362,7 +436,14 @@ export default function EnlacesPropriosPage() {
               <tbody>
                 {historico.map((item, idx) => (
                   <tr key={item.nome} style={{background: idx%2?'#fafafa':'#fff'}}>
-                    <td style={{padding:'4px 8px'}}>{item.nome}</td>
+                    <td style={{padding:'4px 8px'}}>
+                      {item.nome}
+                      {item?.comprovanteDataUrl && (
+                        <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 8 }}>
+                          • Comprovante disponível
+                        </span>
+                      )}
+                    </td>
                     <td style={{padding:'4px 8px'}}>{item.data}</td>
                     <td style={{textAlign:'center'}}>
                       <button onClick={() => {
@@ -374,6 +455,46 @@ export default function EnlacesPropriosPage() {
                         link.click();
                         document.body.removeChild(link);
                       }} style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',marginRight:8,cursor:'pointer'}}>Baixar</button>
+                      {isAdmin && (
+                        <>
+                          <input
+                            id={`upload-comprovante-enlaces-${idx}`}
+                            type="file"
+                            accept="application/pdf,.pdf"
+                            style={{ display: 'none' }}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              await handleUploadComprovante(idx, file);
+                              e.target.value = '';
+                            }}
+                          />
+                          <button
+                            onClick={() => {
+                              const input = document.getElementById(`upload-comprovante-enlaces-${idx}`);
+                              if (input) input.click();
+                            }}
+                            style={{background:'#455a64',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',marginRight:8,cursor:'pointer'}}
+                          >
+                            {item?.comprovanteDataUrl ? 'Trocar comprovante' : 'Enviar comprovante PDF'}
+                          </button>
+                          {item?.comprovanteDataUrl && (
+                            <button
+                              onClick={() => baixarComprovante(item)}
+                              style={{background:'#2e7d32',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',marginRight:8,cursor:'pointer'}}
+                            >
+                              Baixar comprovante
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {!isAdmin && item?.comprovanteDataUrl && (
+                        <button
+                          onClick={() => baixarComprovante(item)}
+                          style={{background:'#2e7d32',color:'#fff',border:'none',borderRadius:4,padding:'2px 10px',marginRight:8,cursor:'pointer'}}
+                        >
+                          Baixar comprovante
+                        </button>
+                      )}
                       <button onClick={() => {
                         if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           const novoHistorico = historico.filter((_, i) => i !== idx);

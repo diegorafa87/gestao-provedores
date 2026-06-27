@@ -8,6 +8,17 @@ import { Link } from 'react-router-dom';
 export default function CompartilhamentoPostesPage() {
   const inputContratoRef = useRef();
   const [camposContrato, setCamposContrato] = useState(null);
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = authUser?.role || localStorage.getItem('roleUsuario') || '';
+  const email = authUser?.email || localStorage.getItem('emailUsuario') || '';
+  const isAdmin = role === 'ADMIN' || email === 'diegorafa87@gmail.com';
 
   // Upload e leitura automática do contrato de postes
   const handleContratoUpload = async (e) => {
@@ -67,6 +78,68 @@ export default function CompartilhamentoPostesPage() {
   } catch {}
 
   const [historicoArquivos, setHistoricoArquivos] = React.useState(() => carregarHistoricoPostesDoStorage(cnpjCliente));
+
+  function validarPdf(file) {
+    if (!file) return 'Nenhum arquivo selecionado.';
+    const nome = (file.name || '').toLowerCase();
+    const tipo = (file.type || '').toLowerCase();
+    if (tipo !== 'application/pdf' && !nome.endsWith('.pdf')) {
+      return 'Selecione um arquivo PDF válido.';
+    }
+    return null;
+  }
+
+  function fileParaDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo PDF.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function baixarComprovante(arq) {
+    if (!arq?.comprovanteDataUrl) {
+      alert('Comprovante não disponível para este arquivo.');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = arq.comprovanteDataUrl;
+    a.download = arq.comprovanteNome || `${(arq.nome || 'comprovante').replace(/\.[^./]+$/, '')}_comprovante.pdf`;
+    a.click();
+  }
+
+  async function handleUploadComprovante(idx, file) {
+    const erroValidacao = validarPdf(file);
+    if (erroValidacao) {
+      alert(erroValidacao);
+      return;
+    }
+    try {
+      const dataUrl = await fileParaDataURL(file);
+      const agora = new Date().toLocaleString();
+      const usuario = localStorage.getItem('emailUsuario') || 'ADMIN';
+
+      setHistoricoArquivos(prev => {
+        const novo = prev.map((item, i) => {
+          if (i !== idx) return item;
+          return {
+            ...item,
+            comprovanteDataUrl: dataUrl,
+            comprovanteNome: file.name || `${(item.nome || 'comprovante').replace(/\.[^./]+$/, '')}_comprovante.pdf`,
+            comprovanteAtualizadoEm: agora,
+            comprovanteAtualizadoPor: usuario
+          };
+        });
+        salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+        return novo;
+      });
+      alert('Comprovante PDF enviado com sucesso!');
+    } catch (err) {
+      alert(err?.message || 'Erro ao enviar comprovante PDF.');
+    }
+  }
+
   let clienteInfo = null;
   let razaoSocial = '';
   try {
@@ -404,6 +477,11 @@ export default function CompartilhamentoPostesPage() {
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>
                       {arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
+                      {arq?.comprovanteDataUrl && (
+                        <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 8 }}>
+                          • Comprovante disponível
+                        </span>
+                      )}
                     </span>
                     <button
                       style={{ marginLeft: 12, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
@@ -421,6 +499,46 @@ export default function CompartilhamentoPostesPage() {
                     >
                       <IconDownload />
                     </button>
+                    {isAdmin && (
+                      <>
+                        <input
+                          id={`upload-comprovante-postes-${idx}`}
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          style={{ display: 'none' }}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            await handleUploadComprovante(idx, file);
+                            e.target.value = '';
+                          }}
+                        />
+                        <button
+                          style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#455a64', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                          onClick={() => {
+                            const input = document.getElementById(`upload-comprovante-postes-${idx}`);
+                            if (input) input.click();
+                          }}
+                        >
+                          {arq?.comprovanteDataUrl ? 'Trocar comprovante' : 'Enviar comprovante PDF'}
+                        </button>
+                        {arq?.comprovanteDataUrl && (
+                          <button
+                            style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                            onClick={() => baixarComprovante(arq)}
+                          >
+                            Baixar comprovante
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {!isAdmin && arq?.comprovanteDataUrl && (
+                      <button
+                        style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#2e7d32', color: '#fff', cursor: 'pointer', fontSize: 13 }}
+                        onClick={() => baixarComprovante(arq)}
+                      >
+                        Baixar comprovante
+                      </button>
+                    )}
                     <button
                       style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
                       onClick={() => {
