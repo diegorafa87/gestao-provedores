@@ -46,9 +46,9 @@ export default function EnlacesPropriosPage() {
       return null;
     }
   })();
-  const role = authUser?.role || localStorage.getItem('roleUsuario') || '';
-  const email = authUser?.email || localStorage.getItem('emailUsuario') || '';
-  const isAdmin = role === 'ADMIN' || email === 'diegorafa87@gmail.com';
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
 
   const [ano, setAno] = useState('2024');
   const [form, setForm] = useState({
