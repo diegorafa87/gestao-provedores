@@ -4,11 +4,13 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
   const { nome, nomeDetalhes, data, usuario } = req.body;
 
   const normalizarTexto = (valor = '') => String(valor).trim().toLowerCase();
+  const normalizarCnpj = (valor = '') => String(valor).replace(/\D/g, '');
   const obterNomeArquivo = (item = {}) => item.nome || item?.detalhes?.nomeArquivo || '';
 
   const nomeAlvo = normalizarTexto(nome || nomeDetalhes || '');
   const dataAlvo = normalizarTexto(data || '');
   const usuarioAlvo = normalizarTexto(usuario || '');
+  const cnpjAlvo = normalizarCnpj(usuario || '');
 
   let logs = [];
   try {
@@ -27,13 +29,15 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
     const nomeItem = normalizarTexto(obterNomeArquivo(item));
     const dataItem = normalizarTexto(item.data || '');
     const usuarioItem = normalizarTexto(item.usuario || '');
+    const cnpjItem = normalizarCnpj(item.usuario || '');
 
     const mesmoNome = nomeAlvo ? nomeItem === nomeAlvo : false;
     const mesmaData = dataAlvo ? dataItem === dataAlvo : true;
     const mesmoUsuario = usuarioAlvo ? usuarioItem === usuarioAlvo : true;
+    const mesmoCnpj = cnpjAlvo ? cnpjItem === cnpjAlvo : false;
 
     const removerExato = mesmoNome && mesmaData && mesmoUsuario;
-    const removerDuplicadoMesmoArquivo = mesmoNome && mesmoUsuario;
+    const removerDuplicadoMesmoArquivo = mesmoNome && (mesmoUsuario || mesmoCnpj);
 
     // Remove o item exato e também entradas duplicadas do mesmo arquivo
     // com suporte a legado (nome em item.nome ou em item.detalhes.nomeArquivo).

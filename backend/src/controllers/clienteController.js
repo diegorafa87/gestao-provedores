@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 const Cliente = require('../models/Cliente');
 const User = require('../../models/User');
 const { registrarLog } = require('./logController');
@@ -23,6 +25,30 @@ function userCanAccessCliente(user, cliente) {
   if (role === 'FILHO') return (cliente.consultoria || '') === (user?.consultoria || '');
   if (role === 'NETO') return String(user?.clienteId || '') === String(cliente?._id || '');
   return false;
+}
+
+function removerHistoricoSCMPorCnpj(cnpj = '') {
+  const cnpjLimpo = String(cnpj).replace(/\D/g, '');
+  if (!cnpjLimpo) return;
+
+  const dbLogPath = path.join(__dirname, '../db_logs.json');
+  let logs = [];
+
+  try {
+    const raw = fs.readFileSync(dbLogPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    logs = Array.isArray(parsed) ? parsed : (parsed.logs || []);
+  } catch {
+    return;
+  }
+
+  const filtrados = logs.filter((item) => {
+    if (item?.acao !== 'GERAR_CSV_SCM') return true;
+    const usuarioCnpj = String(item?.usuario || '').replace(/\D/g, '');
+    return usuarioCnpj !== cnpjLimpo;
+  });
+
+  fs.writeFileSync(dbLogPath, JSON.stringify(filtrados, null, 2));
 }
 
 exports.cadastrarCliente = async (req, res) => {
@@ -156,6 +182,7 @@ exports.excluirCliente = async (req, res) => {
       return res.status(403).json({ error: 'Acesso negado para excluir este cliente.' });
     }
 
+    removerHistoricoSCMPorCnpj(clienteAtual.cnpj);
     await Cliente.findByIdAndDelete(id);
     registrarLog('EXCLUIR_CLIENTE', id, {});
     res.json({ success: true });
