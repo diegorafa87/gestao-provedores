@@ -1,43 +1,24 @@
-          <>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>
-                <span style={{ fontWeight: 700 }}>ESTAÇÃO B</span>
-                <input
-                  type="text"
-                  placeholder="Nome/ID da estação de origem. Deve ser o mesmo de Estações."
-                  style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 4, border: '1px solid #ccc', fontStyle: 'italic' }}
-                />
-              </label>
-            </div>
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ fontWeight: 700, display: 'block', marginBottom: 6 }}>
-                <span style={{ fontWeight: 700 }}>ID ENLACE</span>
-                <input
-                  type="text"
-                  placeholder="ID do enlace"
-                  style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 4, border: '1px solid #ccc', fontStyle: 'italic' }}
-                />
-              </label>
-            </div>
-          </>
 import React, { useState, useEffect } from 'react';
 import MenuLateral from '../components/MenuLateral';
+import { useLocation } from 'react-router-dom';
 
-// Gera a chave do histórico por CNPJ
-function getHistoricoKey() {
+function getClienteSelecionado() {
   try {
     const salvo = localStorage.getItem('clienteSelecionado');
-    if (salvo) {
-      const obj = JSON.parse(salvo);
-      if (obj.cnpj) return 'historicoEnlacesProprios_' + obj.cnpj.replace(/\D/g, '');
-    }
-  } catch {}
-  return 'historicoEnlacesProprios_semcnpj';
+    if (!salvo) return null;
+    return JSON.parse(salvo);
+  } catch {
+    return null;
+  }
 }
 
-const historicoKey = getHistoricoKey();
+function getHistoricoKeyByCnpj(cnpj) {
+  const cnpjNormalizado = String(cnpj || '').replace(/\D/g, '');
+  return `historicoEnlacesProprios_${cnpjNormalizado || 'semcnpj'}`;
+}
 
 export default function EnlacesPropriosPage() {
+  const location = useLocation();
   const authUser = (() => {
     try {
       const raw = localStorage.getItem('authUser');
@@ -64,6 +45,8 @@ export default function EnlacesPropriosPage() {
   });
   const [linhas, setLinhas] = useState([]);
   const [historico, setHistorico] = useState([]);
+  const [clienteCnpj, setClienteCnpj] = useState('');
+  const historicoKey = getHistoricoKeyByCnpj(clienteCnpj);
 
   function validarPdf(file) {
     if (!file) return 'Nenhum arquivo selecionado.';
@@ -118,7 +101,7 @@ export default function EnlacesPropriosPage() {
             comprovanteAtualizadoPor: usuario
           };
         });
-        localStorage.setItem(getHistoricoKey(), JSON.stringify(novo));
+        localStorage.setItem(historicoKey, JSON.stringify(novo));
         return novo;
       });
       alert('Comprovante PDF enviado com sucesso!');
@@ -127,17 +110,22 @@ export default function EnlacesPropriosPage() {
     }
   }
 
+  // Carrega cliente selecionado ao abrir e ao navegar
+  useEffect(() => {
+    const cliente = getClienteSelecionado();
+    setClienteCnpj(String(cliente?.cnpj || '').replace(/\D/g, ''));
+  }, [location]);
+
   // Carrega histórico do localStorage ao iniciar e sempre que o cliente mudar
   useEffect(() => {
-    const key = getHistoricoKey();
     try {
-      const salvo = localStorage.getItem(key);
+      const salvo = localStorage.getItem(historicoKey);
       if (salvo) setHistorico(JSON.parse(salvo));
       else setHistorico([]);
     } catch {
       setHistorico([]);
     }
-  }, [localStorage.getItem('clienteSelecionado')]);
+  }, [historicoKey]);
 
   // Recupera info do cliente do localStorage
   let clienteInfo = null;
@@ -181,6 +169,10 @@ export default function EnlacesPropriosPage() {
 
   // Gera o CSV, salvando a linha antes se necessário
   const handleGerarCSV = () => {
+    if (!clienteCnpj) {
+      alert('Selecione um cliente antes de gerar o CSV.');
+      return;
+    }
     // Se o form atual tem dados, salva antes de exportar
     const algumCampoPreenchido = Object.values(form).some(v => v && v !== '');
     let novasLinhas = linhas;
@@ -238,7 +230,7 @@ export default function EnlacesPropriosPage() {
     // Salva histórico (NÃO FAZ DOWNLOAD DIRETO)
     const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
     setHistorico(novoHistorico);
-    localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
+    localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
     setLinhas([]);
   };
 

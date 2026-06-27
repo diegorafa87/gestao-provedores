@@ -82,6 +82,10 @@ export default function EnlacesContratadosPage() {
   }
 
   async function handleUploadComprovante(idx, file) {
+    if (!clienteSelecionado?.cnpj) {
+      alert('Selecione um cliente antes de enviar comprovante.');
+      return;
+    }
     const erroValidacao = validarPdf(file);
     if (erroValidacao) {
       alert(erroValidacao);
@@ -120,6 +124,10 @@ export default function EnlacesContratadosPage() {
 
   function gerarCSV() {
     if (!linhas || linhas.length === 0) return;
+    if (!clienteSelecionado?.cnpj) {
+      alert('Selecione um cliente antes de gerar o CSV.');
+      return;
+    }
     const header = ['Ano', 'Origem', 'Destino', 'ID Enlace', 'Meio', 'CNPJ'];
     const csvRows = [header.join(';')];
     linhas.forEach(linha => {

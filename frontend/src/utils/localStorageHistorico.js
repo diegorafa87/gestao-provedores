@@ -2,7 +2,8 @@
 
 // Agora cada cliente tem sua própria chave de histórico, baseada no CNPJ
 function getStorageKey(cnpj) {
-  return `historicoArquivosEnlacesContratados_${cnpj || 'semcnpj'}`;
+  const cnpjNormalizado = String(cnpj || '').replace(/\D/g, '');
+  return `historicoArquivosEnlacesContratados_${cnpjNormalizado || 'semcnpj'}`;
 }
 
 export function salvarHistoricoNoStorage(historico, cnpj) {

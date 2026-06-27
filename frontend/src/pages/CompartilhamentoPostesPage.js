@@ -3,9 +3,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { IconDownload } from '../components/IconsHistorico';
 import { salvarHistoricoPostesNoStorage, carregarHistoricoPostesDoStorage, normalizarConteudoCSV, criarBlobCSV } from '../utils/localStorageHistoricoPostes';
 import MenuLateral from '../components/MenuLateral';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function CompartilhamentoPostesPage() {
+  const location = useLocation();
   const inputContratoRef = useRef();
   const [camposContrato, setCamposContrato] = useState(null);
   const authUser = (() => {
@@ -67,17 +68,24 @@ export default function CompartilhamentoPostesPage() {
   });
   const [linhaSalva, setLinhaSalva] = React.useState(null);
   const [historicoLinhas, setHistoricoLinhas] = React.useState([]);
-  // Busca CNPJ do cliente selecionado
-  let cnpjCliente = '';
-  try {
-    const salvo = localStorage.getItem('clienteSelecionado');
-    if (salvo) {
-      const obj = JSON.parse(salvo);
-      if (obj.cnpj) cnpjCliente = obj.cnpj;
-    }
-  } catch {}
+  const [clienteCnpj, setClienteCnpj] = useState('');
+  const [historicoArquivos, setHistoricoArquivos] = React.useState([]);
 
-  const [historicoArquivos, setHistoricoArquivos] = React.useState(() => carregarHistoricoPostesDoStorage(cnpjCliente));
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('clienteSelecionado');
+      if (salvo) {
+        const obj = JSON.parse(salvo);
+        setClienteCnpj(String(obj?.cnpj || '').replace(/\D/g, ''));
+        return;
+      }
+    } catch {}
+    setClienteCnpj('');
+  }, [location]);
+
+  useEffect(() => {
+    setHistoricoArquivos(carregarHistoricoPostesDoStorage(clienteCnpj));
+  }, [clienteCnpj]);
 
   function validarPdf(file) {
     if (!file) return 'Nenhum arquivo selecionado.';
@@ -131,7 +139,7 @@ export default function CompartilhamentoPostesPage() {
             comprovanteAtualizadoPor: usuario
           };
         });
-        salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+        salvarHistoricoPostesNoStorage(novo, clienteCnpj);
         return novo;
       });
       alert('Comprovante PDF enviado com sucesso!');
@@ -366,6 +374,10 @@ export default function CompartilhamentoPostesPage() {
               disabled={historicoLinhas.length === 0}
               onClick={() => {
                 if (historicoLinhas.length === 0) return;
+                if (!clienteCnpj) {
+                  alert('Selecione um cliente antes de gerar o CSV.');
+                  return;
+                }
                 // Cabeçalho igual ao arquivo de exemplo
                 const header = [
                   'CNPJ_OUTORGADA',
@@ -426,7 +438,7 @@ export default function CompartilhamentoPostesPage() {
                 };
                 setHistoricoArquivos(h => {
                   const novo = [novoArquivo, ...h];
-                  salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+                  salvarHistoricoPostesNoStorage(novo, clienteCnpj);
                   return novo;
                 });
                 alert('Arquivo CSV gerado e salvo no histórico!');
@@ -545,7 +557,7 @@ export default function CompartilhamentoPostesPage() {
                         if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           setHistoricoArquivos(h => {
                             const novo = h.filter((_, i) => i !== idx);
-                            salvarHistoricoPostesNoStorage(novo, cnpjCliente);
+                            salvarHistoricoPostesNoStorage(novo, clienteCnpj);
                             return novo;
                           });
                         }
