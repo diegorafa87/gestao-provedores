@@ -14,6 +14,10 @@ const camposCSV = [
   'ACESSOS',
 ];
 
+function limparCNPJ(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
 function normalizarConteudoCsvTVPA(conteudo = '') {
   let csv = String(conteudo || '')
     .replace(/^\uFEFF/, '')
@@ -50,7 +54,7 @@ const codUfToSigla = {
 
 const CadastroTVpA = ({ cnpj }) => {
   // Normaliza o CNPJ removendo formatação para usar como chave de localStorage
-  const cnpjNormalizado = (cnpj || '').replace(/[^\d]/g, '');
+  const cnpjNormalizado = limparCNPJ(cnpj);
   const historicoKey = `historicoTVpA_${cnpjNormalizado}`;
   const [form, setForm] = useState({});
   const [historico, setHistorico] = useState(() => {
@@ -86,9 +90,12 @@ const CadastroTVpA = ({ cnpj }) => {
     try {
       const clienteSel = JSON.parse(localStorage.getItem('clienteSelecionado'));
       if (clienteSel && clienteSel.cnpj) {
-        cnpjValue = clienteSel.cnpj;
+        cnpjValue = limparCNPJ(clienteSel.cnpj);
       }
     } catch {}
+    if (!cnpjValue) {
+      cnpjValue = cnpjNormalizado;
+    }
     // Monta as linhas do CSV na ordem correta
     const rows = linhas.map(linha => {
       return camposCSV.map(campo => {
