@@ -3,14 +3,47 @@ import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistor
 import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
+import { getAcompanhamento } from '../services/acompanhamento';
+
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
 
 function obterNomeArquivoHistorico(item) {
   return item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
 }
 
+function extrairAnoMesDoNomeCSV(nomeArquivo = '') {
+  const nome = String(nomeArquivo || '');
+  const match = nome.match(/_(\d{4})_(\d{1,2})\.csv$/i);
+  if (!match) return null;
+
+  const ano = Number(match[1]);
+  const mesNumero = Number(match[2]);
+  if (!Number.isInteger(ano) || !Number.isInteger(mesNumero) || mesNumero < 1 || mesNumero > 12) {
+    return null;
+  }
+
+  return { ano, mesNumero };
+}
+
 export default function HistoricoSCMPage() {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
+
   const [clienteSelecionado, setClienteSelecionado] = useState({ cnpj: 'semcnpj', razaoSocial: '' });
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
+  const [linksSCM, setLinksSCM] = useState({});
 
   useEffect(() => {
     try {
@@ -23,11 +56,19 @@ export default function HistoricoSCMPage() {
           const cnpjLimpo = (obj.cnpj || '').replace(/\D/g, '');
           setHistoricoArquivos(data.filter(item => (item.usuario || '').replace(/\D/g, '') === cnpjLimpo));
         });
+
+        const cnpjLimpo = (obj.cnpj || '').replace(/\D/g, '');
+        if (cnpjLimpo) {
+          getAcompanhamento('SCM', cnpjLimpo)
+            .then(res => setLinksSCM(res?.links || {}))
+            .catch(() => setLinksSCM({}));
+        }
         return;
       }
     } catch {}
     setClienteSelecionado({ cnpj: 'semcnpj', razaoSocial: '' });
     setHistoricoArquivos([]);
+    setLinksSCM({});
   }, []);
 
   return (
@@ -73,6 +114,50 @@ export default function HistoricoSCMPage() {
                     >
                       <IconDownload />
                     </button>
+                    {(() => {
+                      const nomeArquivo = obterNomeArquivoHistorico(arq);
+                      const info = extrairAnoMesDoNomeCSV(nomeArquivo);
+                      const mesNome = info ? MESES[info.mesNumero - 1] : '';
+                      const linkPdf = info ? linksSCM?.[info.ano]?.[mesNome] : '';
+                      const temComprovante = Boolean(linkPdf && String(linkPdf).trim());
+                      const podeVerSetaComprovante = isAdmin || temComprovante;
+
+                      if (!podeVerSetaComprovante) return null;
+
+                      return (
+                        <button
+                          style={{ marginLeft: 8, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
+                          title="Baixar comprovante PDF"
+                          aria-label="Baixar comprovante PDF"
+                          onClick={() => {
+                            if (!info) {
+                              alert('Não foi possível identificar ano e mês no nome do CSV para localizar o comprovante PDF.');
+                              return;
+                            }
+
+                            if (!linkPdf || !String(linkPdf).trim()) {
+                              alert('Comprovante PDF não encontrado para este CSV.');
+                              return;
+                            }
+
+                            try {
+                              const anchor = document.createElement('a');
+                              anchor.href = linkPdf;
+                              anchor.target = '_blank';
+                              anchor.rel = 'noopener noreferrer';
+                              anchor.download = `COMP_${nomeArquivo.replace(/\.csv$/i, '')}.pdf`;
+                              document.body.appendChild(anchor);
+                              anchor.click();
+                              document.body.removeChild(anchor);
+                            } catch {
+                              window.open(linkPdf, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                        >
+                          <IconDownload color={temComprovante ? '#43a047' : '#1976d2'} />
+                        </button>
+                      );
+                    })()}
                     <button
                       style={{ marginLeft: 8, padding: '2px 10px', borderRadius: 4, border: 'none', background: '#e53935', color: '#fff', cursor: 'pointer', fontSize: 13 }}
                       onClick={async () => {

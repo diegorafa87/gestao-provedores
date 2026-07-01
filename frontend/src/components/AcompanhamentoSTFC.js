@@ -32,6 +32,20 @@ function normalizarToken(texto = '') {
     .toUpperCase();
 }
 
+function extrairAnoMesDoNomeCSV(nomeArquivo = '') {
+  const nome = String(nomeArquivo || '');
+  const match = nome.match(/_(\d{4})_(\d{1,2})\.csv$/i);
+  if (!match) return null;
+
+  const ano = Number(match[1]);
+  const mesNumero = Number(match[2]);
+  if (!Number.isInteger(ano) || !Number.isInteger(mesNumero) || mesNumero < 1 || mesNumero > 12) {
+    return null;
+  }
+
+  return { ano, mesNumero };
+}
+
 function ComprovanteSTFCDownload({ ano, mes, mesNumero, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
@@ -137,6 +151,18 @@ function ComprovanteSTFCDownload({ ano, mes, mesNumero, razaoSocial, link, onSav
 }
 
 export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
+
   const [dados, setDados] = useState(initialData());
   const [logsSTFC, setLogsSTFC] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -385,7 +411,7 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
                   <td style={{ padding: '4px 8px' }}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{ padding: '4px 8px' }}>{item.data || '-'}</td>
                   <td style={{ padding: '4px 8px' }}>{item.usuario || '-'}</td>
-                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                  <td style={{ textAlign: 'center', padding: '4px 8px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button
                       onClick={() => {
                         const BOM = '\uFEFF';
@@ -404,6 +430,50 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
                     >
                       <span role="img" aria-label="download">⬇️</span>
                     </button>
+                    {(() => {
+                      const nomeArquivo = obterNomeArquivoHistorico(item);
+                      const info = extrairAnoMesDoNomeCSV(nomeArquivo);
+                      const mesNome = info ? MESES[info.mesNumero - 1] : '';
+                      const linkPdf = info ? dados?.[info.ano]?.[mesNome]?.link : '';
+                      const temComprovante = Boolean(linkPdf && String(linkPdf).trim());
+                      const podeVerSetaComprovante = isAdmin || temComprovante;
+
+                      if (!podeVerSetaComprovante) return null;
+
+                      return (
+                        <button
+                          onClick={() => {
+                            if (!info) {
+                              alert('Não foi possível identificar ano e mês no nome do CSV para localizar o comprovante PDF.');
+                              return;
+                            }
+
+                            if (!linkPdf || !String(linkPdf).trim()) {
+                              alert('Comprovante PDF não encontrado para este CSV.');
+                              return;
+                            }
+
+                            try {
+                              const anchor = document.createElement('a');
+                              anchor.href = linkPdf;
+                              anchor.target = '_blank';
+                              anchor.rel = 'noopener noreferrer';
+                              anchor.download = `COMP_${nomeArquivo.replace(/\.csv$/i, '')}.pdf`;
+                              document.body.appendChild(anchor);
+                              anchor.click();
+                              document.body.removeChild(anchor);
+                            } catch {
+                              window.open(linkPdf, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                          title="Baixar comprovante PDF"
+                          aria-label="Baixar comprovante PDF"
+                        >
+                          <IconDownload color={temComprovante ? '#43a047' : '#1976d2'} />
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

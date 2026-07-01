@@ -31,6 +31,13 @@ function normalizarToken(texto = '') {
     .toUpperCase();
 }
 
+function extrairAnoDoNomeCSV(nomeArquivo = '') {
+  const nome = String(nomeArquivo || '');
+  const todosAnos = nome.match(/(19|20)\d{2}/g);
+  if (!todosAnos || todosAnos.length === 0) return null;
+  return Number(todosAnos[todosAnos.length - 1]);
+}
+
 function ComprovantePostesDownload({ ano, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
@@ -135,6 +142,18 @@ function ComprovantePostesDownload({ ano, razaoSocial, link, onSaveLink, disable
 }
 
 export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
+
   const [dados, setDados] = useState(initialData());
   const [historicoArquivosPostes, setHistoricoArquivosPostes] = useState([]);
 
@@ -380,7 +399,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
                   <td style={{ padding: '4px 8px' }}>{item?.nome || 'postes.csv'}</td>
                   <td style={{ padding: '4px 8px' }}>{item?.data || '-'}</td>
                   <td style={{ padding: '4px 8px' }}>{cnpj || '-'}</td>
-                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                  <td style={{ textAlign: 'center', padding: '4px 8px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button
                       onClick={() => {
                         const blob = criarBlobCSV(item?.conteudo || '');
@@ -397,6 +416,49 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
                     >
                       <span role="img" aria-label="download">⬇️</span>
                     </button>
+                    {(() => {
+                      const nomeArquivo = item?.nome || 'postes.csv';
+                      const ano = extrairAnoDoNomeCSV(nomeArquivo);
+                      const linkPdf = Number.isInteger(ano) ? dados?.[ano]?.[CAMPOS[0]]?.link : '';
+                      const temComprovante = Boolean(linkPdf && String(linkPdf).trim());
+                      const podeVerSetaComprovante = isAdmin || temComprovante;
+
+                      if (!podeVerSetaComprovante) return null;
+
+                      return (
+                        <button
+                          onClick={() => {
+                            if (!Number.isInteger(ano)) {
+                              alert('Não foi possível identificar o ano no nome do CSV para localizar o comprovante PDF.');
+                              return;
+                            }
+
+                            if (!linkPdf || !String(linkPdf).trim()) {
+                              alert('Comprovante PDF não encontrado para este CSV.');
+                              return;
+                            }
+
+                            try {
+                              const anchor = document.createElement('a');
+                              anchor.href = linkPdf;
+                              anchor.target = '_blank';
+                              anchor.rel = 'noopener noreferrer';
+                              anchor.download = `COMP_${nomeArquivo.replace(/\.csv$/i, '')}.pdf`;
+                              document.body.appendChild(anchor);
+                              anchor.click();
+                              document.body.removeChild(anchor);
+                            } catch {
+                              window.open(linkPdf, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                          title="Baixar comprovante PDF"
+                          aria-label="Baixar comprovante PDF"
+                        >
+                          <IconDownload size={20} color={temComprovante ? '#43a047' : '#1976d2'} />
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}

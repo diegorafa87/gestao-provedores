@@ -30,6 +30,28 @@ function normalizarToken(texto = '') {
     .toUpperCase();
 }
 
+function extrairAnoSemestreDoNomeCSV(nomeArquivo = '') {
+  const nome = String(nomeArquivo || '').toUpperCase();
+
+  const matchSem = nome.match(/_(\d{4})_SEM\(?([12])\)?\.CSV$/i);
+  if (matchSem) {
+    return {
+      ano: Number(matchSem[1]),
+      semestre: Number(matchSem[2]) === 1 ? 'Primeiro Semestre' : 'Segundo Semestre'
+    };
+  }
+
+  const matchSemAlternativo = nome.match(/_SEM([12])_(\d{4})\.CSV$/i);
+  if (matchSemAlternativo) {
+    return {
+      ano: Number(matchSemAlternativo[2]),
+      semestre: Number(matchSemAlternativo[1]) === 1 ? 'Primeiro Semestre' : 'Segundo Semestre'
+    };
+  }
+
+  return null;
+}
+
 function ComprovanteRelEconomicoDownload({ ano, semestreNumero, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
@@ -134,6 +156,18 @@ function ComprovanteRelEconomicoDownload({ ano, semestreNumero, razaoSocial, lin
 }
 
 export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
+
   const [dados, setDados] = useState(initialData());
   const [logsRelatorioEconomico, setLogsRelatorioEconomico] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -381,7 +415,7 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
                   <td style={{ padding: '4px 8px' }}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{ padding: '4px 8px' }}>{item.data || '-'}</td>
                   <td style={{ padding: '4px 8px' }}>{item.usuario || '-'}</td>
-                  <td style={{ textAlign: 'center', padding: '4px 8px' }}>
+                  <td style={{ textAlign: 'center', padding: '4px 8px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button
                       onClick={() => {
                         const BOM = '\uFEFF';
@@ -400,6 +434,49 @@ export default function AcompanhamentoRelatorioEconomico({ cnpj, razaoSocial }) 
                     >
                       <span role="img" aria-label="download">⬇️</span>
                     </button>
+                    {(() => {
+                      const nomeArquivo = obterNomeArquivoHistorico(item);
+                      const info = extrairAnoSemestreDoNomeCSV(nomeArquivo);
+                      const linkPdf = info ? dados?.[info.ano]?.[info.semestre]?.link : '';
+                      const temComprovante = Boolean(linkPdf && String(linkPdf).trim());
+                      const podeVerSetaComprovante = isAdmin || temComprovante;
+
+                      if (!podeVerSetaComprovante) return null;
+
+                      return (
+                        <button
+                          onClick={() => {
+                            if (!info) {
+                              alert('Não foi possível identificar ano e semestre no nome do CSV para localizar o comprovante PDF.');
+                              return;
+                            }
+
+                            if (!linkPdf || !String(linkPdf).trim()) {
+                              alert('Comprovante PDF não encontrado para este CSV.');
+                              return;
+                            }
+
+                            try {
+                              const anchor = document.createElement('a');
+                              anchor.href = linkPdf;
+                              anchor.target = '_blank';
+                              anchor.rel = 'noopener noreferrer';
+                              anchor.download = `COMP_${nomeArquivo.replace(/\.csv$/i, '')}.pdf`;
+                              document.body.appendChild(anchor);
+                              anchor.click();
+                              document.body.removeChild(anchor);
+                            } catch {
+                              window.open(linkPdf, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                          title="Baixar comprovante PDF"
+                          aria-label="Baixar comprovante PDF"
+                        >
+                          <IconDownload size={20} color={temComprovante ? '#43a047' : '#1976d2'} />
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
