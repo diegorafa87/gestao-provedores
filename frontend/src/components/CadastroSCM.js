@@ -574,7 +574,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                             fontSize: 12,
                             fontWeight: 700,
                             color: temComprovante ? '#2e7d32' : '#8d6e00',
-                            minWidth: 92,
+                            minWidth: 118,
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -584,7 +584,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                           aria-label="Baixar comprovante"
                         >
                           <span aria-hidden="true">⬇️</span>
-                          <span>{temComprovante ? 'PDF' : 'LINK PDF'}</span>
+                          <span>{temComprovante ? 'BAIXAR PDF' : 'INSERIR PDF'}</span>
                         </button>
                       );
                     })()}
