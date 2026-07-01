@@ -1,6 +1,7 @@
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const campos = [
   // { name: 'CNPJ', label: 'CNPJ', required: false }, // Não exibe campo de preenchimento de CNPJ
@@ -32,6 +33,25 @@ const ordemCSV = [
   'CNPJ','ANO','MES','COD_IBGE','TIPO_CLIENTE','TIPO_ATENDIMENTO','TIPO_MEIO','TIPO_PRODUTO','TIPO_TECNOLOGIA','VELOCIDADE','ACESSOS'
 ];
 
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+function extrairAnoMesDoNomeCSV(nomeArquivo = '') {
+  const nome = String(nomeArquivo || '');
+  const match = nome.match(/_(\d{4})_(\d{1,2})\.csv$/i);
+  if (!match) return null;
+
+  const ano = Number(match[1]);
+  const mesNumero = Number(match[2]);
+  if (!Number.isInteger(ano) || !Number.isInteger(mesNumero) || mesNumero < 1 || mesNumero > 12) {
+    return null;
+  }
+
+  return { ano, mesNumero };
+}
+
 function obterNomeArquivoHistorico(item) {
   return item?.nome || item?.detalhes?.nomeArquivo || 'scm.csv';
 }
@@ -60,10 +80,24 @@ function toCSV(obj) {
 
 
 const CadastroSCM = ({ cnpj, razaoSocial }) => {
+  const authUser = (() => {
+    try {
+      const raw = localStorage.getItem('authUser');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const role = String(authUser?.role || localStorage.getItem('roleUsuario') || '').trim().toUpperCase();
+  const email = String(authUser?.email || localStorage.getItem('emailUsuario') || '').trim().toLowerCase();
+  const isAdmin = role !== 'NETO' || email === 'diegorafa87@gmail.com';
+
   const [form, setForm] = useState({});
   const [linhas, setLinhas] = useState([]); // Armazena linhas salvas
   const [csv, setCsv] = useState('');
   const [municipios, setMunicipios] = useState([]);
+  const [linksSCM, setLinksSCM] = useState({});
+  const [checksSCM, setChecksSCM] = useState({});
 
   const [historico, setHistorico] = useState([]);
 
@@ -87,6 +121,25 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
         setHistorico(deduplicarHistorico(data, obterCnpjAtual()));
       })
       .catch(() => setHistorico([]));
+  }, [cnpj]);
+
+  useEffect(() => {
+    const cnpjAtual = obterCnpjAtual().replace(/\D/g, '');
+    if (!cnpjAtual) {
+      setLinksSCM({});
+      setChecksSCM({});
+      return;
+    }
+
+    getAcompanhamento('SCM', cnpjAtual)
+      .then(res => {
+        setLinksSCM(res?.links || {});
+        setChecksSCM(res?.checks || {});
+      })
+      .catch(() => {
+        setLinksSCM({});
+        setChecksSCM({});
+      });
   }, [cnpj]);
 
   useEffect(() => {
@@ -443,6 +496,81 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                     <button onClick={() => handleExcluirHistorico(item)} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
                       <IconTrash />
                     </button>
+                    {(() => {
+                      const nomeArquivo = obterNomeArquivoHistorico(item);
+                      const info = extrairAnoMesDoNomeCSV(nomeArquivo);
+                      const mesNome = info ? MESES[info.mesNumero - 1] : '';
+                      const linkPdf = info ? linksSCM?.[info.ano]?.[mesNome] : '';
+                      const temComprovante = Boolean(linkPdf && String(linkPdf).trim());
+                      const podeVerSetaComprovante = isAdmin || temComprovante;
+
+                      if (!podeVerSetaComprovante) return null;
+
+                      return (
+                        <button
+                          onClick={async () => {
+                            if (!info) {
+                              alert('Não foi possível identificar ano e mês no nome do CSV para localizar o comprovante PDF.');
+                              return;
+                            }
+
+                            if (!linkPdf || !String(linkPdf).trim()) {
+                              if (!isAdmin) {
+                                alert('Comprovante PDF não encontrado para este CSV.');
+                                return;
+                              }
+
+                              const url = window.prompt('Cole o link do comprovante PDF (Cloudflare):', '');
+                              const urlTrim = String(url || '').trim();
+                              if (!urlTrim) return;
+
+                              if (!/^https?:\/\//i.test(urlTrim)) {
+                                alert('Informe uma URL válida iniciando com http:// ou https://');
+                                return;
+                              }
+
+                              const novosLinks = {
+                                ...linksSCM,
+                                [info.ano]: {
+                                  ...(linksSCM?.[info.ano] || {}),
+                                  [mesNome]: urlTrim
+                                }
+                              };
+
+                              setLinksSCM(novosLinks);
+
+                              try {
+                                const cnpjAtual = obterCnpjAtual().replace(/\D/g, '');
+                                if (cnpjAtual) {
+                                  await saveAcompanhamento('SCM', cnpjAtual, { checks: checksSCM, links: novosLinks });
+                                }
+                              } catch {
+                                alert('Não foi possível salvar o link do comprovante.');
+                              }
+                              return;
+                            }
+
+                            try {
+                              const anchor = document.createElement('a');
+                              anchor.href = linkPdf;
+                              anchor.target = '_blank';
+                              anchor.rel = 'noopener noreferrer';
+                              anchor.download = `COMP_${nomeArquivo.replace(/\.csv$/i, '')}.pdf`;
+                              document.body.appendChild(anchor);
+                              anchor.click();
+                              document.body.removeChild(anchor);
+                            } catch {
+                              window.open(linkPdf, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 18 }}
+                          title="Comprovante PDF"
+                          aria-label="Comprovante PDF"
+                        >
+                          ⬇️
+                        </button>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
