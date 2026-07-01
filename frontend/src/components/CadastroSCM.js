@@ -463,7 +463,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
               <tr>
                 <th style={{textAlign:'left',padding:'4px 8px'}}>Nome do Arquivo</th>
                 <th style={{textAlign:'left',padding:'4px 8px'}}>Data</th>
-                <th style={{textAlign:'center',padding:'4px 8px'}}>Ações</th>
+                <th style={{textAlign:'center',padding:'4px 8px', minWidth: 220}}>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -471,7 +471,8 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
-                  <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
+                  <td style={{textAlign:'center',padding:'4px 8px', minWidth: 220, whiteSpace: 'nowrap'}}>
+                    <div style={{display:'inline-flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap'}}>
                     <button onClick={() => {
                       // Força BOM UTF-8, separador vírgula, CRLF e sem linha em branco final
                       const BOM = '\uFEFF';
@@ -579,14 +580,15 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                             justifyContent: 'center',
                             gap: 6
                           }}
-                          title={temComprovante ? 'Baixar comprovante PDF' : 'Inserir link do comprovante PDF'}
-                          aria-label="Comprovante PDF"
+                          title="Baixar comprovante"
+                          aria-label="Baixar comprovante"
                         >
                           <span aria-hidden="true">⬇️</span>
                           <span>{temComprovante ? 'PDF' : 'LINK PDF'}</span>
                         </button>
                       );
                     })()}
+                    </div>
                   </td>
                 </tr>
               ))}
