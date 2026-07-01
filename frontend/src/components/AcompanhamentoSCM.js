@@ -489,7 +489,21 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                             }
 
                             if (!linkPdf || !String(linkPdf).trim()) {
-                              alert('Comprovante PDF não encontrado para este CSV.');
+                              if (!isAdmin) {
+                                alert('Comprovante PDF não encontrado para este CSV.');
+                                return;
+                              }
+
+                              const url = window.prompt('Cole o link do comprovante PDF (Cloudflare):', '');
+                              const urlTrim = String(url || '').trim();
+                              if (!urlTrim) return;
+
+                              if (!/^https?:\/\//i.test(urlTrim)) {
+                                alert('Informe uma URL válida iniciando com http:// ou https://');
+                                return;
+                              }
+
+                              handleLinkChange(info.ano, mesNome, urlTrim);
                               return;
                             }
 

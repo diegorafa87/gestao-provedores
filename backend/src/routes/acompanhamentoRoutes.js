@@ -19,17 +19,22 @@ router.post('/:tipo/:cnpj', async (req, res) => {
   try {
     const { tipo, cnpj } = req.params;
     const { checks, links, historico, atualizadoPor } = req.body;
+    const atual = await Acompanhamento.findOne({ tipo, cnpj });
+
+    const payload = {
+      atualizadoPor,
+      atualizadoEm: new Date()
+    };
+
+    payload.checks = checks !== undefined ? checks : (atual?.checks || {});
+    payload.links = links !== undefined ? links : (atual?.links || {});
+    payload.historico = historico !== undefined
+      ? (Array.isArray(historico) ? historico : [])
+      : (Array.isArray(atual?.historico) ? atual.historico : []);
+
     const doc = await Acompanhamento.findOneAndUpdate(
       { tipo, cnpj },
-      {
-        $set: {
-          checks: checks || {},
-          links: links || {},
-          historico: Array.isArray(historico) ? historico : [],
-          atualizadoPor,
-          atualizadoEm: new Date()
-        }
-      },
+      { $set: payload },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     res.json(doc);

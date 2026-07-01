@@ -3,7 +3,7 @@ import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistor
 import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
-import { getAcompanhamento } from '../services/acompanhamento';
+import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -44,6 +44,7 @@ export default function HistoricoSCMPage() {
   const [clienteSelecionado, setClienteSelecionado] = useState({ cnpj: 'semcnpj', razaoSocial: '' });
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
   const [linksSCM, setLinksSCM] = useState({});
+  const [checksSCM, setChecksSCM] = useState({});
 
   useEffect(() => {
     try {
@@ -60,8 +61,14 @@ export default function HistoricoSCMPage() {
         const cnpjLimpo = (obj.cnpj || '').replace(/\D/g, '');
         if (cnpjLimpo) {
           getAcompanhamento('SCM', cnpjLimpo)
-            .then(res => setLinksSCM(res?.links || {}))
-            .catch(() => setLinksSCM({}));
+            .then(res => {
+              setLinksSCM(res?.links || {});
+              setChecksSCM(res?.checks || {});
+            })
+            .catch(() => {
+              setLinksSCM({});
+              setChecksSCM({});
+            });
         }
         return;
       }
@@ -69,6 +76,7 @@ export default function HistoricoSCMPage() {
     setClienteSelecionado({ cnpj: 'semcnpj', razaoSocial: '' });
     setHistoricoArquivos([]);
     setLinksSCM({});
+    setChecksSCM({});
   }, []);
 
   return (
@@ -129,14 +137,45 @@ export default function HistoricoSCMPage() {
                           style={{ marginLeft: 8, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}
                           title="Baixar comprovante PDF"
                           aria-label="Baixar comprovante PDF"
-                          onClick={() => {
+                          onClick={async () => {
                             if (!info) {
                               alert('Não foi possível identificar ano e mês no nome do CSV para localizar o comprovante PDF.');
                               return;
                             }
 
                             if (!linkPdf || !String(linkPdf).trim()) {
-                              alert('Comprovante PDF não encontrado para este CSV.');
+                              if (!isAdmin) {
+                                alert('Comprovante PDF não encontrado para este CSV.');
+                                return;
+                              }
+
+                              const url = window.prompt('Cole o link do comprovante PDF (Cloudflare):', '');
+                              const urlTrim = String(url || '').trim();
+                              if (!urlTrim) return;
+
+                              if (!/^https?:\/\//i.test(urlTrim)) {
+                                alert('Informe uma URL válida iniciando com http:// ou https://');
+                                return;
+                              }
+
+                              const novosLinks = {
+                                ...linksSCM,
+                                [info.ano]: {
+                                  ...(linksSCM?.[info.ano] || {}),
+                                  [mesNome]: urlTrim
+                                }
+                              };
+
+                              setLinksSCM(novosLinks);
+
+                              try {
+                                const cnpjLimpo = (clienteSelecionado?.cnpj || '').replace(/\D/g, '');
+                                if (cnpjLimpo) {
+                                  await saveAcompanhamento('SCM', cnpjLimpo, { checks: checksSCM, links: novosLinks });
+                                }
+                              } catch {
+                                alert('Não foi possível salvar o link do comprovante.');
+                              }
                               return;
                             }
 
