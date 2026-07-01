@@ -508,6 +508,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
                       return (
                         <button
+                          type="button"
                           onClick={async () => {
                             if (!info) {
                               alert('Não foi possível identificar ano e mês no nome do CSV para localizar o comprovante PDF.');
@@ -563,11 +564,26 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
                               window.open(linkPdf, '_blank', 'noopener,noreferrer');
                             }
                           }}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, fontSize: 18 }}
-                          title="Comprovante PDF"
+                          style={{
+                            background: temComprovante ? '#e8f5e9' : '#fff8e1',
+                            border: '1px solid ' + (temComprovante ? '#43a047' : '#f9a825'),
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            padding: '2px 8px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: temComprovante ? '#2e7d32' : '#8d6e00',
+                            minWidth: 92,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6
+                          }}
+                          title={temComprovante ? 'Baixar comprovante PDF' : 'Inserir link do comprovante PDF'}
                           aria-label="Comprovante PDF"
                         >
-                          ⬇️
+                          <span aria-hidden="true">⬇️</span>
+                          <span>{temComprovante ? 'PDF' : 'LINK PDF'}</span>
                         </button>
                       );
                     })()}
