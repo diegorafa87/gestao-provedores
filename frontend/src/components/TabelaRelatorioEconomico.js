@@ -1,6 +1,6 @@
 import API_URL from '../services/api';
 // ...restante do código permanece igual...
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const campos = [
   { name: 'CN', label: 'CN' },
@@ -35,6 +35,10 @@ function criarBlobCSV(conteudo = '') {
   return new Blob([BOM + normalizarConteudoCSV(conteudo)], { type: 'text/csv;charset=utf-8;' });
 }
 
+function limparCnpj(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
 export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datasPadrao, razaoSocial = '', semestre = 'SEM1', ano = '' }) {
   // Busca o CNPJ do cliente do card (localStorage)
   let cnpjCliente = cnpjPadrao;
@@ -46,7 +50,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
     }
   } catch {}
   // Histórico de exportações CSV
-  const historicoKey = `historicoCSVRelatorioEconomico_${cnpjCliente}`;
+  const historicoKey = `historicoCSVRelatorioEconomico_${limparCnpj(cnpjCliente) || 'semcnpj'}`;
   const [historicoCSV, setHistoricoCSV] = useState(() => {
     const salvo = localStorage.getItem(historicoKey);
     if (!salvo) return [];
@@ -56,6 +60,24 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
       return { ...item, url: URL.createObjectURL(blob) };
     });
   });
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(historicoKey);
+      if (!salvo) {
+        setHistoricoCSV([]);
+        return;
+      }
+
+      const lista = JSON.parse(salvo).map(item => {
+        const blob = criarBlobCSV(item.conteudo);
+        return { ...item, url: URL.createObjectURL(blob) };
+      });
+      setHistoricoCSV(lista);
+    } catch {
+      setHistoricoCSV([]);
+    }
+  }, [historicoKey]);
 
   const [linhas, setLinhas] = useState([
     { CN: '0', DadoInformado: 'Receita_Operacional_Líquida_ROL', Servico: 'SCM', UF: '', Valores: '', CNPJ: cnpjCliente || '', DATA: datasPadrao ? datasPadrao[0] : (dataPadrao || '') },

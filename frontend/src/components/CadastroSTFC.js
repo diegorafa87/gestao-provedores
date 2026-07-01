@@ -30,12 +30,21 @@ const CadastroSTFC = ({ cnpj }) => {
   const cnpjLimpo = (cnpj || '').replace(/[\.\/-]/g, '');
   // Sempre inicializa o form com CNPJ preenchido
   const [form, setForm] = useState(() => ({ CNPJ: cnpjLimpo }));
-  const historicoKey = `historicoSTFC_${cnpj}`;
+  const historicoKey = `historicoSTFC_${cnpjLimpo || 'semcnpj'}`;
   const [historico, setHistorico] = useState(() => {
     const salvo = localStorage.getItem(historicoKey);
     return salvo ? JSON.parse(salvo) : [];
   });
   const [municipios, setMunicipios] = useState([]);
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(historicoKey);
+      setHistorico(salvo ? JSON.parse(salvo) : []);
+    } catch {
+      setHistorico([]);
+    }
+  }, [historicoKey]);
 
   useEffect(() => {
     fetch('/municipiosIBGE.json')

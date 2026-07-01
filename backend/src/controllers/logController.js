@@ -5,7 +5,10 @@ const dbLogPath = path.join(__dirname, '../db_logs.json');
 function lerLogs() {
   try {
     const data = fs.readFileSync(dbLogPath, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.logs)) return parsed.logs;
+    return [];
   } catch (e) {
     return [];
   }

@@ -55,13 +55,22 @@ const codUfToSigla = {
 const CadastroTVpA = ({ cnpj }) => {
   // Normaliza o CNPJ removendo formatação para usar como chave de localStorage
   const cnpjNormalizado = limparCNPJ(cnpj);
-  const historicoKey = `historicoTVpA_${cnpjNormalizado}`;
+  const historicoKey = `historicoTVpA_${cnpjNormalizado || 'semcnpj'}`;
   const [form, setForm] = useState({});
   const [historico, setHistorico] = useState(() => {
     const salvo = localStorage.getItem(historicoKey);
     return salvo ? JSON.parse(salvo) : [];
   });
   const [municipios, setMunicipios] = useState([]);
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(historicoKey);
+      setHistorico(salvo ? JSON.parse(salvo) : []);
+    } catch {
+      setHistorico([]);
+    }
+  }, [historicoKey]);
 
   useEffect(() => {
     fetch('/municipiosIBGE.json')
