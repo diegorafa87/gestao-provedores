@@ -2,7 +2,6 @@
 import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getSCMHistoricoCSV } from '../services/scmHistorico';
 
 const cores = {
   NOVO: '#1976d2',
@@ -17,11 +16,6 @@ const nomes = {
   CORRIGIR: 'Corrigir',
   SUSPENSO: 'Suspensos'
 };
-
-const MESES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-];
 
 function agruparPorStatus(clientes) {
   if (!Array.isArray(clientes)) {
@@ -38,49 +32,9 @@ function removerAcentos(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function normalizarCnpj(valor = '') {
-  return String(valor || '').replace(/\D/g, '');
-}
-
-function obterNomeArquivoHistorico(item = {}) {
-  return String(item?.nome || item?.detalhes?.nomeArquivo || '').trim();
-}
-
-function extrairAnoMesDoNomeCSV(nomeArquivo = '') {
-  const nome = String(nomeArquivo || '');
-  const match = nome.match(/_(\d{4})_(\d{1,2})\.csv$/i);
-  if (!match) return null;
-
-  const ano = Number(match[1]);
-  const mesNumero = Number(match[2]);
-  if (!Number.isInteger(ano) || !Number.isInteger(mesNumero) || mesNumero < 1 || mesNumero > 12) {
-    return null;
-  }
-
-  return { ano, mesNumero };
-}
-
-function obterReferenciaMesAnterior(dataBase = new Date()) {
-  const ano = dataBase.getFullYear();
-  const mesAtualNumero = dataBase.getMonth() + 1;
-
-  if (mesAtualNumero === 1) {
-    return { ano: ano - 1, mesNumero: 12 };
-  }
-
-  return { ano, mesNumero: mesAtualNumero - 1 };
-}
-
-function formatarReferenciaScm(referencia) {
-  if (!referencia) return '';
-  const nomeMes = MESES[(referencia.mesNumero || 1) - 1] || `${referencia.mesNumero}`;
-  return `${nomeMes}/${referencia.ano}`;
-}
-
 const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clienteIdUsuario }) => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pendenciasScmPorClienteId, setPendenciasScmPorClienteId] = useState({});
   const [statusVisiveis, setStatusVisiveis] = useState(() => {
     const saved = localStorage.getItem('statusVisiveis');
     if (saved) {
@@ -121,56 +75,6 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
   useEffect(() => {
     localStorage.setItem('statusVisiveis', JSON.stringify(statusVisiveis));
   }, [statusVisiveis]);
-
-  useEffect(() => {
-    const clientesAtivos = (Array.isArray(clientes) ? clientes : []).filter(c => c?.status === 'ATIVO');
-    if (clientesAtivos.length === 0) {
-      setPendenciasScmPorClienteId({});
-      return;
-    }
-
-    let cancelado = false;
-    const referencia = obterReferenciaMesAnterior();
-
-    getSCMHistoricoCSV()
-      .then((historico) => {
-        if (cancelado) return;
-
-        const lista = Array.isArray(historico) ? historico : [];
-        const historicoPorCnpj = new Map();
-
-        lista.forEach(item => {
-          const cnpj = normalizarCnpj(item?.usuario || item?.cnpj || '');
-          if (!cnpj) return;
-          if (!historicoPorCnpj.has(cnpj)) historicoPorCnpj.set(cnpj, []);
-          historicoPorCnpj.get(cnpj).push(item);
-        });
-
-        const novoMapaPendencias = {};
-        clientesAtivos.forEach(cliente => {
-          const cnpjCliente = normalizarCnpj(cliente?.cnpj || '');
-          const historicoCliente = cnpjCliente ? (historicoPorCnpj.get(cnpjCliente) || []) : [];
-          const temArquivoReferencia = historicoCliente.some(item => {
-            const nome = obterNomeArquivoHistorico(item);
-            const info = extrairAnoMesDoNomeCSV(nome);
-            return info && info.ano === referencia.ano && info.mesNumero === referencia.mesNumero;
-          });
-
-          novoMapaPendencias[cliente._id] = !temArquivoReferencia;
-        });
-
-        setPendenciasScmPorClienteId(novoMapaPendencias);
-      })
-      .catch(() => {
-        if (!cancelado) {
-          setPendenciasScmPorClienteId({});
-        }
-      });
-
-    return () => {
-      cancelado = true;
-    };
-  }, [clientes]);
 
   const handleStatus = async (id, status) => {
     await fetch(`${API_URL}/api/clientes/${id}/status`, {
@@ -260,9 +164,6 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
     setStatusVisiveis(v => ({ ...v, [status]: !v[status] }));
   };
 
-  const referenciaScm = obterReferenciaMesAnterior();
-  const referenciaScmLabel = formatarReferenciaScm(referenciaScm);
-
   return (
     <div>
       {['NOVO', 'ATIVO', 'CORRIGIR', 'SUSPENSO'].map(status => (
@@ -283,45 +184,11 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
             <>
               {(agrupados[status] || []).length === 0 && <p style={{ color: '#888' }}>Nenhum cliente.</p>}
               {(agrupados[status] || []).map(cliente => (
-                <div
-                  key={cliente._id}
-                  style={{
-                    background: cores[status],
-                    color: '#fff',
-                    padding: '1rem',
-                    borderRadius: '6px',
-                    marginBottom: '0.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    border: status === 'ATIVO' && pendenciasScmPorClienteId[cliente._id] ? '3px solid #ff3d00' : 'none',
-                    boxShadow: status === 'ATIVO' && pendenciasScmPorClienteId[cliente._id] ? '0 0 0 2px #ffd8cc' : 'none'
-                  }}
-                >
+                <div key={cliente._id} style={{ background: cores[status], color: '#fff', padding: '1rem', borderRadius: '6px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
                       <div style={{ flex: 1 }}>
                         <strong>{cliente.cnpj} - {cliente.razaoSocial}</strong>
-                        {status === 'ATIVO' && pendenciasScmPorClienteId[cliente._id] && (
-                          <div
-                            style={{
-                              marginTop: 6,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              background: '#fff3e0',
-                              color: '#b71c1c',
-                              border: '1px solid #ff6f00',
-                              borderRadius: 999,
-                              padding: '0.2rem 0.55rem',
-                              fontWeight: 700,
-                              fontSize: '0.82rem'
-                            }}
-                            title="Lembrete de pendência do arquivo SCM"
-                          >
-                            ⚠ SCM pendente ({referenciaScmLabel})
-                          </div>
-                        )}
                       </div>
                       {(status === 'CORRIGIR' || status === 'SUSPENSO') && (
                         <div style={{ display: 'flex', alignItems: 'center', background: '#fffbe6', borderRadius: 6, padding: '0.2rem 0.7rem', boxShadow: '0 1px 4px #0001', minWidth: 180 }}>
