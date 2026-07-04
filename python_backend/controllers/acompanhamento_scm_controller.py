@@ -21,26 +21,6 @@ def _write(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def _extract_logs(content):
-    if isinstance(content, list):
-        return content
-    if isinstance(content, dict) and isinstance(content.get('logs'), list):
-        return content.get('logs', [])
-    return []
-
-
-def _write_logs_content(original_content, logs):
-    if isinstance(original_content, list):
-        _write(logs)
-        return
-    if isinstance(original_content, dict):
-        payload = dict(original_content)
-        payload['logs'] = logs
-        _write(payload)
-        return
-    _write(logs)
-
-
 def _parse_date(value):
     if not value:
         return None
@@ -59,6 +39,14 @@ def _parse_date(value):
     return None
 
 
+def _is_current_month(value):
+    parsed = _parse_date(value)
+    if not parsed:
+        return False
+    now = datetime.now(parsed.tzinfo) if parsed.tzinfo else datetime.now()
+    return parsed.year == now.year and parsed.month == now.month
+
+
 def _scm_key(item):
     nome = str(item.get('nome') or (item.get('detalhes') or {}).get('nomeArquivo') or '').strip().lower()
     usuario = ''.join(ch for ch in str(item.get('usuario') or '') if ch.isdigit())
@@ -67,12 +55,14 @@ def _scm_key(item):
     return f'{nome}|{usuario}|{data}'
 
 
-def _dedupe_scm_logs(logs):
+def _sanitize_scm_logs(logs):
     vistos = set()
     saida = []
     for item in (logs or []):
         if item.get('acao') != 'GERAR_CSV_SCM':
             saida.append(item)
+            continue
+        if not _is_current_month(item.get('data')):
             continue
         chave = _scm_key(item)
         if chave in vistos:
@@ -82,12 +72,33 @@ def _dedupe_scm_logs(logs):
     return saida
 
 
+def _persist_sanitized_logs(logs):
+    sanitizados = _sanitize_scm_logs(logs)
+    _write(sanitizados)
+    return sanitizados
+
+
+def _persist_sanitized_content(content):
+    if isinstance(content, list):
+        return _persist_sanitized_logs(content)
+
+    obj = dict(content or {})
+    logs = obj.get('logs', []) if isinstance(obj.get('logs', []), list) else []
+    obj['logs'] = _sanitize_scm_logs(logs)
+    _write(obj)
+    return obj['logs']
+
+
 async def delete_scm_historico_csv(payload: dict):
     nome = (payload.get('nome') or payload.get('nomeDetalhes') or '').strip().lower()
     data_alvo = (payload.get('data') or '').strip().lower()
     usuario_alvo = (payload.get('usuario') or '').strip().lower()
     raw = _read()
-    logs = _extract_logs(raw)
+    logs = []
+    if isinstance(raw, list):
+        logs = _sanitize_scm_logs(raw)
+    else:
+        logs = _sanitize_scm_logs(raw.get('logs', []))
 
     def obter_nome(item):
         return (item.get('nome') or (item.get('detalhes') or {}).get('nomeArquivo') or '').strip().lower()
@@ -110,7 +121,11 @@ async def delete_scm_historico_csv(payload: dict):
             continue
         nova_lista.append(item)
 
-    _write_logs_content(raw, _dedupe_scm_logs(nova_lista))
+    if isinstance(raw, dict):
+        raw['logs'] = nova_lista
+        _write(raw)
+    else:
+        _write(nova_lista)
     return {'success': True}
 
 
@@ -135,7 +150,11 @@ async def set_scm_status(cnpj: str, payload: dict):
 
 async def get_scm_historico_csv():
     data = _read()
-    logs = _dedupe_scm_logs(_extract_logs(data))
+    logs = []
+    if isinstance(data, list):
+        logs = _persist_sanitized_logs(data)
+    else:
+        logs = _persist_sanitized_content(data)
     historico = [item for item in logs if item.get('acao') == 'GERAR_CSV_SCM']
     historico.sort(key=lambda x: x.get('data') or 0, reverse=True)
     return historico
@@ -143,8 +162,16 @@ async def get_scm_historico_csv():
 
 async def add_scm_historico_csv(payload: dict):
     data = _read()
-    logs = _extract_logs(data)
+    logs = []
+    if isinstance(data, list):
+        logs = _sanitize_scm_logs(data)
+    else:
+        logs = _sanitize_scm_logs(data.get('logs', []))
     nova = {**payload, 'acao': payload.get('acao', 'GERAR_CSV_SCM'), 'data': datetime.utcnow().isoformat()}
     logs.insert(0, nova)
-    _write_logs_content(data, _dedupe_scm_logs(logs))
+    if isinstance(data, dict):
+        data['logs'] = _sanitize_scm_logs(logs)
+        _write(data)
+    else:
+        _persist_sanitized_logs(logs)
     return {'success': True}
