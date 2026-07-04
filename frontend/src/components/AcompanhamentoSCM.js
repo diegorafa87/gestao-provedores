@@ -3,6 +3,22 @@ import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistor
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
+function formatarDataHistoricoSCM(valor) {
+  if (!valor) return '-';
+
+  const texto = String(valor).trim();
+  const dataIso = new Date(texto);
+  if (!Number.isNaN(dataIso.getTime())) {
+    return dataIso.toLocaleString('pt-BR');
+  }
+
+  const matchPtBr = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (!matchPtBr) return texto;
+
+  const [, dia, mes, ano, hora = '00', minuto = '00', segundo = '00'] = matchPtBr;
+  return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}, ${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:${segundo.padStart(2, '0')}`;
+}
+
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -446,7 +462,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
               {historicoArquivos.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
-                  <td style={{padding:'4px 8px'}}>{item.data}</td>
+                  <td style={{padding:'4px 8px'}}>{formatarDataHistoricoSCM(item.data)}</td>
                   <td style={{padding:'4px 8px'}}>{item.usuario}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {

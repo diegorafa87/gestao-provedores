@@ -3,6 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 
+function formatarDataHistoricoSCM(valor) {
+  if (!valor) return '-';
+
+  const texto = String(valor).trim();
+  const dataIso = new Date(texto);
+  if (!Number.isNaN(dataIso.getTime())) {
+    return dataIso.toLocaleString('pt-BR');
+  }
+
+  const matchPtBr = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (!matchPtBr) return texto;
+
+  const [, dia, mes, ano, hora = '00', minuto = '00', segundo = '00'] = matchPtBr;
+  return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}, ${hora.padStart(2, '0')}:${minuto.padStart(2, '0')}:${segundo.padStart(2, '0')}`;
+}
+
 const campos = [
   // { name: 'CNPJ', label: 'CNPJ', required: false }, // Não exibe campo de preenchimento de CNPJ
   { name: 'ANO', label: 'Ano', required: true, type: 'select', options: ['2024', '2025', '2026'] },
@@ -475,7 +491,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
               {historico.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
-                  <td style={{padding:'4px 8px'}}>{item.data}</td>
+                  <td style={{padding:'4px 8px'}}>{formatarDataHistoricoSCM(item.data)}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', minWidth: 220, whiteSpace: 'nowrap'}}>
                     <div style={{display:'inline-flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap'}}>
                     <button onClick={() => {
