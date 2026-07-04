@@ -16,7 +16,7 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
   try {
     const fileData = fs.readFileSync(dbPath, 'utf8');
     const json = JSON.parse(fileData);
-    logs = Array.isArray(json) ? json : (json.logs || []);
+    logs = sanitizarLogsSCM(Array.isArray(json) ? json : (json.logs || []));
   } catch (e) {}
 
   const novaLista = logs.filter(item => {
@@ -53,6 +53,67 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
 const fs = require('fs');
 const path = require('path');
 const dbPath = path.join(__dirname, '../db_logs.json');
+
+function parseDataHistorico(valor) {
+  if (!valor) return null;
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor;
+
+  const texto = String(valor).trim();
+  const dataIso = new Date(texto);
+  if (!Number.isNaN(dataIso.getTime())) return dataIso;
+
+  const matchPtBr = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (!matchPtBr) return null;
+
+  const [, dia, mes, ano, hora = '0', minuto = '0', segundo = '0'] = matchPtBr;
+  const data = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(minuto), Number(segundo));
+  return Number.isNaN(data.getTime()) ? null : data;
+}
+
+function ehDoMesAtual(valorData) {
+  const data = parseDataHistorico(valorData);
+  if (!data) return false;
+  const agora = new Date();
+  return data.getFullYear() === agora.getFullYear() && data.getMonth() === agora.getMonth();
+}
+
+function obterChaveSCM(item = {}) {
+  const nomeArquivo = String(item?.nome || item?.detalhes?.nomeArquivo || '').trim().toLowerCase();
+  const usuario = String(item?.usuario || '').replace(/\D/g, '');
+  const data = parseDataHistorico(item?.data);
+  return `${nomeArquivo}|${usuario}|${data ? data.toISOString() : String(item?.data || '')}`;
+}
+
+function sanitizarLogsSCM(logs = []) {
+  const vistos = new Set();
+  return (Array.isArray(logs) ? logs : []).filter(item => {
+    if (item?.acao !== 'GERAR_CSV_SCM') return true;
+    if (!ehDoMesAtual(item?.data)) return false;
+
+    const chave = obterChaveSCM(item);
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+}
+
+function persistirLogsSanitizados(logs = []) {
+  const logsSanitizados = sanitizarLogsSCM(logs);
+  fs.writeFileSync(dbPath, JSON.stringify(logsSanitizados, null, 2));
+  return logsSanitizados;
+}
+
+function persistirConteudoSanitizado(conteudo) {
+  if (Array.isArray(conteudo)) {
+    return persistirLogsSanitizados(conteudo);
+  }
+
+  const obj = conteudo && typeof conteudo === 'object' ? { ...conteudo } : {};
+  const logsOriginais = Array.isArray(obj.logs) ? obj.logs : [];
+  obj.logs = sanitizarLogsSCM(logsOriginais);
+  fs.writeFileSync(dbPath, JSON.stringify(obj, null, 2));
+  return obj.logs;
+}
 
 function lerAcompanhamentoSCM() {
   try {
@@ -97,7 +158,7 @@ exports.getSCMHistoricoCSV = (req, res) => {
     const data = fs.readFileSync(dbPath, 'utf8');
     const json = JSON.parse(data);
     // Suporta tanto array quanto objeto (compatibilidade)
-    const logs = Array.isArray(json) ? json : (json.logs || []);
+    const logs = persistirConteudoSanitizado(json);
     historico = logs
       .filter((item) => item.acao === 'GERAR_CSV_SCM')
       .sort((a, b) => new Date(b?.data || 0).getTime() - new Date(a?.data || 0).getTime());
@@ -112,17 +173,17 @@ exports.addSCMHistoricoCSV = (req, res) => {
   try {
     const data = fs.readFileSync(dbPath, 'utf8');
     const json = JSON.parse(data);
-    logs = Array.isArray(json) ? json : (json.logs || []);
+    logs = sanitizarLogsSCM(Array.isArray(json) ? json : (json.logs || []));
   } catch (e) {}
   const novaEntrada = {
     ...req.body,
     acao: req.body?.acao || 'GERAR_CSV_SCM',
-    data: req.body?.data || new Date().toISOString()
+    data: new Date().toISOString()
   };
   // Mantém entradas mais recentes no topo para compatibilidade com o logger global.
   logs.unshift(novaEntrada);
   try {
-    fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
+    persistirConteudoSanitizado(logs);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: 'Erro ao salvar histórico' });
