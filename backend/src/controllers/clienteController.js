@@ -98,7 +98,7 @@ exports.cadastrarCliente = async (req, res) => {
 
 exports.listarClientes = async (req, res) => {
   try {
-    const { consultoria } = req.query;
+    const { consultoria, cnpj } = req.query;
     let filtro = {};
 
     const user = await getUserFromHeader(req);
@@ -115,6 +115,10 @@ exports.listarClientes = async (req, res) => {
 
     if (consultoria) {
       filtro.consultoria = consultoria;
+    }
+
+    if (cnpj) {
+      filtro.cnpj = cnpj;
     }
 
     const clientes = await Cliente.find(filtro);

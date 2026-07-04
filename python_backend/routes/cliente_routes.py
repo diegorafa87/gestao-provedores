@@ -8,8 +8,8 @@ async def cadastrar_cliente(payload: dict):
     return await cliente_controller.cadastrar_cliente(payload)
 
 @router.get('/clientes')
-async def listar_clientes(consultoria: str = Query(None)):
-    return await cliente_controller.listar_clientes(consultoria)
+async def listar_clientes(consultoria: str = Query(None), cnpj: str = Query(None)):
+    return await cliente_controller.listar_clientes(consultoria, cnpj)
 
 @router.patch('/clientes/{id}/status')
 async def atualizar_status(id: str = Path(...), payload: dict = None):

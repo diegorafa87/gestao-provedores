@@ -18,7 +18,10 @@ const PaginaCadastroTVpA = () => {
           if (!resp.ok) return;
           const data = await resp.json();
           console.log('Cliente retornado do backend:', data);
-          if (Array.isArray(data) && data.length > 0) setCliente(data[0]);
+          if (Array.isArray(data) && data.length > 0) {
+            const clienteEncontrado = data.find(item => String(item?.cnpj || '').replace(/\D/g, '') === String(cnpj).replace(/\D/g, ''));
+            setCliente(clienteEncontrado || data[0]);
+          }
         });
     }
   }, [location.search]);

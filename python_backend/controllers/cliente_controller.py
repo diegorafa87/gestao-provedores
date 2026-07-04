@@ -69,10 +69,12 @@ async def cadastrar_cliente(payload: dict):
     registrar_log('CADASTRAR_CLIENTE', cnpj, {'razaoSocial': razaoSocial, 'email': email, 'telefone': telefone, 'consultoria': consultoria})
     return novo
 
-async def listar_clientes(consultoria: str = None):
+async def listar_clientes(consultoria: str = None, cnpj: str = None):
     filtro = {}
     if consultoria:
         filtro['consultoria'] = consultoria
+    if cnpj:
+        filtro['cnpj'] = cnpj
     coll = db['clientes']
     try:
         cursor = coll.find(filtro)
