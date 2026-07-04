@@ -61,6 +61,45 @@ function extrairAnoMesDoNomeCSV(nomeArquivo = '') {
   return { ano, mesNumero };
 }
 
+function carregarHistoricoLocalTVPA(cnpj = '') {
+  const cnpjLimpo = String(cnpj || '').replace(/\D/g, '') || 'semcnpj';
+  const chaves = ['historicoTVpA_global', `historicoTVpA_${cnpjLimpo}`];
+  let combinado = [];
+
+  chaves.forEach(chave => {
+    try {
+      const salvo = localStorage.getItem(chave);
+      const arr = salvo ? JSON.parse(salvo) : [];
+      if (Array.isArray(arr)) {
+        combinado = combinado.concat(arr);
+      }
+    } catch {}
+  });
+
+  const vistos = new Set();
+  return combinado
+    .filter(item => {
+      const nome = String(item?.nome || item?.detalhes?.nomeArquivo || '').trim();
+      if (!nome) return false;
+      const cnpjItem = String(item?.cnpj || '').replace(/\D/g, '') || 'semcnpj';
+      if (cnpjItem !== cnpjLimpo) return false;
+      const chave = `${nome}|${item?.data || ''}|${cnpjItem}`;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    })
+    .map(item => ({
+      acao: 'GERAR_CSV_TVPA',
+      usuario: cnpjLimpo,
+      data: item?.data || null,
+      conteudo: item?.conteudo || item?.detalhes?.conteudo || '',
+      detalhes: {
+        ...(item?.detalhes || {}),
+        nomeArquivo: item?.nome || item?.detalhes?.nomeArquivo || 'tvpa.csv'
+      }
+    }));
+}
+
 function ComprovanteTVPADownload({ ano, mes, mesNumero, razaoSocial, link, onSaveLink, disabled }) {
   const [editando, setEditando] = useState(false);
   const [valor, setValor] = useState('');
@@ -303,11 +342,20 @@ export default function AcompanhamentoTVpA({ cnpj, razaoSocial }) {
     getLogs()
       .then(todosLogs => {
         const logsFiltrados = todosLogs.filter(
-          log => log.acao === 'GERAR_CSV_TVPA' && (log.usuario.replace(/\D/g, '') === cnpjLimpo)
+          log => log.acao === 'GERAR_CSV_TVPA' && (String(log.usuario || '').replace(/\D/g, '') === cnpjLimpo)
         );
-        setLogsTVPA(logsFiltrados);
+        if (logsFiltrados.length > 0) {
+          setLogsTVPA(logsFiltrados);
+          return;
+        }
+
+        const fallbackLocal = carregarHistoricoLocalTVPA(cnpjLimpo);
+        setLogsTVPA(fallbackLocal);
       })
-      .catch(() => setLogsTVPA([]));
+      .catch(() => {
+        const fallbackLocal = carregarHistoricoLocalTVPA(cnpjLimpo);
+        setLogsTVPA(fallbackLocal);
+      });
   }, [cnpj]);
 
   if (!razaoSocial) {

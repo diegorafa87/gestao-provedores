@@ -18,6 +18,11 @@ function limparCNPJ(valor = '') {
   return String(valor || '').replace(/\D/g, '');
 }
 
+function normalizarIdentificadorCnpj(valor = '') {
+  const limpo = limparCNPJ(valor);
+  return limpo || 'semcnpj';
+}
+
 function normalizarConteudoCsvTVPA(conteudo = '') {
   let csv = String(conteudo || '')
     .replace(/^\uFEFF/, '')
@@ -55,22 +60,60 @@ const codUfToSigla = {
 const CadastroTVpA = ({ cnpj }) => {
   // Normaliza o CNPJ removendo formatação para usar como chave de localStorage
   const cnpjNormalizado = limparCNPJ(cnpj);
-  const historicoKey = `historicoTVpA_${cnpjNormalizado || 'semcnpj'}`;
+  const historicoKeyLegado = `historicoTVpA_${cnpjNormalizado || 'semcnpj'}`;
+  const historicoKeyGlobal = 'historicoTVpA_global';
+
+  const lerArrayStorage = (chave) => {
+    try {
+      const salvo = localStorage.getItem(chave);
+      const parseado = salvo ? JSON.parse(salvo) : [];
+      return Array.isArray(parseado) ? parseado : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const deduplicarHistorico = (lista = []) => {
+    const vistos = new Set();
+    return (lista || []).filter(item => {
+      const chave = `${item?.nome || ''}|${item?.data || ''}|${item?.cnpj || ''}`;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+  };
+
+  const carregarHistorico = React.useCallback(() => {
+    const global = lerArrayStorage(historicoKeyGlobal);
+    const legado = lerArrayStorage(historicoKeyLegado);
+
+    const legadoMigrado = legado.map(item => ({
+      id: item?.id || `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      cnpj: item?.cnpj || cnpjNormalizado || 'semcnpj',
+      ...item
+    }));
+
+    const globalNormalizado = global.map(item => ({
+      id: item?.id || `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      ...item
+    }));
+
+    const combinado = deduplicarHistorico([...legadoMigrado, ...globalNormalizado]);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(combinado));
+
+    const cnpjAtual = normalizarIdentificadorCnpj(cnpjNormalizado);
+    const filtrado = combinado.filter(item => normalizarIdentificadorCnpj(item?.cnpj) === cnpjAtual);
+
+    setHistorico(filtrado);
+  }, [cnpjNormalizado, historicoKeyGlobal, historicoKeyLegado]);
+
   const [form, setForm] = useState({});
-  const [historico, setHistorico] = useState(() => {
-    const salvo = localStorage.getItem(historicoKey);
-    return salvo ? JSON.parse(salvo) : [];
-  });
+  const [historico, setHistorico] = useState([]);
   const [municipios, setMunicipios] = useState([]);
 
   useEffect(() => {
-    try {
-      const salvo = localStorage.getItem(historicoKey);
-      setHistorico(salvo ? JSON.parse(salvo) : []);
-    } catch {
-      setHistorico([]);
-    }
-  }, [historicoKey]);
+    carregarHistorico();
+  }, [carregarHistorico]);
 
   useEffect(() => {
     fetch('/municipiosIBGE.json')
@@ -128,9 +171,22 @@ const CadastroTVpA = ({ cnpj }) => {
     mes = linhas[0].MES || '';
     const nomeArquivo = `TVpA_${razao}_${ano}_${mes}.csv`;
     // Não faz download automático. O download será feito apenas pelo histórico.
-    const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
-    setHistorico(novoHistorico);
-    localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+    const novoItem = {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      nome: nomeArquivo,
+      conteudo: csvContent,
+      data: new Date().toLocaleString(),
+      cnpj: cnpjValue || cnpjNormalizado || 'semcnpj'
+    };
+    const historicoGlobal = lerArrayStorage(historicoKeyGlobal);
+    const novoHistorico = deduplicarHistorico([novoItem, ...historicoGlobal]);
+
+    const cnpjAtual = normalizarIdentificadorCnpj(cnpjValue || cnpjNormalizado);
+    const historicoAtual = novoHistorico.filter(item => normalizarIdentificadorCnpj(item?.cnpj) === cnpjAtual);
+
+    setHistorico(historicoAtual);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(novoHistorico));
+    localStorage.setItem(historicoKeyLegado, JSON.stringify(historicoAtual));
     // Não limpa as linhas após gerar o CSV
     // Log da ação no backend
       fetch(`${API_URL}/api/acao`, {
@@ -144,10 +200,16 @@ const CadastroTVpA = ({ cnpj }) => {
     });
   };
 
-  const handleExcluirHistorico = idx => {
-    const novo = historico.filter((_, i) => i !== idx);
-    setHistorico(novo);
-    localStorage.setItem(historicoKey, JSON.stringify(novo));
+  const handleExcluirHistorico = id => {
+    const historicoGlobal = lerArrayStorage(historicoKeyGlobal);
+    const novoGlobal = historicoGlobal.filter(item => item?.id !== id);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(novoGlobal));
+
+    const cnpjAtual = normalizarIdentificadorCnpj(cnpjNormalizado);
+    const novoFiltradoAtual = novoGlobal.filter(item => normalizarIdentificadorCnpj(item?.cnpj) === cnpjAtual);
+
+    localStorage.setItem(historicoKeyLegado, JSON.stringify(novoFiltradoAtual));
+    setHistorico(novoFiltradoAtual);
   };
 
   return (
@@ -292,7 +354,7 @@ const CadastroTVpA = ({ cnpj }) => {
             </thead>
             <tbody>
               {historico.map((item, idx) => (
-                <tr key={item.nome} style={{background: idx%2?'#fafafa':'#fff'}}>
+                <tr key={item.id || `${item.nome}_${idx}`} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{item.nome}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
@@ -311,7 +373,7 @@ const CadastroTVpA = ({ cnpj }) => {
                     </button>
                     <button onClick={() => {
                       if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
-                        handleExcluirHistorico(idx);
+                        handleExcluirHistorico(item.id);
                       }
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
                       <IconTrash />
