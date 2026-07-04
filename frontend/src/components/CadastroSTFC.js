@@ -26,25 +26,63 @@ const camposSTFC = [
   { name: 'ACESSOS', label: 'Acessos', required: false },
 ];
 
+function normalizarCnpj(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
+function lerHistoricoSTFC(chave) {
+  try {
+    const salvo = localStorage.getItem(chave);
+    const parseado = salvo ? JSON.parse(salvo) : [];
+    return Array.isArray(parseado) ? parseado : [];
+  } catch {
+    return [];
+  }
+}
+
+function deduplicarHistoricoSTFC(lista = []) {
+  const vistos = new Set();
+  return lista.filter(item => {
+    const chave = `${item?.nome || ''}|${item?.data || ''}|${item?.cnpj || ''}`;
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+}
+
 const CadastroSTFC = ({ cnpj }) => {
-  const cnpjLimpo = (cnpj || '').replace(/[\.\/-]/g, '');
+  const cnpjLimpo = normalizarCnpj(cnpj);
   // Sempre inicializa o form com CNPJ preenchido
   const [form, setForm] = useState(() => ({ CNPJ: cnpjLimpo }));
-  const historicoKey = `historicoSTFC_${cnpjLimpo || 'semcnpj'}`;
-  const [historico, setHistorico] = useState(() => {
-    const salvo = localStorage.getItem(historicoKey);
-    return salvo ? JSON.parse(salvo) : [];
-  });
+  const historicoKeyLegado = `historicoSTFC_${cnpjLimpo || 'semcnpj'}`;
+  const historicoKeyGlobal = 'historicoSTFC_global';
+  const [historico, setHistorico] = useState([]);
   const [municipios, setMunicipios] = useState([]);
 
-  useEffect(() => {
-    try {
-      const salvo = localStorage.getItem(historicoKey);
-      setHistorico(salvo ? JSON.parse(salvo) : []);
-    } catch {
+  const carregarHistorico = React.useCallback(() => {
+    if (!cnpjLimpo) {
       setHistorico([]);
+      return;
     }
-  }, [historicoKey]);
+
+    const historicoGlobal = lerHistoricoSTFC(historicoKeyGlobal).map(item => ({
+      ...item,
+      cnpj: normalizarCnpj(item?.cnpj)
+    }));
+    const historicoLegado = lerHistoricoSTFC(historicoKeyLegado).map(item => ({
+      ...item,
+      cnpj: normalizarCnpj(item?.cnpj || cnpjLimpo)
+    }));
+
+    const combinado = deduplicarHistoricoSTFC([...historicoLegado, ...historicoGlobal]);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(combinado));
+
+    setHistorico(combinado.filter(item => normalizarCnpj(item?.cnpj) === cnpjLimpo));
+  }, [cnpjLimpo, historicoKeyGlobal, historicoKeyLegado]);
+
+  useEffect(() => {
+    carregarHistorico();
+  }, [carregarHistorico]);
 
   useEffect(() => {
     fetch('/municipiosIBGE.json')
@@ -129,9 +167,18 @@ const CadastroSTFC = ({ cnpj }) => {
     let mes = linhas[0]?.MES || '';
     const nomeArquivo = `STFC_${nomeRazao}_${ano}_${mes}.csv`;
     // Não faz download automático. O download será feito apenas pelo histórico.
-    const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
-    setHistorico(novoHistorico);
-    localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+    const novoItem = {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      nome: nomeArquivo,
+      conteudo: csvContent,
+      data: new Date().toLocaleString(),
+      cnpj: cnpjLimpo
+    };
+    const historicoGlobal = lerHistoricoSTFC(historicoKeyGlobal);
+    const novoHistorico = deduplicarHistoricoSTFC([novoItem, ...historicoGlobal]);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(novoHistorico));
+    localStorage.setItem(historicoKeyLegado, JSON.stringify(novoHistorico.filter(item => normalizarCnpj(item?.cnpj) === cnpjLimpo)));
+    setHistorico(novoHistorico.filter(item => normalizarCnpj(item?.cnpj) === cnpjLimpo));
     // Não limpa as linhas após gerar o CSV
     // Log da ação no backend
     fetch(`${API_URL}/api/acao`, {
@@ -145,10 +192,13 @@ const CadastroSTFC = ({ cnpj }) => {
     });
   };
 
-  const handleExcluirHistorico = idx => {
-    const novo = historico.filter((_, i) => i !== idx);
-    setHistorico(novo);
-    localStorage.setItem(historicoKey, JSON.stringify(novo));
+  const handleExcluirHistorico = id => {
+    const historicoGlobal = lerHistoricoSTFC(historicoKeyGlobal);
+    const novoGlobal = historicoGlobal.filter(item => item?.id !== id);
+    const novoAtual = novoGlobal.filter(item => normalizarCnpj(item?.cnpj) === cnpjLimpo);
+    localStorage.setItem(historicoKeyGlobal, JSON.stringify(novoGlobal));
+    localStorage.setItem(historicoKeyLegado, JSON.stringify(novoAtual));
+    setHistorico(novoAtual);
   };
 
   return (
@@ -258,7 +308,7 @@ const CadastroSTFC = ({ cnpj }) => {
               <tr><td colSpan={3} style={{textAlign:'center',color:'#888',padding:'16px 0'}}>Nenhum arquivo gerado ainda.</td></tr>
             ) : (
               historico.map((item, idx) => (
-                <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
+                <tr key={item.id || `${item.nome}_${idx}`} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{item.nome}</td>
                   <td style={{padding:'4px 8px'}}>{item.data}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
@@ -285,7 +335,7 @@ const CadastroSTFC = ({ cnpj }) => {
                     </button>
                     <button onClick={() => {
                       if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
-                        handleExcluirHistorico(idx);
+                        handleExcluirHistorico(item.id);
                       }
                     }} style={{background:'none',border:'none',cursor:'pointer',padding:2}} title="Excluir do histórico" aria-label="Excluir do histórico">
                       <IconTrash />

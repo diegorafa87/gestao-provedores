@@ -70,12 +70,16 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
         navigate('/tvpa/cadastro');
       }
     } else if (itemLabel === 'STFC') {
-      let cnpj = params.get('cnpj');
-      if (!cnpj && window.location.pathname.match(/cliente\/(\d+)/)) {
-        const cnpjInput = document.querySelector('input[name="cnpj"]');
-        if (cnpjInput && cnpjInput.value) {
-          cnpj = cnpjInput.value;
+      let cnpj = '';
+      try {
+        const salvo = localStorage.getItem('clienteSelecionado');
+        if (salvo) {
+          const obj = JSON.parse(salvo);
+          cnpj = obj.cnpj || '';
         }
+      } catch {}
+      if (!cnpj) {
+        cnpj = params.get('cnpj') || '';
       }
       if (cnpj) {
         cnpj = cnpj.replace(/[\.\/\-]/g, '');

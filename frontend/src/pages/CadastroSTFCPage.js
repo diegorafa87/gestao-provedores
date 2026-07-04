@@ -25,6 +25,8 @@ const PaginaCadastroSTFC = () => {
   // Fallback: tenta pegar dados do cliente do localStorage se não vier do backend
   let razaoSocial = cliente?.razaoSocial;
   let cnpj = cliente?.cnpj;
+  const params2 = new URLSearchParams(location.search);
+  if (!cnpj) cnpj = params2.get('cnpj') || '';
   if (!razaoSocial || !cnpj) {
     try {
       const salvo = localStorage.getItem('clienteSelecionado');
