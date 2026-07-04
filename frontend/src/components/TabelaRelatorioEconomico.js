@@ -1,7 +1,6 @@
 import API_URL from '../services/api';
 // ...restante do código permanece igual...
 import React, { useState, useEffect } from 'react';
-import formatHistoricoData from '../utils/formatHistoricoData';
 
 const campos = [
   { name: 'CN', label: 'CN' },
@@ -350,7 +349,7 @@ export default function TabelaRelatorioEconomico({ cnpjPadrao, dataPadrao, datas
               historicoCSV.map((item, idx) => (
                 <li key={idx} style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
                   <span style={{fontSize:14,color:'#555',fontFamily:'monospace'}}>{item.nome || 'relatorio_economico.csv'}</span>
-                  <span style={{fontSize:14,color:'#333'}}>{formatHistoricoData(item.data)}</span>
+                  <span style={{fontSize:14,color:'#333'}}>{item.data}</span>
                   <a href={item.url} download={item.nome || 'relatorio_economico.csv'} target="_blank" rel="noopener noreferrer">
                     <button style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'0.3rem 1.2rem',fontWeight:'bold',cursor:'pointer'}}>Download</button>
                   </a>

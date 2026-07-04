@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { salvarHistoricoNoStorage, carregarHistoricoDoStorage } from '../utils/localStorageHistorico';
-import formatHistoricoData from '../utils/formatHistoricoData';
 import MenuLateral from '../components/MenuLateral';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -377,7 +376,7 @@ export default function EnlacesContratadosPage() {
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ marginBottom: 8, background: '#f4f6fa', padding: 8, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>
-                      <b>{arq.nome}</b> <span style={{ color: '#888', fontSize: 12 }}>({formatHistoricoData(arq.data)})</span>
+                      <b>{arq.nome}</b> <span style={{ color: '#888', fontSize: 12 }}>({arq.data})</span>
                       {arq?.comprovanteDataUrl && (
                         <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 8 }}>
                           • Comprovante disponível

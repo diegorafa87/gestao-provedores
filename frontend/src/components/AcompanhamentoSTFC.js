@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 import { getLogs } from '../services/logs';
-import formatHistoricoData from '../utils/formatHistoricoData';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const MESES = [
@@ -410,7 +409,7 @@ export default function AcompanhamentoSTFC({ cnpj, razaoSocial }) {
               {logsSTFC.map((item, idx) => (
                 <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
                   <td style={{ padding: '4px 8px' }}>{obterNomeArquivoHistorico(item)}</td>
-                  <td style={{ padding: '4px 8px' }}>{formatHistoricoData(item.data)}</td>
+                  <td style={{ padding: '4px 8px' }}>{item.data || '-'}</td>
                   <td style={{ padding: '4px 8px' }}>{item.usuario || '-'}</td>
                   <td style={{ textAlign: 'center', padding: '4px 8px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button
