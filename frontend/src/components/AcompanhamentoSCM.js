@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import { carregarHistoricoSCMLocal, mesclarHistoricoSCM, removerHistoricoSCMLocal } from '../utils/scmHistoricoLocal';
 
 function formatarDataHistoricoSCM(valor) {
   if (!valor) return '-';
@@ -206,11 +207,15 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
   // Histórico de arquivos CSV gerados (global, backend)
   const [historicoArquivos, setHistoricoArquivos] = useState([]);
   useEffect(() => {
+    const local = carregarHistoricoSCMLocal(cnpj);
+    setHistoricoArquivos(deduplicarHistorico(local));
+
     getSCMHistoricoCSV()
       .then(data => {
-        setHistoricoArquivos(deduplicarHistorico(data));
+        const combinado = mesclarHistoricoSCM(data, cnpj);
+        setHistoricoArquivos(deduplicarHistorico(combinado));
       })
-      .catch(() => setHistoricoArquivos([]));
+      .catch(() => setHistoricoArquivos(deduplicarHistorico(local)));
   }, [cnpj]);
 
   // Carregar dados do backend ao montar ou mudar cnpj
@@ -549,6 +554,7 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                       <button onClick={async () => {
                         if(window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                           try {
+                            removerHistoricoSCMLocal(item, cnpj);
                             await deleteSCMHistoricoCSV({
                               nome: item?.nome,
                               nomeDetalhes: item?.detalhes?.nomeArquivo,
@@ -556,8 +562,10 @@ export default function AcompanhamentoSCM({ cnpj, razaoSocial }) {
                               usuario: item?.usuario
                             });
                             const data = await getSCMHistoricoCSV();
-                            setHistoricoArquivos(deduplicarHistorico(data));
+                            const combinado = mesclarHistoricoSCM(data, cnpj);
+                            setHistoricoArquivos(deduplicarHistorico(combinado));
                           } catch {
+                            setHistoricoArquivos(deduplicarHistorico(carregarHistoricoSCMLocal(cnpj)));
                             alert('Erro ao excluir arquivo do histórico.');
                           }
                         }

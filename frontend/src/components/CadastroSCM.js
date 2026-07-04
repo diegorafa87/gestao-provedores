@@ -2,6 +2,7 @@ import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import { adicionarHistoricoSCMLocal, carregarHistoricoSCMLocal, mesclarHistoricoSCM, removerHistoricoSCMLocal } from '../utils/scmHistoricoLocal';
 
 function formatarDataHistoricoSCM(valor) {
   if (!valor) return '-';
@@ -136,8 +137,16 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
   const recarregarHistorico = React.useCallback(async () => {
     const cnpjAtual = obterCnpjAtual();
-    const data = await getSCMHistoricoCSV();
-    setHistorico(deduplicarHistorico(data, cnpjAtual));
+    const local = carregarHistoricoSCMLocal(cnpjAtual);
+    setHistorico(deduplicarHistorico(local, cnpjAtual));
+
+    try {
+      const data = await getSCMHistoricoCSV();
+      const combinado = mesclarHistoricoSCM(data, cnpjAtual);
+      setHistorico(deduplicarHistorico(combinado, cnpjAtual));
+    } catch {
+      setHistorico(deduplicarHistorico(local, cnpjAtual));
+    }
   }, [cnpj]);
 
   // Busca histórico global do backend ao montar
@@ -270,11 +279,15 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       detalhes: { nomeArquivo, ano, mes, razaoSocial: nomeRazao },
       acao: 'GERAR_CSV_SCM'
     };
+    adicionarHistoricoSCMLocal(novaEntrada, cnpjAtual);
+    setHistorico(prev => deduplicarHistorico([novaEntrada, ...prev], cnpjAtual));
     try {
       await addSCMHistoricoCSV(novaEntrada);
       // Atualiza histórico local após salvar
       await recarregarHistorico();
-    } catch {}
+    } catch {
+      await recarregarHistorico();
+    }
   };
 
   // Exclusão permanente: remove do backend e recarrega o histórico
@@ -284,6 +297,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     }
 
     try {
+      removerHistoricoSCMLocal(item, obterCnpjAtual());
       await deleteSCMHistoricoCSV({
         nome: item?.nome,
         nomeDetalhes: item?.detalhes?.nomeArquivo,
@@ -292,6 +306,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       });
       await recarregarHistorico();
     } catch {
+      await recarregarHistorico();
       alert('Erro ao excluir arquivo do histórico.');
     }
   };
