@@ -3,8 +3,48 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 from db import db
 from controllers.log_controller import registrar_log
+from controllers.acompanhamento_scm_controller import _read as _read_scm_logs, _write as _write_scm_logs
 
 VALID_STATUSES = ['NOVO','ATIVO','CORRIGIR','SUSPENSO']
+
+
+def _normalizar_cnpj(valor: str = ''):
+    return ''.join(ch for ch in str(valor or '') if ch.isdigit())
+
+
+def _remover_historico_scm_por_cnpj(cnpj: str = ''):
+    cnpj_limpo = _normalizar_cnpj(cnpj)
+    if not cnpj_limpo:
+        return
+
+    raw = _read_scm_logs()
+    if isinstance(raw, list):
+        logs = raw
+    else:
+        logs = raw.get('logs', [])
+
+    filtrados = []
+    for item in logs:
+        if item.get('acao') != 'GERAR_CSV_SCM':
+            filtrados.append(item)
+            continue
+
+        usuario_cnpj = _normalizar_cnpj(item.get('usuario') or '')
+        if usuario_cnpj != cnpj_limpo:
+            filtrados.append(item)
+
+    if isinstance(raw, dict):
+        raw['logs'] = filtrados
+        _write_scm_logs(raw)
+    else:
+        _write_scm_logs(filtrados)
+
+
+async def _remover_acompanhamento_scm_por_cnpj(cnpj: str = ''):
+    cnpj_limpo = _normalizar_cnpj(cnpj)
+    if not cnpj_limpo:
+        return
+    await db['acompanhamentos'].delete_many({'cnpj': cnpj_limpo, 'tipo': 'SCM'})
 
 async def cadastrar_cliente(payload: dict):
     razaoSocial = payload.get('razaoSocial')
@@ -21,6 +61,8 @@ async def cadastrar_cliente(payload: dict):
     existe_razao = await coll.find_one({'razaoSocial': {'$regex': f'^{razaoSocial}$', '$options': 'i'}})
     if existe_razao:
         raise HTTPException(status_code=409, detail='Razão Social já cadastrada!')
+    _remover_historico_scm_por_cnpj(cnpj)
+    await _remover_acompanhamento_scm_por_cnpj(cnpj)
     novo = { 'razaoSocial': razaoSocial, 'cnpj': cnpj, 'email': email, 'telefone': telefone, 'consultoria': consultoria }
     res = await coll.insert_one(novo)
     novo['_id'] = str(res.inserted_id)
@@ -80,6 +122,8 @@ async def excluir_cliente(id: str):
     res = await coll.find_one_and_delete({'_id': oid})
     if not res:
         raise HTTPException(status_code=404, detail='Cliente não encontrado')
+    _remover_historico_scm_por_cnpj(res.get('cnpj'))
+    await _remover_acompanhamento_scm_por_cnpj(res.get('cnpj'))
     registrar_log('EXCLUIR_CLIENTE', id, {})
     return {'success': True}
 

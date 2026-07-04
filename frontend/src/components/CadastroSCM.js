@@ -69,6 +69,10 @@ function deduplicarHistorico(lista = [], cnpj = '') {
   });
 }
 
+function normalizarCnpj(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
 
 
 // Função para gerar CSV com separador vírgula, CRLF e sem linha em branco final
@@ -114,14 +118,17 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     return '';
   };
 
+  const recarregarHistorico = React.useCallback(async () => {
+    const cnpjAtual = obterCnpjAtual();
+    const data = await getSCMHistoricoCSV();
+    setHistorico(deduplicarHistorico(data, cnpjAtual));
+  }, [cnpj]);
+
   // Busca histórico global do backend ao montar
   useEffect(() => {
-    getSCMHistoricoCSV()
-      .then(data => {
-        setHistorico(deduplicarHistorico(data, obterCnpjAtual()));
-      })
+    recarregarHistorico()
       .catch(() => setHistorico([]));
-  }, [cnpj]);
+  }, [recarregarHistorico]);
 
   useEffect(() => {
     const cnpjAtual = obterCnpjAtual().replace(/\D/g, '');
@@ -250,8 +257,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     try {
       await addSCMHistoricoCSV(novaEntrada);
       // Atualiza histórico local após salvar
-      const data = await getSCMHistoricoCSV();
-      setHistorico(deduplicarHistorico(data, cnpj));
+      await recarregarHistorico();
     } catch {}
   };
 
@@ -268,8 +274,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
         data: item?.data,
         usuario: item?.usuario
       });
-      const data = await getSCMHistoricoCSV();
-      setHistorico(deduplicarHistorico(data, cnpj));
+      await recarregarHistorico();
     } catch {
       alert('Erro ao excluir arquivo do histórico.');
     }

@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const Cliente = require('../models/Cliente');
 const User = require('../../models/User');
+const Acompanhamento = require('../models/Acompanhamento');
 const { registrarLog } = require('./logController');
 
 const ADMIN_EMAIL_FALLBACK = 'diegorafa87@gmail.com';
@@ -51,6 +52,15 @@ function removerHistoricoSCMPorCnpj(cnpj = '') {
   fs.writeFileSync(dbLogPath, JSON.stringify(filtrados, null, 2));
 }
 
+async function removerAcompanhamentoSCMPorCnpj(cnpj = '') {
+  const cnpjLimpo = String(cnpj).replace(/\D/g, '');
+  if (!cnpjLimpo) return;
+
+  try {
+    await Acompanhamento.deleteMany({ cnpj: cnpjLimpo, tipo: 'SCM' });
+  } catch {}
+}
+
 exports.cadastrarCliente = async (req, res) => {
   try {
     let { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
@@ -74,6 +84,9 @@ exports.cadastrarCliente = async (req, res) => {
 
     const existeRazao = await Cliente.findOne({ razaoSocial: { $regex: `^${razaoSocial}$`, $options: 'i' } });
     if (existeRazao) return res.status(409).json({ error: 'Razão Social já cadastrada!' });
+
+    await removerHistoricoSCMPorCnpj(cnpj);
+    await removerAcompanhamentoSCMPorCnpj(cnpj);
 
     const novoCliente = await Cliente.create({ razaoSocial, cnpj, email, telefone, consultoria });
     registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, consultoria });
@@ -183,6 +196,7 @@ exports.excluirCliente = async (req, res) => {
     }
 
     removerHistoricoSCMPorCnpj(clienteAtual.cnpj);
+    await removerAcompanhamentoSCMPorCnpj(clienteAtual.cnpj);
     await Cliente.findByIdAndDelete(id);
     registrarLog('EXCLUIR_CLIENTE', id, {});
     res.json({ success: true });
