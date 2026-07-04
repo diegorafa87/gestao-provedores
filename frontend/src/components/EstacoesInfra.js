@@ -33,6 +33,26 @@ function criarBlobCSV(conteudo = '') {
   return new Blob([BOM + normalizarConteudoCSV(conteudo)], { type: 'text/csv;charset=utf-8;' });
 }
 
+function normalizarCnpj(valor = '') {
+  return String(valor || '').replace(/\D/g, '');
+}
+
+function obterClienteSelecionadoCnpj() {
+  try {
+    const salvo = localStorage.getItem('clienteSelecionado');
+    if (!salvo) return '';
+    const obj = JSON.parse(salvo);
+    return normalizarCnpj(obj?.cnpj || '');
+  } catch {
+    return '';
+  }
+}
+
+function getHistoricoKeyByCnpj(cnpj = '') {
+  const cnpjLimpo = normalizarCnpj(cnpj);
+  return cnpjLimpo ? `historicoCsvEstacoes_${cnpjLimpo}` : null;
+}
+
 const campos = [
   'Ano',
   'Nome da Estação',
@@ -52,6 +72,7 @@ const campos = [
 export default function EstacoesInfra() {
   const [valores, setValores] = useState(Array(campos.length).fill(''));
   const [municipios, setMunicipios] = useState([]);
+  const [clienteCnpj, setClienteCnpj] = useState(() => obterClienteSelecionadoCnpj());
   // Subcampos do endereço
   const [endereco, setEndereco] = useState({
     rua: '',
@@ -63,22 +84,13 @@ export default function EstacoesInfra() {
   });
   // Lista de estações cadastradas
   const [estacoes, setEstacoes] = useState([]);
-  // Função para gerar a chave do histórico por CNPJ
-  function getHistoricoKey() {
-    try {
-      const salvo = localStorage.getItem('clienteSelecionado');
-      if (salvo) {
-        const obj = JSON.parse(salvo);
-        if (obj.cnpj) return 'historicoCsvEstacoes_' + obj.cnpj.replace(/\D/g, '');
-      }
-    } catch {}
-    return 'historicoCsvEstacoes_semcnpj';
-  }
+  const historicoKey = getHistoricoKeyByCnpj(clienteCnpj);
 
   // Histórico de CSVs gerados (por cliente)
   const [csvHistorico, setCsvHistorico] = useState(() => {
+    if (!historicoKey) return [];
     try {
-      const salvo = localStorage.getItem(getHistoricoKey());
+      const salvo = localStorage.getItem(historicoKey);
       return salvo ? JSON.parse(salvo) : [];
     } catch {
       return [];
@@ -87,9 +99,29 @@ export default function EstacoesInfra() {
 
   // Carregar histórico do localStorage sempre que o cliente mudar ou o localStorage for alterado (em outras abas)
   useEffect(() => {
+    function atualizarClienteSelecionado() {
+      setClienteCnpj(obterClienteSelecionadoCnpj());
+    }
+
+    atualizarClienteSelecionado();
+    window.addEventListener('storage', atualizarClienteSelecionado);
+    window.addEventListener('focus', atualizarClienteSelecionado);
+
+    return () => {
+      window.removeEventListener('storage', atualizarClienteSelecionado);
+      window.removeEventListener('focus', atualizarClienteSelecionado);
+    };
+  }, []);
+
+  useEffect(() => {
     function atualizarHistorico() {
+      if (!historicoKey) {
+        setCsvHistorico([]);
+        return;
+      }
+
       try {
-        const salvo = localStorage.getItem(getHistoricoKey());
+        const salvo = localStorage.getItem(historicoKey);
         setCsvHistorico(salvo ? JSON.parse(salvo) : []);
       } catch {
         setCsvHistorico([]);
@@ -98,7 +130,7 @@ export default function EstacoesInfra() {
     atualizarHistorico();
     window.addEventListener('storage', atualizarHistorico);
     return () => window.removeEventListener('storage', atualizarHistorico);
-  }, [localStorage.getItem('clienteSelecionado')]);
+  }, [historicoKey]);
 
   useEffect(() => {
     fetchMunicipios().then(setMunicipios);
@@ -498,6 +530,11 @@ export default function EstacoesInfra() {
             </tbody>
           </table>
           <button onClick={() => {
+            if (!clienteCnpj) {
+              alert('Selecione um cliente antes de gerar o CSV.');
+              return;
+            }
+
             // Cabeçalho igual ao EX_ESTACOES.csv
             const header = [
               'CNPJ',
@@ -515,14 +552,7 @@ export default function EstacoesInfra() {
               'SN_ENLACE_SATELITE'
             ];
             // Recupera o CNPJ do cliente do localStorage
-            let cnpj = '';
-            try {
-              const salvo = localStorage.getItem('clienteSelecionado');
-              if (salvo) {
-                const obj = JSON.parse(salvo);
-                cnpj = (obj.cnpj || '').replace(/[\.\/-]/g, '');
-              }
-            } catch {}
+            const cnpj = clienteCnpj;
             // Mapear os dados para a ordem correta
             const csvRows = [
               header.join(';'),
@@ -572,7 +602,9 @@ export default function EstacoesInfra() {
             // Limitar histórico a 10 arquivos
             if (novoHistorico.length > 10) novoHistorico = novoHistorico.slice(0, 10);
             setCsvHistorico(novoHistorico);
-            localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
+            if (historicoKey) {
+              localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+            }
           }}
             style={{marginTop:24, padding:'10px 24px', background:'#388e3c', color:'#fff', border:'none', borderRadius:4, fontWeight:700, fontSize:16, cursor:'pointer'}}
           >Gerar CSV</button>
@@ -608,7 +640,9 @@ export default function EstacoesInfra() {
                     if (window.confirm('Tem certeza que deseja excluir este arquivo do histórico?')) {
                       const novoHistorico = csvHistorico.filter((_, i) => i !== idx);
                       setCsvHistorico(novoHistorico);
-                      localStorage.setItem(getHistoricoKey(), JSON.stringify(novoHistorico));
+                      if (historicoKey) {
+                        localStorage.setItem(historicoKey, JSON.stringify(novoHistorico));
+                      }
                     }
                   }}
                 >Excluir</button>

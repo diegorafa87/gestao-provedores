@@ -176,9 +176,14 @@ export default function AcompanhamentoInfra({ cnpj, razaoSocial }) {
   // Carregar histórico de CSV INFRA (Estações) salvo por cliente
   useEffect(() => {
     const cnpjLimpo = (cnpj || '').replace(/\D/g, '');
-    const chaveHistorico = cnpjLimpo ? `historicoCsvEstacoes_${cnpjLimpo}` : 'historicoCsvEstacoes_semcnpj';
+    const chaveHistorico = cnpjLimpo ? `historicoCsvEstacoes_${cnpjLimpo}` : null;
 
     const carregarHistorico = () => {
+      if (!chaveHistorico) {
+        setHistoricoArquivosInfra([]);
+        return;
+      }
+
       try {
         const salvo = localStorage.getItem(chaveHistorico);
         setHistoricoArquivosInfra(salvo ? JSON.parse(salvo) : []);
