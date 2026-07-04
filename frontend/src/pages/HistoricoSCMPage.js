@@ -4,6 +4,7 @@ import { IconDownload } from '../components/IconsHistorico';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 const MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -104,7 +105,7 @@ export default function HistoricoSCMPage() {
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>
-                      {obterNomeArquivoHistorico(arq)} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
+                      {obterNomeArquivoHistorico(arq)} - <span style={{ color: '#1976d2' }}>{formatHistoricoData(arq.data)}</span>
                     </span>
                     <button
                       style={{ marginLeft: 12, background: 'none', border: 'none', padding: 2, cursor: 'pointer' }}

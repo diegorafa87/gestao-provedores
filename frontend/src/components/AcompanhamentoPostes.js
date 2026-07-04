@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { IconPower, IconPowerOn, IconEye, IconEyeOff, IconDownload } from './IconsAcompanhamento';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
 import { carregarHistoricoPostesDoStorage, criarBlobCSV } from '../utils/localStorageHistoricoPostes';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 const ANOS = [2021, 2022, 2023, 2024, 2025, 2026];
 const CAMPOS = ['Contrato processado na Coleta Anatel'];
@@ -397,7 +398,7 @@ export default function AcompanhamentoPostes({ cnpj, razaoSocial }) {
               {historicoArquivosPostes.map((item, idx) => (
                 <tr key={idx} style={{ background: idx % 2 ? '#fafafa' : '#fff' }}>
                   <td style={{ padding: '4px 8px' }}>{item?.nome || 'postes.csv'}</td>
-                  <td style={{ padding: '4px 8px' }}>{item?.data || '-'}</td>
+                  <td style={{ padding: '4px 8px' }}>{formatHistoricoData(item?.data)}</td>
                   <td style={{ padding: '4px 8px' }}>{cnpj || '-'}</td>
                   <td style={{ textAlign: 'center', padding: '4px 8px', display: 'flex', justifyContent: 'center', gap: 8 }}>
                     <button

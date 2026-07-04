@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 // Mapeamento de sigla UF para código IBGE
 const UF_TO_CODIGO = {
@@ -617,7 +618,7 @@ export default function EstacoesInfra() {
           <ul style={{paddingLeft:0, listStyle:'none'}}>
             {csvHistorico.map((item, idx) => (
               <li key={idx} style={{marginBottom:6, fontSize:15, display:'flex', alignItems:'center', gap:12}}>
-                <span style={{fontWeight:500}}>{item.nome} <span style={{color:'#888', fontSize:13}}>({item.data})</span></span>
+                <span style={{fontWeight:500}}>{item.nome} <span style={{color:'#888', fontSize:13}}>({formatHistoricoData(item.data)})</span></span>
                 <button
                   style={{background:'#1976d2', color:'#fff', border:'none', borderRadius:3, padding:'2px 10px', fontSize:13, cursor:'pointer', marginLeft:4}}
                   title="Baixar este CSV"

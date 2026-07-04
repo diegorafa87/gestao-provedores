@@ -1,6 +1,7 @@
 import API_URL from '../services/api';
 import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 // Ordem e nomes dos campos para o CSV STFC padrão ANSAT
 const camposCSV_STFC = [
@@ -310,7 +311,7 @@ const CadastroSTFC = ({ cnpj }) => {
               historico.map((item, idx) => (
                 <tr key={item.id || `${item.nome}_${idx}`} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{item.nome}</td>
-                  <td style={{padding:'4px 8px'}}>{item.data}</td>
+                  <td style={{padding:'4px 8px'}}>{formatHistoricoData(item.data)}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', display:'flex', gap:8, justifyContent:'center'}}>
                     <button onClick={() => {
                       // Força BOM UTF-8, separador ponto e vírgula e CRLF (padrão SCM)

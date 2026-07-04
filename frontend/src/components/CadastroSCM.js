@@ -2,6 +2,7 @@ import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 const campos = [
   // { name: 'CNPJ', label: 'CNPJ', required: false }, // Não exibe campo de preenchimento de CNPJ
@@ -475,7 +476,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
               {historico.map((item, idx) => (
                 <tr key={idx} style={{background: idx%2?'#fafafa':'#fff'}}>
                   <td style={{padding:'4px 8px'}}>{obterNomeArquivoHistorico(item)}</td>
-                  <td style={{padding:'4px 8px'}}>{item.data}</td>
+                  <td style={{padding:'4px 8px'}}>{formatHistoricoData(item.data)}</td>
                   <td style={{textAlign:'center',padding:'4px 8px', minWidth: 220, whiteSpace: 'nowrap'}}>
                     <div style={{display:'inline-flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap'}}>
                     <button onClick={() => {

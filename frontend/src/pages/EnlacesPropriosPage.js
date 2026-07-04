@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MenuLateral from '../components/MenuLateral';
 import { useLocation } from 'react-router-dom';
+import formatHistoricoData from '../utils/formatHistoricoData';
 
 function getClienteSelecionado() {
   try {
@@ -436,7 +437,7 @@ export default function EnlacesPropriosPage() {
                         </span>
                       )}
                     </td>
-                    <td style={{padding:'4px 8px'}}>{item.data}</td>
+                    <td style={{padding:'4px 8px'}}>{formatHistoricoData(item.data)}</td>
                     <td style={{textAlign:'center'}}>
                       <button onClick={() => {
                         const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });

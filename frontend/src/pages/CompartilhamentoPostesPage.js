@@ -2,6 +2,7 @@ import API_URL from '../services/api';
 import React, { useEffect, useRef, useState } from 'react';
 import { IconDownload } from '../components/IconsHistorico';
 import { salvarHistoricoPostesNoStorage, carregarHistoricoPostesDoStorage, normalizarConteudoCSV, criarBlobCSV } from '../utils/localStorageHistoricoPostes';
+import formatHistoricoData from '../utils/formatHistoricoData';
 import MenuLateral from '../components/MenuLateral';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -488,7 +489,7 @@ export default function CompartilhamentoPostesPage() {
                 {historicoArquivos.map((arq, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
                     <span style={{ flex: 1 }}>
-                      {arq.nome} - <span style={{ color: '#1976d2' }}>{arq.data}</span>
+                      {arq.nome} - <span style={{ color: '#1976d2' }}>{formatHistoricoData(arq.data)}</span>
                       {arq?.comprovanteDataUrl && (
                         <span style={{ color: '#2e7d32', fontSize: 12, marginLeft: 8 }}>
                           • Comprovante disponível
