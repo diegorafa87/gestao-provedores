@@ -140,9 +140,9 @@ export default function EstacoesInfra() {
   const handleChange = (idx, value) => {
     setValores(v => {
       const novo = [...v];
-      // Se for o campo Endereço (posição 8)
-      if (idx === 8) {
-        novo[8] = value; // Não usado diretamente, mas mantido para compatibilidade
+      // Se for o campo Endereço (posição 7)
+      if (idx === 7) {
+        novo[7] = value; // Não usado diretamente, mas mantido para compatibilidade
       } else {
         novo[idx] = value;
       }
@@ -158,7 +158,7 @@ export default function EstacoesInfra() {
       const concat = `${novo.rua}, ${novo.numero}, ${novo.bairro}, ${novo.municipio}, ${novo.estado}, ${novo.cep}`;
       setValores(v => {
         const arr = [...v];
-        arr[8] = concat;
+        arr[7] = concat;
         return arr;
       });
       return novo;
@@ -559,7 +559,7 @@ export default function EstacoesInfra() {
               ...estacoes.map(est => {
                 // O campo endereço é sempre salvo na posição 8 como string completa
                 // Garantir que não haja ; no endereço
-                let enderecoCompleto = est[8] ? String(est[8]).replace(/;/g, ',') : '';
+                let enderecoCompleto = est[7] ? String(est[7]).replace(/;/g, ',') : '';
                 return [
                   cnpj,
                   est[0] || '', // ANO
@@ -569,11 +569,11 @@ export default function EstacoesInfra() {
                   est[4] || '', // LONG
                   est[6] || '', // CO_MUNICIPIO_IBGE
                   enderecoCompleto, // ENDERECO
-                  est[9] || '', // SN_ABERTURA
-                  est[10] || '', // TP_ESTACAO
-                  est[11] || '', // SN_ENLACE_PROPRIO
-                  est[12] || '', // SN_ENLACE_CONTRATADO
-                  est[13] || ''  // SN_ENLACE_SATELITE
+                  est[8] || '', // SN_ABERTURA
+                  est[9] || '', // TP_ESTACAO
+                  est[10] || '', // SN_ENLACE_PROPRIO
+                  est[11] || '', // SN_ENLACE_CONTRATADO
+                  est[12] || ''  // SN_ENLACE_SATELITE
                 ].join(';');
               })
             ];
