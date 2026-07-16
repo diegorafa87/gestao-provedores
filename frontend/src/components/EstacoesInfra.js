@@ -53,6 +53,49 @@ function getHistoricoKeyByCnpj(cnpj = '') {
   return cnpjLimpo ? `historicoCsvEstacoes_${cnpjLimpo}` : null;
 }
 
+function formatarDecimalCoordenada(valorNumerico) {
+  if (!Number.isFinite(valorNumerico)) return '';
+  return valorNumerico.toFixed(6).replace('.', ',');
+}
+
+function converterCoordenadaParaDecimal(valor, eixo = 'lat') {
+  const textoOriginal = String(valor || '').trim();
+  if (!textoOriginal) return '';
+
+  // Já decimal (aceita vírgula ou ponto)
+  const decimalDireto = textoOriginal.replace(',', '.');
+  if (/^-?\d+(\.\d+)?$/.test(decimalDireto)) {
+    const numero = Number(decimalDireto);
+    if (!Number.isFinite(numero)) return textoOriginal;
+    return formatarDecimalCoordenada(numero);
+  }
+
+  // DMS: extrai graus, minutos e segundos (na ordem em que aparecerem)
+  const partesNumericas = textoOriginal.match(/\d+(?:[.,]\d+)?/g);
+  if (!partesNumericas || partesNumericas.length === 0) return textoOriginal;
+
+  const graus = Number(String(partesNumericas[0]).replace(',', '.')) || 0;
+  const minutos = Number(String(partesNumericas[1] || '0').replace(',', '.')) || 0;
+  const segundos = Number(String(partesNumericas[2] || '0').replace(',', '.')) || 0;
+
+  let decimal = Math.abs(graus) + (minutos / 60) + (segundos / 3600);
+
+  const textoMaiusculo = textoOriginal.toUpperCase();
+  const temSinalNegativo = /^\s*-/.test(textoOriginal);
+  const hemisferioSul = /\bS\b/.test(textoMaiusculo);
+  const hemisferioOeste = /\bW\b|\bO\b/.test(textoMaiusculo);
+
+  if (temSinalNegativo) {
+    decimal = -decimal;
+  } else if (eixo === 'lat' && hemisferioSul) {
+    decimal = -decimal;
+  } else if (eixo === 'long' && hemisferioOeste) {
+    decimal = -decimal;
+  }
+
+  return formatarDecimalCoordenada(decimal);
+}
+
 const campos = [
   'Ano',
   'Nome da Estação',
@@ -167,7 +210,12 @@ export default function EstacoesInfra() {
 
   const handleSubmit = e => {
     e.preventDefault();
-    setEstacoes(estacoesAntigas => [...estacoesAntigas, valores]);
+    const valoresNormalizados = [...valores];
+    // Índices: 3 = Latitude, 4 = Longitude
+    valoresNormalizados[3] = converterCoordenadaParaDecimal(valoresNormalizados[3], 'lat');
+    valoresNormalizados[4] = converterCoordenadaParaDecimal(valoresNormalizados[4], 'long');
+
+    setEstacoes(estacoesAntigas => [...estacoesAntigas, valoresNormalizados]);
     setValores(Array(campos.length).fill(''));
     setEndereco({
       rua: '',
@@ -565,8 +613,8 @@ export default function EstacoesInfra() {
                   est[0] || '', // ANO
                   est[1] || '', // ID_ESTACAO (Nome da Estação)
                   est[2] || '', // NU_ESTACAO_BDTA_ANATEL (Número da estação)
-                  est[3] || '', // LAT
-                  est[4] || '', // LONG
+                  converterCoordenadaParaDecimal(est[3], 'lat') || '', // LAT
+                  converterCoordenadaParaDecimal(est[4], 'long') || '', // LONG
                   est[6] || '', // CO_MUNICIPIO_IBGE
                   enderecoCompleto, // ENDERECO
                   est[8] || '', // SN_ABERTURA
