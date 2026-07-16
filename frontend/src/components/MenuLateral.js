@@ -3,6 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+const INFRA_SUBITENS = [
+  { label: 'Estações', path: '/infra/estacoes' },
+  { label: 'Enlaces Próprios', path: '/infra/enlaces-proprios' },
+  { label: 'Enlaces Contratados', path: '/infra/enlaces-contratados' },
+];
+
 const itens = [
   { label: 'SCM', icon: '📡' },
   { label: 'TVpA', icon: '📺' },
@@ -16,6 +22,7 @@ const itens = [
 
 const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
   const location = useLocation();
+  const [infraSubmenuAberto, setInfraSubmenuAberto] = useState(location.pathname.startsWith('/infra/'));
   const [clienteInfoPersistente, setClienteInfoPersistente] = useState(() => {
     try {
       const salvo = localStorage.getItem('clienteSelecionado');
@@ -30,6 +37,10 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       const salvo = localStorage.getItem('clienteSelecionado');
       if (salvo) setClienteInfoPersistente(JSON.parse(salvo));
     } catch {}
+
+    if (location.pathname.startsWith('/infra/')) {
+      setInfraSubmenuAberto(true);
+    }
   }, [location]);
 
   const navigate = useNavigate();
@@ -90,6 +101,7 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
     } else if (itemLabel === 'RELATÓRIO ECONÔMICO') {
       navigate('/relatorio-economico/primeiro-semestre');
     } else if (itemLabel === 'INFRA') {
+      setInfraSubmenuAberto(v => !v);
       navigate('/infra/estacoes');
     } else if (itemLabel === 'CONTRATOS E CERTIDÕES') {
       navigate('/contratos-e-certidoes/contratos');
@@ -116,6 +128,10 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
     } else {
       alert(`Clicou em ${itemLabel}`);
     }
+  };
+
+  const handleInfraSubitemClick = (path) => {
+    navigate(path);
   };
 
   return (
@@ -186,25 +202,56 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       </div>
       <nav style={{width: '100%'}}>
         {itens.map(item => (
-          <div
-            key={item.label}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '12px 24px',
-              cursor: 'pointer',
-              color: '#fff',
-              fontWeight: 'normal',
-              fontSize: 16,
-              transition: 'background 0.2s',
-              background: 'none',
-            }}
-              onClick={() => handleItemClick(item.label)}
-          >
-            <span style={{fontSize: 20}}>{item.icon}</span>
-            <span style={item.label === 'EDITAR PERFIL' && !clienteInfoPersistente?.id ? { opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' } : {}}>{item.label}</span>
+          <div key={item.label}>
+            <div
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 24px',
+                cursor: 'pointer',
+                color: '#fff',
+                fontWeight: 'normal',
+                fontSize: 16,
+                transition: 'background 0.2s',
+                background: 'none',
+              }}
+                onClick={() => handleItemClick(item.label)}
+            >
+              <span style={{fontSize: 20}}>{item.icon}</span>
+              <span style={item.label === 'EDITAR PERFIL' && !clienteInfoPersistente?.id ? { opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' } : {}}>{item.label}</span>
+            </div>
+
+            {item.label === 'INFRA' && infraSubmenuAberto && (
+              <div style={{ marginTop: -4, marginBottom: 8 }}>
+                {INFRA_SUBITENS.map((subitem) => {
+                  const ativo = location.pathname === subitem.path;
+                  return (
+                    <div
+                      key={subitem.label}
+                      onClick={() => handleInfraSubitemClick(subitem.path)}
+                      style={{
+                        marginLeft: 52,
+                        marginRight: 12,
+                        marginBottom: 6,
+                        padding: '6px 8px',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        lineHeight: 1.2,
+                        cursor: 'pointer',
+                        color: '#fff',
+                        background: ativo ? '#1976d2' : 'rgba(255,255,255,0.08)',
+                        border: ativo ? '1px solid #4da3ff' : '1px solid transparent',
+                      }}
+                      title={subitem.label}
+                    >
+                      {subitem.label}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </nav>
