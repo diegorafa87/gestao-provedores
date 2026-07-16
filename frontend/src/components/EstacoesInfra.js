@@ -96,6 +96,45 @@ function converterCoordenadaParaDecimal(valor, eixo = 'lat') {
   return formatarDecimalCoordenada(decimal);
 }
 
+function normalizarSimNao(valor = '') {
+  const texto = String(valor || '').trim().toUpperCase();
+  if (texto === 'S' || texto === 'N') return texto;
+  return '';
+}
+
+function mapearLinhaEstacaoParaCsv(est = [], cnpj = '') {
+  const snAberturaAtual = normalizarSimNao(est[8]);
+  const snAberturaLegado = normalizarSimNao(est[9]);
+  const usaLayoutLegado = !snAberturaAtual && !!snAberturaLegado;
+
+  // layout atual: endereço[7], SN[8..12]
+  // layout legado: endereço[8], SN_ABERTURA[9], TP[10], PROPRIO[11], CONTR[12], SAT[13]
+  const enderecoRaw = usaLayoutLegado ? est[8] : est[7];
+  const enderecoCompleto = enderecoRaw ? String(enderecoRaw).replace(/;/g, ',') : '';
+
+  const snAbertura = usaLayoutLegado ? snAberturaLegado : snAberturaAtual;
+  const tpEstacao = usaLayoutLegado ? (est[10] || '') : (est[9] || '');
+  const snEnlaceProprio = normalizarSimNao(usaLayoutLegado ? est[11] : est[10]);
+  const snEnlaceContratado = normalizarSimNao(usaLayoutLegado ? est[12] : est[11]);
+  const snEnlaceSatelite = normalizarSimNao(usaLayoutLegado ? est[13] : est[12]);
+
+  return [
+    cnpj,
+    est[0] || '', // ANO
+    est[1] || '', // ID_ESTACAO (Nome da Estação)
+    est[2] || '', // NU_ESTACAO_BDTA_ANATEL (Número da estação)
+    converterCoordenadaParaDecimal(est[3], 'lat') || '', // LAT
+    converterCoordenadaParaDecimal(est[4], 'long') || '', // LONG
+    est[6] || '', // CO_MUNICIPIO_IBGE
+    enderecoCompleto, // ENDERECO
+    snAbertura, // SN_ABERTURA
+    tpEstacao, // TP_ESTACAO
+    snEnlaceProprio, // SN_ENLACE_PROPRIO
+    snEnlaceContratado, // SN_ENLACE_CONTRATADO
+    snEnlaceSatelite // SN_ENLACE_SATELITE
+  ];
+}
+
 const campos = [
   'Ano',
   'Nome da Estação',
@@ -604,26 +643,7 @@ export default function EstacoesInfra() {
             // Mapear os dados para a ordem correta
             const csvRows = [
               header.join(';'),
-              ...estacoes.map(est => {
-                // O campo endereço é sempre salvo na posição 8 como string completa
-                // Garantir que não haja ; no endereço
-                let enderecoCompleto = est[7] ? String(est[7]).replace(/;/g, ',') : '';
-                return [
-                  cnpj,
-                  est[0] || '', // ANO
-                  est[1] || '', // ID_ESTACAO (Nome da Estação)
-                  est[2] || '', // NU_ESTACAO_BDTA_ANATEL (Número da estação)
-                  converterCoordenadaParaDecimal(est[3], 'lat') || '', // LAT
-                  converterCoordenadaParaDecimal(est[4], 'long') || '', // LONG
-                  est[6] || '', // CO_MUNICIPIO_IBGE
-                  enderecoCompleto, // ENDERECO
-                  est[8] || '', // SN_ABERTURA
-                  est[9] || '', // TP_ESTACAO
-                  est[10] || '', // SN_ENLACE_PROPRIO
-                  est[11] || '', // SN_ENLACE_CONTRATADO
-                  est[12] || ''  // SN_ENLACE_SATELITE
-                ].join(';');
-              })
+              ...estacoes.map(est => mapearLinhaEstacaoParaCsv(est, cnpj).join(';'))
             ];
             // Usa CRLF como quebra de linha e garante CRLF ao final
             const csvContent = normalizarConteudoCSV(csvRows.join('\r\n'));
