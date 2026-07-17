@@ -7,7 +7,7 @@ function getStorageKey(cnpj) {
 }
 
 export function normalizarConteudoCSV(conteudo = '') {
-  let texto = String(conteudo).replace(/^\s+/, '');
+  let texto = String(conteudo || '').replace(/^\uFEFF+/, '').replace(/^\s+/, '');
   texto = texto.replace(/([^\r])\n/g, '$1\r\n');
   texto = texto.replace(/(\r\n)+$/g, '');
   return texto + '\r\n';

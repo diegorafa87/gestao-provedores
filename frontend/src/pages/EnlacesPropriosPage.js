@@ -225,8 +225,9 @@ export default function EnlacesPropriosPage() {
           linha.SRID || ''
         ].join(';');
       });
-      // Usa CRLF como quebra de linha e garante CRLF ao final
-      const csvContent = [header, ...rows].join('\r\n') + '\r\n';
+      // Usa CRLF como quebra de linha, adiciona BOM UTF-8 (\uFEFF) e garante CRLF ao final
+      const BOM = '\uFEFF';
+      const csvContent = BOM + [header, ...rows].join('\r\n') + '\r\n';
     // Salva histórico (NÃO FAZ DOWNLOAD DIRETO)
     const novoHistorico = [{ nome: nomeArquivo, conteudo: csvContent, data: new Date().toLocaleString() }, ...historico];
     setHistorico(novoHistorico);
@@ -439,7 +440,9 @@ export default function EnlacesPropriosPage() {
                     <td style={{padding:'4px 8px'}}>{item.data}</td>
                     <td style={{textAlign:'center'}}>
                       <button onClick={() => {
-                        const blob = new Blob([item.conteudo], { type: 'text/csv;charset=utf-8;' });
+                        const BOM = '\uFEFF';
+                        const conteudoLimpo = String(item.conteudo || '').replace(/^\uFEFF+/, '');
+                        const blob = new Blob([BOM + conteudoLimpo], { type: 'text/csv;charset=utf-8;' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
                         link.setAttribute('download', item.nome);

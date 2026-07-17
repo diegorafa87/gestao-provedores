@@ -128,7 +128,9 @@ export default function HistoricoSCMPage() {
                       title="Baixar arquivo"
                       aria-label="Baixar arquivo"
                       onClick={() => {
-                        const blob = new Blob([arq.conteudo], { type: 'text/csv' });
+                        const BOM = '\uFEFF';
+                        const conteudoLimpo = String(arq.conteudo || '').replace(/^\uFEFF+/, '');
+                        const blob = new Blob([BOM + conteudoLimpo], { type: 'text/csv;charset=utf-8;' });
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
                         link.download = obterNomeArquivoHistorico(arq);

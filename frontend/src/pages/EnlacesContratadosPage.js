@@ -140,8 +140,9 @@ export default function EnlacesContratadosPage() {
         '"' + (linha.cnpj || '') + '"'
       ].join(';'));
     });
-    // Usa CRLF como quebra de linha e garante CRLF ao final
-    const csvContent = csvRows.join('\r\n') + '\r\n';
+    // Usa CRLF como quebra de linha, adiciona BOM UTF-8 (\uFEFF) e garante CRLF ao final
+    const BOM = '\uFEFF';
+    const csvContent = BOM + csvRows.join('\r\n') + '\r\n';
     let razao = '';
     try {
       if (clienteSelecionado && clienteSelecionado.razaoSocial) {
@@ -387,7 +388,9 @@ export default function EnlacesContratadosPage() {
                       <button
                         style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer', fontWeight: 600 }}
                         onClick={() => {
-                          const blob = new Blob([arq.conteudo], { type: 'text/csv;charset=utf-8;' });
+                          const BOM = '\uFEFF';
+                          const conteudoLimpo = String(arq.conteudo || '').replace(/^\uFEFF+/, '');
+                          const blob = new Blob([BOM + conteudoLimpo], { type: 'text/csv;charset=utf-8;' });
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
