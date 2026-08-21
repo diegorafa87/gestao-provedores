@@ -79,7 +79,10 @@ function App() {
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem', position: 'relative' }}>
-      <div style={{ position: 'absolute', right: 0, top: 10, display: 'flex', gap: 8 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 30, background: '#f8fafc', paddingTop: '0.5rem', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+          <h1 style={{ textAlign: 'center', color: '#153a6b', margin: 0 }}>DOC PROVEDOR</h1>
+        </div>
         {isAdmin && (
           <div style={{ position: 'relative' }}>
             <button
@@ -116,8 +119,6 @@ function App() {
           Sair
         </button>
       </div>
-      <h1 style={{ textAlign: 'center', color: '#153a6b' }}>DOC PROVEDOR</h1>
-
       {!isNeto && <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />}
 
       {/* Campo de pesquisa por CNPJ ou Razão Social */}
