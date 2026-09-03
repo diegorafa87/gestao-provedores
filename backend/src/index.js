@@ -15,16 +15,31 @@ const app = express();
 // Conecta ao MongoDB
 connectDB();
 
-app.use(cors({
-  origin: [
-    'https://frontend-gestao-provedores.onrender.com',
-    'https://provedordoc-2.onrender.com',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3001'
-  ]
-}));
+const defaultCorsOrigins = [
+  'https://www.docprovedor.com.br',
+  'https://docprovedor.com.br',
+  'https://frontend-gestao-provedores.onrender.com',
+  'https://provedordoc-2.onrender.com',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001'
+];
+
+const corsOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins.join(','))
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: corsOrigins,
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Rotas
