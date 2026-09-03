@@ -34,7 +34,7 @@ const corsOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins.join(','))
 const corsOptions = {
   origin: corsOrigins,
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-email'],
   optionsSuccessStatus: 204
 };
 
