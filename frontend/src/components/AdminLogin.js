@@ -35,7 +35,12 @@ const AdminLogin = ({ onLogin }) => {
 
   return (
     <div style={{maxWidth:400,margin:'4rem auto',background:'#fff',borderRadius:12,padding:'2.5rem 2rem',boxShadow:'0 2px 12px #0002'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+        <img
+          src="/icone.png"
+          alt="Identidade visual Doc Provedor"
+          style={{width:'100%',maxWidth:320,height:'auto',maxHeight:150,objectFit:'contain',marginBottom:16}}
+        />
         <h1 style={{textAlign:'center',color:'#153a6b',margin:0,fontSize:'2rem'}}>Doc Provedor</h1>
       </div>
       <h2 style={{textAlign:'center',color:'#1976d2',marginBottom:24}}>Login</h2>
