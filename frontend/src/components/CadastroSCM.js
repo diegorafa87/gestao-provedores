@@ -2,7 +2,6 @@ import { IconDownload, IconTrash } from './IconsHistorico';
 import React, { useState, useEffect } from 'react';
 import { getSCMHistoricoCSV, addSCMHistoricoCSV, deleteSCMHistoricoCSV } from '../services/scmHistorico';
 import { getAcompanhamento, saveAcompanhamento } from '../services/acompanhamento';
-import { adicionarHistoricoSCMLocal, carregarHistoricoSCMLocal, mesclarHistoricoSCM, removerHistoricoSCMLocal } from '../utils/scmHistoricoLocal';
 
 function formatarDataHistoricoSCM(valor) {
   if (!valor) return '-';
@@ -137,15 +136,14 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
 
   const recarregarHistorico = React.useCallback(async () => {
     const cnpjAtual = obterCnpjAtual();
-    const local = carregarHistoricoSCMLocal(cnpjAtual);
-    setHistorico(deduplicarHistorico(local, cnpjAtual));
+    const chaveHistoricoLocal = `historicoSCM_${cnpjAtual.replace(/\D/g, '')}`;
+    localStorage.removeItem(chaveHistoricoLocal);
 
     try {
       const data = await getSCMHistoricoCSV();
-      const combinado = mesclarHistoricoSCM(data, cnpjAtual);
-      setHistorico(deduplicarHistorico(combinado, cnpjAtual));
+      setHistorico(deduplicarHistorico(data, cnpjAtual));
     } catch {
-      setHistorico(deduplicarHistorico(local, cnpjAtual));
+      setHistorico([]);
     }
   }, [cnpj]);
 
@@ -279,7 +277,6 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
       detalhes: { nomeArquivo, ano, mes, razaoSocial: nomeRazao },
       acao: 'GERAR_CSV_SCM'
     };
-    adicionarHistoricoSCMLocal(novaEntrada, cnpjAtual);
     setHistorico(prev => deduplicarHistorico([novaEntrada, ...prev], cnpjAtual));
     try {
       await addSCMHistoricoCSV(novaEntrada);
@@ -297,7 +294,6 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     }
 
     try {
-      removerHistoricoSCMLocal(item, obterCnpjAtual());
       await deleteSCMHistoricoCSV({
         id: item?._id,
         nome: item?.nome,
