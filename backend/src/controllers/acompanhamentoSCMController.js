@@ -70,30 +70,36 @@ function salvarAcompanhamentoSCM(obj) {
 
 // Excluir entrada do histórico de geração de CSV SCM por nome, data e usuario
 exports.deleteSCMHistoricoCSV = async (req, res) => {
-  const { nome, nomeDetalhes, data, usuario } = req.body;
+  const { id, nome, nomeDetalhes, data, usuario } = req.body;
 
   const normalizarTexto = (valor = '') => String(valor).trim().toLowerCase();
   const normalizarCnpj = (valor = '') => String(valor).replace(/\D/g, '');
+  const normalizarData = (valor = '') => {
+    const timestamp = new Date(valor).getTime();
+    return Number.isNaN(timestamp) ? normalizarTexto(valor) : String(timestamp);
+  };
   const obterNomeArquivo = (item = {}) => item.nome || item?.detalhes?.nomeArquivo || '';
 
   const nomeAlvo = normalizarTexto(nome || nomeDetalhes || '');
-  const dataAlvo = normalizarTexto(data || '');
+  const dataAlvo = normalizarData(data || '');
   const usuarioAlvo = normalizarTexto(usuario || '');
   const cnpjAlvo = normalizarCnpj(usuario || '');
 
   try {
     const historicos = await Log.find({ acao: 'GERAR_CSV_SCM' }).lean();
-    const idsParaExcluir = historicos.filter(item => {
+    const idsParaExcluir = id
+      ? historicos.filter(item => String(item._id) === String(id)).map(item => item._id)
+      : historicos.filter(item => {
       if (!nomeAlvo && !dataAlvo && !usuarioAlvo && !cnpjAlvo) return false;
       const nomeItem = normalizarTexto(obterNomeArquivo(item));
-      const dataItem = normalizarTexto(item.data || '');
+      const dataItem = normalizarData(item.data || '');
       const usuarioItem = normalizarTexto(item.usuario || '');
       const cnpjItem = normalizarCnpj(item.usuario || '');
       return (nomeAlvo ? nomeItem === nomeAlvo : false) &&
         (dataAlvo ? dataItem === dataAlvo : true) &&
         (usuarioAlvo ? usuarioItem === usuarioAlvo : true) &&
         (cnpjAlvo ? cnpjItem === cnpjAlvo : true);
-    }).map(item => item._id);
+      }).map(item => item._id);
     if (idsParaExcluir.length) await Log.deleteMany({ _id: { $in: idsParaExcluir } });
     res.json({ success: true });
   } catch (e) {

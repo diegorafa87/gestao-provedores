@@ -25,13 +25,7 @@ async function garantirMigracaoLogs() {
     migrationPromise = (async () => {
       if (await Log.exists({})) return;
       const logs = lerLogs();
-      const recoveredPath = path.join(__dirname, '../data/recovered-scm-history.json');
-      let recoveredLogs = [];
-      try {
-        recoveredLogs = JSON.parse(fs.readFileSync(recoveredPath, 'utf8'));
-      } catch {}
-      const legacyLogs = [...logs, ...recoveredLogs];
-      if (legacyLogs.length) await Log.insertMany(legacyLogs, { ordered: false });
+      if (logs.length) await Log.insertMany(logs, { ordered: false });
     })().catch((err) => {
       migrationPromise = null;
       console.error('[Logs] Erro ao migrar histórico:', err.message);

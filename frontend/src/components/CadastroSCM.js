@@ -299,6 +299,7 @@ const CadastroSCM = ({ cnpj, razaoSocial }) => {
     try {
       removerHistoricoSCMLocal(item, obterCnpjAtual());
       await deleteSCMHistoricoCSV({
+        id: item?._id,
         nome: item?.nome,
         nomeDetalhes: item?.detalhes?.nomeArquivo,
         data: item?.data,
