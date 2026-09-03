@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const Log = require('../models/Log');
+const { garantirMigracaoLogs } = require('./logController');
 const dbPath = path.join(__dirname, '../db_logs.json');
 
 function lerConteudoLogs() {
@@ -67,7 +69,7 @@ function salvarAcompanhamentoSCM(obj) {
 }
 
 // Excluir entrada do histórico de geração de CSV SCM por nome, data e usuario
-exports.deleteSCMHistoricoCSV = (req, res) => {
+exports.deleteSCMHistoricoCSV = async (req, res) => {
   const { nome, nomeDetalhes, data, usuario } = req.body;
 
   const normalizarTexto = (valor = '') => String(valor).trim().toLowerCase();
@@ -79,29 +81,20 @@ exports.deleteSCMHistoricoCSV = (req, res) => {
   const usuarioAlvo = normalizarTexto(usuario || '');
   const cnpjAlvo = normalizarCnpj(usuario || '');
 
-  const conteudoOriginal = lerConteudoLogs();
-  const logs = extrairLogs(conteudoOriginal);
-
-  const novaLista = logs.filter(item => {
-    if (item.acao !== 'GERAR_CSV_SCM') return true;
-    if (!nomeAlvo && !dataAlvo && !usuarioAlvo && !cnpjAlvo) return true;
-
-    const nomeItem = normalizarTexto(obterNomeArquivo(item));
-    const dataItem = normalizarTexto(item.data || '');
-    const usuarioItem = normalizarTexto(item.usuario || '');
-    const cnpjItem = normalizarCnpj(item.usuario || '');
-
-    const mesmoNome = nomeAlvo ? nomeItem === nomeAlvo : false;
-    const mesmaData = dataAlvo ? dataItem === dataAlvo : true;
-    const mesmoUsuario = usuarioAlvo ? usuarioItem === usuarioAlvo : true;
-    const mesmoCnpj = cnpjAlvo ? cnpjItem === cnpjAlvo : true;
-
-    const removerExato = mesmoNome && mesmaData && mesmoUsuario && mesmoCnpj;
-    return !removerExato;
-  });
-
   try {
-    salvarConteudoLogs(conteudoOriginal, novaLista);
+    const historicos = await Log.find({ acao: 'GERAR_CSV_SCM' }).lean();
+    const idsParaExcluir = historicos.filter(item => {
+      if (!nomeAlvo && !dataAlvo && !usuarioAlvo && !cnpjAlvo) return false;
+      const nomeItem = normalizarTexto(obterNomeArquivo(item));
+      const dataItem = normalizarTexto(item.data || '');
+      const usuarioItem = normalizarTexto(item.usuario || '');
+      const cnpjItem = normalizarCnpj(item.usuario || '');
+      return (nomeAlvo ? nomeItem === nomeAlvo : false) &&
+        (dataAlvo ? dataItem === dataAlvo : true) &&
+        (usuarioAlvo ? usuarioItem === usuarioAlvo : true) &&
+        (cnpjAlvo ? cnpjItem === cnpjAlvo : true);
+    }).map(item => item._id);
+    if (idsParaExcluir.length) await Log.deleteMany({ _id: { $in: idsParaExcluir } });
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: 'Erro ao excluir histórico' });
@@ -125,35 +118,23 @@ exports.setSCMStatus = (req, res) => {
 };
 
 // Novo: Listar histórico de geração de CSV SCM
-exports.getSCMHistoricoCSV = (req, res) => {
-  let historico = [];
-  try {
-    const conteudoOriginal = lerConteudoLogs();
-    const logs = extrairLogs(conteudoOriginal);
-    historico = logs
-      .filter((item) => item.acao === 'GERAR_CSV_SCM')
-      .sort((a, b) => {
-        const dataB = parseDataHistorico(b?.data)?.getTime() || 0;
-        const dataA = parseDataHistorico(a?.data)?.getTime() || 0;
-        return dataB - dataA;
-      });
-  } catch (e) {}
+exports.getSCMHistoricoCSV = async (req, res) => {
+  await garantirMigracaoLogs();
+  const historico = await Log.find({ acao: 'GERAR_CSV_SCM' })
+    .sort({ data: -1 })
+    .lean();
   res.json(historico);
 };
 
 // Novo: Adicionar entrada ao histórico de geração de CSV SCM
-exports.addSCMHistoricoCSV = (req, res) => {
-  const conteudoOriginal = lerConteudoLogs();
-  const logs = extrairLogs(conteudoOriginal);
+exports.addSCMHistoricoCSV = async (req, res) => {
   const novaEntrada = {
     ...req.body,
     acao: req.body?.acao || 'GERAR_CSV_SCM',
     data: new Date().toISOString()
   };
-  // Mantém entradas mais recentes no topo para compatibilidade com o logger global.
-  logs.unshift(novaEntrada);
   try {
-    salvarConteudoLogs(conteudoOriginal, logs);
+    await Log.create(novaEntrada);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: 'Erro ao salvar histórico' });

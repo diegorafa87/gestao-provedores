@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const Log = require('../models/Log');
 const dbLogPath = path.join(__dirname, '../db_logs.json');
+
+let migrationPromise;
 
 function lerLogs() {
   try {
@@ -17,25 +20,50 @@ function salvarLogs(logs) {
   fs.writeFileSync(dbLogPath, JSON.stringify(logs, null, 2));
 }
 
-exports.registrarLog = (acao, usuario, detalhes) => {
-  const logs = lerLogs();
-  logs.unshift({
+async function garantirMigracaoLogs() {
+  if (!migrationPromise) {
+    migrationPromise = (async () => {
+      if (await Log.exists({})) return;
+      const logs = lerLogs();
+      const recoveredPath = path.join(__dirname, '../data/recovered-scm-history.json');
+      let recoveredLogs = [];
+      try {
+        recoveredLogs = JSON.parse(fs.readFileSync(recoveredPath, 'utf8'));
+      } catch {}
+      const legacyLogs = [...logs, ...recoveredLogs];
+      if (legacyLogs.length) await Log.insertMany(legacyLogs, { ordered: false });
+    })().catch((err) => {
+      migrationPromise = null;
+      console.error('[Logs] Erro ao migrar histórico:', err.message);
+    });
+  }
+  return migrationPromise;
+}
+
+exports.garantirMigracaoLogs = garantirMigracaoLogs;
+
+exports.registrarLog = async (acao, usuario, detalhes) => {
+  await garantirMigracaoLogs();
+  await Log.create({
     acao,
     usuario: usuario || 'sistema',
-    detalhes,
+    detalhes: detalhes || {},
     data: new Date().toISOString()
   });
-  salvarLogs(logs.slice(0, 100)); // Limita a 100 logs
 };
 
-exports.listarLogs = (req, res) => {
-  res.json(lerLogs());
+exports.listarLogs = async (req, res) => {
+  await garantirMigracaoLogs();
+  res.json(await Log.find().sort({ data: -1 }).lean());
 };
 
 // Retorna os meses com dados preenchidos para um cliente específico
-exports.getMesesComDados = (req, res) => {
+exports.getMesesComDados = async (req, res) => {
   const { cnpj } = req.params;
-  const logs = lerLogs();
+  await garantirMigracaoLogs();
+  const logs = await Log.find({
+    $or: [{ usuario: { $regex: cnpj } }, { 'detalhes.cnpj': cnpj }]
+  }).lean();
   
   // Mapeia tipos de ação para módulos
   const moduloMap = {
