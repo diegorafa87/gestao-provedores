@@ -394,7 +394,7 @@ exports.listManagedUsers = async (req, res) => {
 exports.updateManagedUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { actorEmail, nome, login, email, consultoria, clienteId } = req.body;
+    const { actorEmail, nome, login, email, consultoria, clienteId, senha } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'id inválido.' });
@@ -427,6 +427,16 @@ exports.updateManagedUser = async (req, res) => {
     }
 
     if (typeof nome === 'string') target.nome = nome;
+
+    if (typeof senha === 'string') {
+      const trimmedSenha = senha.trim();
+      if (trimmedSenha && trimmedSenha.length < 6) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+      }
+      if (trimmedSenha) {
+        target.passwordHash = await bcrypt.hash(trimmedSenha, 10);
+      }
+    }
 
     if (target.role === 'FILHO') {
       if (!consultoria) return res.status(400).json({ error: 'Consultoria é obrigatória para usuário FILHO.' });

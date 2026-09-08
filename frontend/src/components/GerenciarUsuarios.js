@@ -23,7 +23,7 @@ export default function GerenciarUsuarios({ actorEmail }) {
   const [usuarios, setUsuarios] = useState([]);
   const [todosUsuarios, setTodosUsuarios] = useState([]);
   const [editId, setEditId] = useState('');
-  const [editForm, setEditForm] = useState({ nome: '', login: '', email: '', consultoria: '', clienteId: '' });
+  const [editForm, setEditForm] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
 
   const [filho, setFilho] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '' });
   const [neto, setNeto] = useState({ nome: '', login: '', email: '', senha: '', consultoria: '', clienteId: '' });
@@ -171,6 +171,7 @@ export default function GerenciarUsuarios({ actorEmail }) {
       nome: u.nome || '',
       login: u.login || '',
       email: u.email || '',
+      senha: '',
       consultoria: u.consultoria || '',
       clienteId: u.cliente?.id || '',
     });
@@ -178,12 +179,18 @@ export default function GerenciarUsuarios({ actorEmail }) {
 
   const salvarEdicao = async (u) => {
     try {
+      if (editForm.senha && editForm.senha.length < 6) {
+        setMsg('❌ A nova senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
       const payload = {
         actorEmail,
         nome: editForm.nome,
         login: editForm.login,
         email: editForm.email,
         consultoria: editForm.consultoria,
+        senha: editForm.senha || undefined,
       };
       if (u.role === 'NETO') payload.clienteId = editForm.clienteId;
       await editarUsuarioGerenciavel(u.id, payload);
@@ -370,6 +377,13 @@ export default function GerenciarUsuarios({ actorEmail }) {
                     </select>
                   )}
                 </div>
+                <input
+                  style={baseStyle()}
+                  type="password"
+                  value={editForm.senha}
+                  onChange={e => setEditForm(v => ({ ...v, senha: e.target.value }))}
+                  placeholder="Nova senha (opcional)"
+                />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => salvarEdicao(u)} style={{ background: '#0369a1', color: '#fff', border: 'none', borderRadius: 6, padding: '0.5rem 0.9rem', fontWeight: 'bold' }}>Salvar</button>
                   <button onClick={() => setEditId('')} style={{ background: '#64748b', color: '#fff', border: 'none', borderRadius: 6, padding: '0.5rem 0.9rem' }}>Cancelar</button>
