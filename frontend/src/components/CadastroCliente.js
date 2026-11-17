@@ -25,6 +25,8 @@ const CadastroCliente = ({ onClienteCadastrado }) => {
     cnpj: '',
     email: '',
     telefone: '',
+    responsavel: '',
+    telefoneResponsavel: '',
     consultoria: ''
   });
   const [mensagem, setMensagem] = useState('');
@@ -48,7 +50,7 @@ const CadastroCliente = ({ onClienteCadastrado }) => {
       });
       if (resp.ok) {
         setMensagem('Cliente cadastrado com sucesso!');
-        setForm({ razaoSocial: '', cnpj: '', email: '', telefone: '', consultoria: '' });
+        setForm({ razaoSocial: '', cnpj: '', email: '', telefone: '', responsavel: '', telefoneResponsavel: '', consultoria: '' });
         if (onClienteCadastrado) onClienteCadastrado();
       } else {
         const data = await resp.json();
@@ -82,6 +84,15 @@ const CadastroCliente = ({ onClienteCadastrado }) => {
           maxLength={15}
           required
           style={{flex:'1 1 150px'}}
+        />
+        <input name="responsavel" placeholder="Responsável" value={form.responsavel} onChange={handleChange} style={{flex:'1 1 200px'}} />
+        <input
+          name="telefoneResponsavel"
+          placeholder="Telefone do Responsável"
+          value={form.telefoneResponsavel}
+          onChange={e => setForm(f => ({ ...f, telefoneResponsavel: formatTelefone(e.target.value) }))}
+          maxLength={15}
+          style={{flex:'1 1 180px'}}
         />
         <input name="consultoria" placeholder="Consultoria" value={form.consultoria} onChange={handleChange} required style={{flex:'1 1 150px'}} />
         <button type="submit" style={{background:'#153a6b',color:'#fff',border:'none',padding:'0 2rem',borderRadius:'4px',height:'40px'}}>Cadastrar</button>

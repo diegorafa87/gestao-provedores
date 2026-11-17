@@ -63,7 +63,7 @@ async function removerAcompanhamentoSCMPorCnpj(cnpj = '') {
 
 exports.cadastrarCliente = async (req, res) => {
   try {
-    let { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
+    let { razaoSocial, cnpj, email, telefone, responsavel = '', telefoneResponsavel = '', consultoria } = req.body;
     const user = await getUserFromHeader(req);
     const role = resolveRole(user);
 
@@ -88,8 +88,8 @@ exports.cadastrarCliente = async (req, res) => {
     await removerHistoricoSCMPorCnpj(cnpj);
     await removerAcompanhamentoSCMPorCnpj(cnpj);
 
-    const novoCliente = await Cliente.create({ razaoSocial, cnpj, email, telefone, consultoria });
-    registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, consultoria });
+    const novoCliente = await Cliente.create({ razaoSocial, cnpj, email, telefone, responsavel, telefoneResponsavel, consultoria });
+    registrarLog('CADASTRAR_CLIENTE', cnpj, { razaoSocial, email, telefone, responsavel, telefoneResponsavel, consultoria });
     res.status(201).json(novoCliente);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao cadastrar cliente', details: err.message });
@@ -212,7 +212,7 @@ exports.excluirCliente = async (req, res) => {
 exports.editarCliente = async (req, res) => {
   try {
     const { id } = req.params;
-    let { razaoSocial, cnpj, email, telefone, consultoria } = req.body;
+    let { razaoSocial, cnpj, email, telefone, responsavel = '', telefoneResponsavel = '', consultoria } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'ID de cliente inválido' });
@@ -238,11 +238,11 @@ exports.editarCliente = async (req, res) => {
 
     const cliente = await Cliente.findByIdAndUpdate(
       id,
-      { razaoSocial, cnpj, email, telefone, consultoria },
+      { razaoSocial, cnpj, email, telefone, responsavel, telefoneResponsavel, consultoria },
       { new: true }
     );
 
-    registrarLog('EDITAR_CLIENTE', cnpj, { id, razaoSocial, email, telefone, consultoria });
+    registrarLog('EDITAR_CLIENTE', cnpj, { id, razaoSocial, email, telefone, responsavel, telefoneResponsavel, consultoria });
     res.json(cliente);
   } catch (err) {
     res.status(500).json({ error: 'Erro ao editar cliente', details: err.message });

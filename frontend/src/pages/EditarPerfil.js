@@ -21,7 +21,7 @@ const EditarPerfil = () => {
   const [cliente, setCliente] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
-  const [form, setForm] = useState({ razaoSocial: '', cnpj: '', email: '', telefone: '', consultoria: '' });
+  const [form, setForm] = useState({ razaoSocial: '', cnpj: '', email: '', telefone: '', responsavel: '', telefoneResponsavel: '', consultoria: '' });
 
   useEffect(() => {
     setLoading(true);
@@ -44,6 +44,8 @@ const EditarPerfil = () => {
           cnpj: data.cnpj,
           email: data.email,
           telefone: data.telefone,
+          responsavel: data.responsavel || '',
+          telefoneResponsavel: data.telefoneResponsavel || '',
           consultoria: data.consultoria
         });
         setLoading(false);
@@ -120,6 +122,15 @@ const EditarPerfil = () => {
                 <b>Telefone:</b> <a href={`https://wa.me/${cliente.telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">{cliente.telefone}</a>
               </div>
               <div style={{marginBottom:6, textAlign:'center'}}>
+                <b>Responsável:</b> {cliente.responsavel || '-'}
+              </div>
+              <div style={{marginBottom:6, textAlign:'center'}}>
+                <b>Telefone do Responsável:</b>{' '}
+                {cliente.telefoneResponsavel ? (
+                  <a href={`https://wa.me/${cliente.telefoneResponsavel.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">{cliente.telefoneResponsavel}</a>
+                ) : '-'}
+              </div>
+              <div style={{marginBottom:6, textAlign:'center'}}>
                 <b>Consultoria:</b> {cliente.consultoria}
               </div>
               <button onClick={()=>setEditando(true)} style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:'8px',padding:'0.8rem 0',fontWeight:'bold',fontSize:'1.1rem',cursor:'pointer',marginTop:18, width:120}}>Editar</button>
@@ -146,6 +157,16 @@ const EditarPerfil = () => {
                   <div style={{flex:1}}>
                     <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Telefone</label>
                     <input name="telefone" value={form.telefone} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                </div>
+                <div style={{display:'flex', gap:18}}>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Responsável</label>
+                    <input name="responsavel" value={form.responsavel} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
+                  </div>
+                  <div style={{flex:1}}>
+                    <label style={{fontWeight:600, color:'#153a6b', fontSize:15}}>Telefone do Responsável</label>
+                    <input name="telefoneResponsavel" value={form.telefoneResponsavel} onChange={handleChange} style={{fontSize:'1.1rem',marginTop:4, textAlign:'left', width:'100%', border:'1.5px solid #1976d2', borderRadius:6, padding:'8px 12px', background:'#f8f9fb'}} />
                   </div>
                 </div>
                 <div style={{display:'flex', gap:18}}>

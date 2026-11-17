@@ -5,6 +5,8 @@ const ClienteSchema = new mongoose.Schema({
   cnpj: { type: String, required: true, unique: true },
   email: { type: String, required: true },
   telefone: { type: String, required: true },
+  responsavel: { type: String, default: '' },
+  telefoneResponsavel: { type: String, default: '' },
   consultoria: { type: String, required: true },
   status: { type: String, enum: ['NOVO','ATIVO','CORRIGIR','SUSPENSO'], default: 'NOVO' },
   observacao: { type: String, default: '' },
