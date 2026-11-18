@@ -2,6 +2,7 @@
 import API_URL from '../services/api';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getSCMHistoricoCSV } from '../services/scmHistorico';
 
 const cores = {
   NOVO: '#1976d2',
@@ -32,9 +33,35 @@ function removerAcentos(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function obterCompetenciaAtual() {
+  const agora = new Date();
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function obterCompetenciaSCM(item = {}) {
+  const nomeArquivo = String(item?.nome || item?.detalhes?.nomeArquivo || '');
+  const match = nomeArquivo.match(/_(\d{4})_(\d{1,2})\.csv$/i);
+  const ano = Number(match?.[1] || item?.detalhes?.ano);
+  const mes = Number(match?.[2] || item?.detalhes?.mes);
+
+  if (!Number.isInteger(ano) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return '';
+  }
+
+  return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+function normalizarCnpj(valor = '') {
+  return String(valor).replace(/\D/g, '');
+}
+
 const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clienteIdUsuario }) => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historicoSCM, setHistoricoSCM] = useState([]);
+  const [historicoSCMCarregado, setHistoricoSCMCarregado] = useState(false);
+  const [erroHistoricoSCM, setErroHistoricoSCM] = useState(false);
+  const [competenciaAtual, setCompetenciaAtual] = useState(obterCompetenciaAtual);
   const [statusVisiveis, setStatusVisiveis] = useState(() => {
     const saved = localStorage.getItem('statusVisiveis');
     if (saved) {
@@ -71,6 +98,50 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
       })
       .finally(() => setLoading(false));
   }, [atualizar, consultoriaFiltro]);
+
+  useEffect(() => {
+    let ativo = true;
+    let competenciaVerificada = obterCompetenciaAtual();
+    setCompetenciaAtual(competenciaVerificada);
+
+    const carregarHistoricoSCM = async () => {
+      try {
+        const historico = await getSCMHistoricoCSV();
+        if (!Array.isArray(historico)) {
+          throw new Error('O histórico SCM retornou um formato inválido.');
+        }
+        if (ativo) {
+          setHistoricoSCM(historico);
+          setHistoricoSCMCarregado(true);
+          setErroHistoricoSCM(false);
+        }
+      } catch (erro) {
+        console.error('Erro ao carregar histórico SCM dos clientes:', erro);
+        if (ativo) {
+          setErroHistoricoSCM(true);
+        }
+      }
+    };
+
+    const verificarCompetencia = () => {
+      const competencia = obterCompetenciaAtual();
+      if (competencia !== competenciaVerificada) {
+        competenciaVerificada = competencia;
+        setCompetenciaAtual(competencia);
+        carregarHistoricoSCM();
+      }
+    };
+
+    carregarHistoricoSCM();
+    window.addEventListener('focus', carregarHistoricoSCM);
+    const intervalo = window.setInterval(verificarCompetencia, 60000);
+
+    return () => {
+      ativo = false;
+      window.removeEventListener('focus', carregarHistoricoSCM);
+      window.clearInterval(intervalo);
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('statusVisiveis', JSON.stringify(statusVisiveis));
@@ -164,8 +235,23 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
     setStatusVisiveis(v => ({ ...v, [status]: !v[status] }));
   };
 
+  const possuiSCMAtual = (cliente) => {
+    const cnpjCliente = normalizarCnpj(cliente.cnpj);
+    if (!cnpjCliente) return false;
+
+    return historicoSCM.some(item =>
+      normalizarCnpj(item?.usuario || item?.cnpj) === cnpjCliente &&
+      obterCompetenciaSCM(item) === competenciaAtual
+    );
+  };
+
   return (
     <div>
+      {erroHistoricoSCM && (
+        <p role="alert" style={{ color: '#8a5a00', background: '#fff8e1', padding: '0.75rem', borderRadius: 6 }}>
+          Não foi possível verificar os arquivos SCM deste mês. Atualize a página ou tente novamente.
+        </p>
+      )}
       {['NOVO', 'ATIVO', 'CORRIGIR', 'SUSPENSO'].map(status => (
         <div key={status} style={{ marginBottom: '2rem' }}>
           <h3
@@ -183,8 +269,10 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
           {statusVisiveis[status] && (
             <>
               {(agrupados[status] || []).length === 0 && <p style={{ color: '#888' }}>Nenhum cliente.</p>}
-              {(agrupados[status] || []).map(cliente => (
-                <div key={cliente._id} style={{ background: cores[status], color: '#fff', padding: '1rem', borderRadius: '6px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {(agrupados[status] || []).map(cliente => {
+                const scmPendente = status === 'ATIVO' && historicoSCMCarregado && !possuiSCMAtual(cliente);
+                return (
+                <div key={cliente._id} style={{ background: cores[status], color: '#fff', padding: '1rem', borderRadius: '6px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: scmPendente ? '2px solid #d4af37' : '2px solid transparent' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
                       <div style={{ flex: 1 }}>
@@ -232,6 +320,13 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
                       )}
                     </div>
                     <span>Consultoria: {cliente.consultoria}</span>
+                    {scmPendente && (
+                      <div>
+                        <span style={{ display: 'inline-block', marginTop: '0.4rem', padding: '0.2rem 0.55rem', borderRadius: 12, background: '#fff4cc', color: '#684d00', fontSize: '0.82rem', fontWeight: 700 }}>
+                          SCM do mês pendente
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
@@ -266,7 +361,8 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
                     </Link>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </>
           )}
         </div>
