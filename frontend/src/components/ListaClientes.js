@@ -33,9 +33,15 @@ function removerAcentos(str) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function obterCompetenciaAtual() {
+function obterCompetenciaReferenciaSCM() {
   const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+  const referencia = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+  return `${referencia.getFullYear()}-${String(referencia.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function formatarMesCompetencia(competencia) {
+  const [ano, mes] = competencia.split('-').map(Number);
+  return new Date(ano, mes - 1, 1).toLocaleDateString('pt-BR', { month: 'long' });
 }
 
 function obterCompetenciaSCM(item = {}) {
@@ -61,7 +67,7 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
   const [historicoSCM, setHistoricoSCM] = useState([]);
   const [historicoSCMCarregado, setHistoricoSCMCarregado] = useState(false);
   const [erroHistoricoSCM, setErroHistoricoSCM] = useState(false);
-  const [competenciaAtual, setCompetenciaAtual] = useState(obterCompetenciaAtual);
+  const [competenciaEsperada, setCompetenciaEsperada] = useState(obterCompetenciaReferenciaSCM);
   const [statusVisiveis, setStatusVisiveis] = useState(() => {
     const saved = localStorage.getItem('statusVisiveis');
     if (saved) {
@@ -101,8 +107,8 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
 
   useEffect(() => {
     let ativo = true;
-    let competenciaVerificada = obterCompetenciaAtual();
-    setCompetenciaAtual(competenciaVerificada);
+    let competenciaVerificada = obterCompetenciaReferenciaSCM();
+    setCompetenciaEsperada(competenciaVerificada);
 
     const carregarHistoricoSCM = async () => {
       try {
@@ -124,10 +130,10 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
     };
 
     const verificarCompetencia = () => {
-      const competencia = obterCompetenciaAtual();
+      const competencia = obterCompetenciaReferenciaSCM();
       if (competencia !== competenciaVerificada) {
         competenciaVerificada = competencia;
-        setCompetenciaAtual(competencia);
+        setCompetenciaEsperada(competencia);
         carregarHistoricoSCM();
       }
     };
@@ -241,15 +247,17 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
 
     return historicoSCM.some(item =>
       normalizarCnpj(item?.usuario || item?.cnpj) === cnpjCliente &&
-      obterCompetenciaSCM(item) === competenciaAtual
+      obterCompetenciaSCM(item) === competenciaEsperada
     );
   };
+
+  const mesReferenciaSCM = formatarMesCompetencia(competenciaEsperada);
 
   return (
     <div>
       {erroHistoricoSCM && (
         <p role="alert" style={{ color: '#8a5a00', background: '#fff8e1', padding: '0.75rem', borderRadius: 6 }}>
-          Não foi possível verificar os arquivos SCM deste mês. Atualize a página ou tente novamente.
+          Não foi possível verificar os arquivos SCM do mês de referência. Atualize a página ou tente novamente.
         </p>
       )}
       {['NOVO', 'ATIVO', 'CORRIGIR', 'SUSPENSO'].map(status => (
@@ -323,7 +331,7 @@ const ListaClientes = ({ atualizar, consultoriaFiltro, pesquisa, userEmail, clie
                     {scmPendente && (
                       <div>
                         <span style={{ display: 'inline-block', marginTop: '0.4rem', padding: '0.2rem 0.55rem', borderRadius: 12, background: '#fff4cc', color: '#684d00', fontSize: '0.82rem', fontWeight: 700 }}>
-                          SCM do mês pendente
+                          SCM referente a {mesReferenciaSCM} pendente
                         </span>
                       </div>
                     )}
