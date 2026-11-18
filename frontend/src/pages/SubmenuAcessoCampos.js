@@ -74,6 +74,12 @@ export default function SubmenuAcessoCampos() {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '40px 0' }}>
         <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 32, maxWidth: 400, width: '100%' }}>
           <h2 style={{ color: '#1976d2', marginBottom: 24 }}>Acesso - Preencha os campos</h2>
+          <Link
+            to="/gerenciador/dici"
+            style={{ display: 'block', marginBottom: 20, padding: '10px 12px', borderRadius: 6, background: '#e8f5e9', color: '#1b5e20', fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}
+          >
+            Solicitar DICI aos clientes sem acesso completo
+          </Link>
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontWeight: 600 }}>Link
               <input type="text" value={valores.campo1} onChange={e => setValores(v => ({ ...v, campo1: e.target.value }))} style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 4, border: '1px solid #ccc' }} />
@@ -121,6 +127,7 @@ export default function SubmenuAcessoCampos() {
                   senha: valores.campo3
                 });
                 setErro(null);
+                window.dispatchEvent(new Event('gerenciador-acesso-atualizado'));
               } catch (err) {
                 let msg = 'Erro ao salvar dados do gerenciador.';
                 if (err && err.response) {

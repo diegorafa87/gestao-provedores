@@ -5,6 +5,7 @@ import CertidoesPage from './pages/CertidoesPage';
 import ContratosPage from './pages/ContratosPage';
 import EstacoesPage from './pages/EstacoesPage';
 import SubmenuAcessoCampos from './pages/SubmenuAcessoCampos';
+import SolicitacaoDICIPage from './pages/SolicitacaoDICIPage';
 import EnlacesPropriosPage from './pages/EnlacesPropriosPage';
 import EnlacesContratadosPage from './pages/EnlacesContratadosPage';
 import React from 'react';
@@ -50,6 +51,7 @@ const RequireAuth = ({ children }) => {
       '/infra/enlaces-contratados',
       '/postes/compartilhamento',
       '/gerenciador/acesso',
+      '/gerenciador/dici',
       editarPerfilRoute,
     ]);
 
@@ -108,6 +110,7 @@ const AppRouter = () => {
         <Route path="/infra/enlaces-proprios" element={<RequireAuth><EnlacesPropriosPage /></RequireAuth>} />
         <Route path="/infra/enlaces-contratados" element={<RequireAuth><EnlacesContratadosPage /></RequireAuth>} />
         <Route path="/gerenciador/acesso" element={<RequireAuth><SubmenuAcessoCampos /></RequireAuth>} />
+        <Route path="/gerenciador/dici" element={<RequireAuth><SolicitacaoDICIPage /></RequireAuth>} />
         <Route path="/contratos-e-certidoes/contratos" element={<RequireAuth><ContratosPage /></RequireAuth>} />
         <Route path="/contratos-e-certidoes/certidoes" element={<RequireAuth><CertidoesPage /></RequireAuth>} />
         <Route path="/postes/compartilhamento" element={<RequireAuth><CompartilhamentoPostesPage /></RequireAuth>} />

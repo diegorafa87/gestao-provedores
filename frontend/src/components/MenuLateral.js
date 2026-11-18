@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getGerenciadorAcessosPendentes } from '../services/gerenciadorAcesso';
 
 const INFRA_SUBITENS = [
   { label: 'Estações', path: '/infra/estacoes' },
@@ -23,6 +24,7 @@ const itens = [
 const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
   const location = useLocation();
   const [infraSubmenuAberto, setInfraSubmenuAberto] = useState(location.pathname.startsWith('/infra/'));
+  const [gerenciadorCompleto, setGerenciadorCompleto] = useState(null);
   const [clienteInfoPersistente, setClienteInfoPersistente] = useState(() => {
     try {
       const salvo = localStorage.getItem('clienteSelecionado');
@@ -42,6 +44,30 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
       setInfraSubmenuAberto(true);
     }
   }, [location]);
+
+  useEffect(() => {
+    let ativo = true;
+    const cnpj = clienteInfoPersistente?.cnpj;
+    setGerenciadorCompleto(null);
+    if (!cnpj) return () => { ativo = false; };
+
+    const carregarStatus = () => getGerenciadorAcessosPendentes(cnpj)
+      .then(status => {
+        if (ativo) setGerenciadorCompleto(status?.completo === true);
+      })
+      .catch(erro => {
+        console.error('Erro ao verificar os dados do GERENCIADOR do cliente:', erro);
+        if (ativo) setGerenciadorCompleto(false);
+      });
+
+    carregarStatus();
+    window.addEventListener('gerenciador-acesso-atualizado', carregarStatus);
+
+    return () => {
+      ativo = false;
+      window.removeEventListener('gerenciador-acesso-atualizado', carregarStatus);
+    };
+  }, [clienteInfoPersistente?.cnpj]);
 
   const navigate = useNavigate();
   const search = location.search;
@@ -217,10 +243,22 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
                 transition: 'background 0.2s',
                 background: 'none',
               }}
+              title={item.label === 'GERENCIADOR' && gerenciadorCompleto
+                ? 'Link, login e senha estão preenchidos'
+                : undefined}
                 onClick={() => handleItemClick(item.label)}
             >
               <span style={{fontSize: 20}}>{item.icon}</span>
-              <span style={item.label === 'EDITAR PERFIL' && !clienteInfoPersistente?.id ? { opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' } : {}}>{item.label}</span>
+              <span style={{
+                ...(item.label === 'EDITAR PERFIL' && !clienteInfoPersistente?.id
+                  ? { opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' }
+                  : {}),
+                ...(item.label === 'GERENCIADOR' && gerenciadorCompleto
+                  ? { color: '#4ade80', fontWeight: 700 }
+                  : {})
+              }}>
+                {item.label}{item.label === 'GERENCIADOR' && gerenciadorCompleto ? ' ✓' : ''}
+              </span>
             </div>
 
             {item.label === 'INFRA' && infraSubmenuAberto && (

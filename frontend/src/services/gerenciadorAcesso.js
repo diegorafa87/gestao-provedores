@@ -11,6 +11,21 @@ export async function getGerenciadorAcesso(cnpj) {
   return res.json();
 }
 
+export async function getGerenciadorAcessosPendentes(cnpj = '') {
+  const cnpjLimpo = limparCNPJ(cnpj);
+  const query = cnpjLimpo ? `?cnpj=${encodeURIComponent(cnpjLimpo)}` : '';
+  let emailUsuario = localStorage.getItem('emailUsuario') || '';
+  try {
+    emailUsuario = JSON.parse(localStorage.getItem('authUser') || 'null')?.email || emailUsuario;
+  } catch {}
+
+  const res = await fetch(`${API_URL}/api/gerenciador-acesso/status${query}`, {
+    headers: emailUsuario ? { 'x-user-email': emailUsuario } : {}
+  });
+  if (!res.ok) throw new Error('Erro ao verificar os dados do gerenciador');
+  return res.json();
+}
+
 // Função para salvar dados do gerenciador por CNPJ
 export async function saveGerenciadorAcesso(cnpj, data, atualizadoPor) {
   const cnpjLimpo = limparCNPJ(cnpj);
