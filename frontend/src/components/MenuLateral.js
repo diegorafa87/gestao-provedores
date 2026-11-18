@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getGerenciadorAcessosPendentes } from '../services/gerenciadorAcesso';
+import { getGerenciadorAcessoStatus } from '../services/gerenciadorAcesso';
 
 const INFRA_SUBITENS = [
   { label: 'Estações', path: '/infra/estacoes' },
@@ -51,7 +51,7 @@ const MenuLateral = ({ voltarLink, clienteInfo, hiddenLabels = [] }) => {
     setGerenciadorCompleto(null);
     if (!cnpj) return () => { ativo = false; };
 
-    const carregarStatus = () => getGerenciadorAcessosPendentes(cnpj)
+    const carregarStatus = () => getGerenciadorAcessoStatus(cnpj)
       .then(status => {
         if (ativo) setGerenciadorCompleto(status?.completo === true);
       })

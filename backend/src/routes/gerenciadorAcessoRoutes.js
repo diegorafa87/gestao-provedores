@@ -3,6 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/gerenciadorAcessoController');
 
 router.get('/status', controller.getStatusAcessos);
+router.post('/:cnpj/dici-solicitado', controller.marcarDiciSolicitado);
 router.get('/:cnpj', controller.getAcesso);
 router.post('/:cnpj', controller.saveAcesso);
 

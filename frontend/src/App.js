@@ -1,11 +1,10 @@
 import API_URL from './services/api';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import CadastroCliente from './components/CadastroCliente';
 import ListaClientes from './components/ListaClientes';
-import { getGerenciadorAcessosPendentes } from './services/gerenciadorAcesso';
 
 function App() {
   const navigate = useNavigate();
@@ -15,8 +14,6 @@ function App() {
   const [consultorias, setConsultorias] = useState([]);
   const [consultoriaFiltro, setConsultoriaFiltro] = useState('');
   const [menuAdminAberto, setMenuAdminAberto] = useState(false);
-  const [clientesDiciPendentes, setClientesDiciPendentes] = useState(null);
-  const [erroDiciPendentes, setErroDiciPendentes] = useState(false);
 
   // Contexto do usuário logado
   let authUser = null;
@@ -31,29 +28,6 @@ function App() {
   const clienteIdUsuario = authUser?.clienteId || localStorage.getItem('clienteIdUsuario') || '';
   const isAdmin = roleUsuario === 'ADMIN' || emailUsuario === 'diegorafa87@gmail.com';
   const isNeto = roleUsuario === 'NETO';
-
-  useEffect(() => {
-    let ativo = true;
-    getGerenciadorAcessosPendentes()
-      .then(data => {
-        if (!Array.isArray(data)) {
-          throw new Error('A lista de pendências do GERENCIADOR retornou um formato inválido.');
-        }
-        if (ativo) {
-          setClientesDiciPendentes(data);
-          setErroDiciPendentes(false);
-        }
-      })
-      .catch(erro => {
-        console.error('Erro ao verificar pendências de DICI:', erro);
-        if (ativo) {
-          setClientesDiciPendentes(null);
-          setErroDiciPendentes(true);
-        }
-      });
-
-    return () => { ativo = false; };
-  }, [atualizar, emailUsuario]);
 
   // Buscar consultorias distintas dos clientes cadastrados (apenas para admin)
   React.useEffect(() => {
@@ -132,14 +106,6 @@ function App() {
             )}
           </div>
         )}
-        {clientesDiciPendentes?.length > 0 && (
-          <button
-            onClick={() => navigate('/gerenciador/dici')}
-            style={{ background: '#15803d', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.8rem', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            SOLICITAR DICI ({clientesDiciPendentes.length})
-          </button>
-        )}
         <button
           onClick={() => setAtualizar(a => a + 1)}
           style={{ background: '#334155', color: '#fff', border: 'none', borderRadius: 6, padding: '0.45rem 0.8rem', cursor: 'pointer' }}
@@ -153,11 +119,6 @@ function App() {
           Sair
         </button>
       </div>
-      {erroDiciPendentes && (
-        <p role="alert" style={{ color: '#8a5a00', background: '#fff8e1', padding: '0.75rem', borderRadius: 6 }}>
-          Não foi possível verificar quais clientes estão sem os dados do GERENCIADOR.
-        </p>
-      )}
       {!isNeto && <CadastroCliente onClienteCadastrado={() => setAtualizar(a => a + 1)} />}
 
       {/* Campo de pesquisa por CNPJ ou Razão Social */}

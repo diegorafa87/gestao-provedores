@@ -6,7 +6,9 @@ const GerenciadorAcessoSchema = new mongoose.Schema({
   login: { type: String, default: '' },
   senha: { type: String, default: '' },
   atualizadoPor: { type: String },
-  atualizadoEm: { type: Date, default: Date.now }
+  atualizadoEm: { type: Date, default: Date.now },
+  diciSolicitadoCompetencia: { type: String, default: '' },
+  diciSolicitadoEm: { type: Date }
 });
 
 module.exports = mongoose.model('GerenciadorAcesso', GerenciadorAcessoSchema);

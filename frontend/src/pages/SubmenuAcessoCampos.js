@@ -2,7 +2,37 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import MenuLateral from '../components/MenuLateral';
 import { Link } from 'react-router-dom';
-import { getGerenciadorAcesso, saveGerenciadorAcesso } from '../services/gerenciadorAcesso';
+import {
+  getGerenciadorAcesso,
+  getGerenciadorAcessoStatus,
+  marcarDiciSolicitado,
+  saveGerenciadorAcesso
+} from '../services/gerenciadorAcesso';
+
+function obterCompetenciaAtual() {
+  const agora = new Date();
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function obterNumeroWhatsapp(telefone) {
+  const numero = String(telefone || '').replace(/\D/g, '');
+  if (numero.startsWith('55') && (numero.length === 12 || numero.length === 13)) {
+    return numero;
+  }
+  if (numero.length === 10 || numero.length === 11) {
+    return `55${numero}`;
+  }
+  return '';
+}
+
+function obterCompetenciaDICI() {
+  const agora = new Date();
+  const competencia = new Date(agora.getFullYear(), agora.getMonth() - 1, 1);
+  return {
+    mes: competencia.toLocaleDateString('pt-BR', { month: 'long' }),
+    ano: competencia.getFullYear()
+  };
+}
 
 export default function SubmenuAcessoCampos() {
   // Recupera info do cliente do localStorage
@@ -26,6 +56,22 @@ export default function SubmenuAcessoCampos() {
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
+  const [erroDICI, setErroDICI] = useState('');
+  const [acessoCompleto, setAcessoCompleto] = useState(false);
+  const [statusDICIVerificado, setStatusDICIVerificado] = useState(false);
+  const [solicitadoNesteMes, setSolicitadoNesteMes] = useState(false);
+  const [solicitandoDICI, setSolicitandoDICI] = useState(false);
+  const [competenciaMes, setCompetenciaMes] = useState(obterCompetenciaAtual);
+  const [contatoCliente, setContatoCliente] = useState({ telefone: '', telefoneResponsavel: '' });
+
+  useEffect(() => {
+    const intervalo = window.setInterval(() => {
+      const competencia = obterCompetenciaAtual();
+      setCompetenciaMes(atual => atual === competencia ? atual : competencia);
+    }, 60000);
+
+    return () => window.clearInterval(intervalo);
+  }, []);
 
   // Carrega do backend ao abrir ou mudar cliente
   useEffect(() => {
@@ -57,6 +103,65 @@ export default function SubmenuAcessoCampos() {
       .finally(() => setCarregando(false));
   }, [clienteSelecionado]);
 
+  useEffect(() => {
+    if (!clienteSelecionado?.cnpj) return undefined;
+    let ativo = true;
+    setStatusDICIVerificado(false);
+
+    getGerenciadorAcessoStatus(clienteSelecionado.cnpj, competenciaMes)
+      .then(status => {
+        if (!ativo) return;
+        setAcessoCompleto(status?.completo === true);
+        setSolicitadoNesteMes(status?.solicitadoNesteMes === true);
+        setContatoCliente({
+          telefone: status?.telefone || '',
+          telefoneResponsavel: status?.telefoneResponsavel || ''
+        });
+        setErroDICI('');
+        setStatusDICIVerificado(true);
+      })
+      .catch(err => {
+        console.error('Erro ao verificar a solicitação de DICI do cliente:', err);
+        if (ativo) {
+          setErroDICI('Não foi possível verificar o status da solicitação de DICI.');
+          setStatusDICIVerificado(false);
+        }
+      });
+
+    return () => { ativo = false; };
+  }, [clienteSelecionado, competenciaMes]);
+
+  const competenciaDICI = obterCompetenciaDICI();
+  const telefoneParaWhatsapp = contatoCliente.telefoneResponsavel || contatoCliente.telefone;
+  const numeroWhatsapp = obterNumeroWhatsapp(telefoneParaWhatsapp);
+  const mensagemDICI = `Olá! O arquivo DICI da competência ${competenciaDICI.mes}/${competenciaDICI.ano} já pode ser enviado. Por favor, encaminhe o arquivo por este WhatsApp. Obrigado!`;
+  const urlWhatsappDICI = numeroWhatsapp
+    ? `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(mensagemDICI)}`
+    : '';
+  const mesAtualNome = new Date().toLocaleDateString('pt-BR', { month: 'long' });
+
+  const abrirWhatsAppDICI = async () => {
+    if (!urlWhatsappDICI || solicitadoNesteMes || solicitandoDICI) return;
+
+    const janela = window.open(urlWhatsappDICI, '_blank');
+    if (!janela) {
+      setErroDICI('O navegador bloqueou a abertura do WhatsApp. Permita pop-ups e tente novamente.');
+      return;
+    }
+    janela.opener = null;
+    setSolicitandoDICI(true);
+    setErroDICI('');
+    try {
+      await marcarDiciSolicitado(clienteSelecionado.cnpj, competenciaMes);
+      setSolicitadoNesteMes(true);
+    } catch (err) {
+      console.error('Erro ao registrar a solicitação de DICI:', err);
+      setErroDICI('A conversa foi aberta, mas não foi possível registrar a solicitação.');
+    } finally {
+      setSolicitandoDICI(false);
+    }
+  };
+
   // Exibe info do cliente
   const clienteInfo = clienteSelecionado ? (
     <div style={{marginBottom: 16, textAlign: 'center'}}>
@@ -74,6 +179,38 @@ export default function SubmenuAcessoCampos() {
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', padding: '40px 0' }}>
         <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px #0001', padding: 32, maxWidth: 400, width: '100%' }}>
           <h2 style={{ color: '#1976d2', marginBottom: 24 }}>Acesso - Preencha os campos</h2>
+          {clienteSelecionado && statusDICIVerificado && !acessoCompleto && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
+              <button
+                type="button"
+                onClick={abrirWhatsAppDICI}
+                disabled={solicitadoNesteMes || solicitandoDICI || !urlWhatsappDICI}
+                style={{
+                  background: '#15803d',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '10px 14px',
+                  fontWeight: 700,
+                  cursor: solicitadoNesteMes || solicitandoDICI || !urlWhatsappDICI ? 'not-allowed' : 'pointer',
+                  opacity: solicitadoNesteMes || solicitandoDICI || !urlWhatsappDICI ? 0.65 : 1
+                }}
+              >
+                {solicitandoDICI ? 'Abrindo WhatsApp...' : 'SOLICITAR DICI'}
+              </button>
+              {solicitadoNesteMes && (
+                <span role="status" style={{ color: '#166534', fontWeight: 700 }}>
+                  Solicitado em {mesAtualNome}
+                </span>
+              )}
+              {!urlWhatsappDICI && (
+                <span style={{ color: '#b91c1c', fontSize: '0.9rem' }}>
+                  Telefone inválido ou não cadastrado
+                </span>
+              )}
+            </div>
+          )}
+          {erroDICI && <div role="alert" style={{ color: '#b91c1c', marginBottom: 16 }}>{erroDICI}</div>}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontWeight: 600 }}>Link
               <input type="text" value={valores.campo1} onChange={e => setValores(v => ({ ...v, campo1: e.target.value }))} style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 4, border: '1px solid #ccc' }} />
@@ -121,6 +258,7 @@ export default function SubmenuAcessoCampos() {
                   senha: valores.campo3
                 });
                 setErro(null);
+                setAcessoCompleto(Boolean(valores.campo1.trim() && valores.campo2.trim() && valores.campo3.trim()));
                 window.dispatchEvent(new Event('gerenciador-acesso-atualizado'));
               } catch (err) {
                 let msg = 'Erro ao salvar dados do gerenciador.';

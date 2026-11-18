@@ -8,6 +8,15 @@ function normalizarCnpj(valor = '') {
   return String(valor).replace(/\D/g, '');
 }
 
+function obterCompetenciaAtual() {
+  const agora = new Date();
+  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function validarCompetencia(valor) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(valor || ''));
+}
+
 function acessoCompleto(acesso) {
   return Boolean(
     String(acesso?.link || '').trim() &&
@@ -16,74 +25,103 @@ function acessoCompleto(acesso) {
   );
 }
 
+async function obterClienteAutorizado(req, res, cnpj) {
+  const email = String(req.headers['x-user-email'] || '').trim();
+  if (!email) {
+    res.status(401).json({ error: 'Usuário não autenticado.' });
+    return null;
+  }
+
+  const user = await User.findOne({ email }).lean();
+  const role = user?.role || (email.toLowerCase() === ADMIN_EMAIL_FALLBACK ? 'ADMIN' : '');
+  if (!user && role !== 'ADMIN') {
+    res.status(401).json({ error: 'Usuário não autenticado.' });
+    return null;
+  }
+  if (!['ADMIN', 'FILHO', 'NETO'].includes(role)) {
+    res.status(403).json({ error: 'Acesso não autorizado.' });
+    return null;
+  }
+
+  const filtroClientes = {};
+  if (role === 'FILHO') filtroClientes.consultoria = user.consultoria;
+  if (role === 'NETO') {
+    if (!user.clienteId) {
+      res.status(404).json({ error: 'Cliente não encontrado.' });
+      return null;
+    }
+    filtroClientes._id = user.clienteId;
+  }
+
+  const clientes = await Cliente.find(filtroClientes)
+    .select('razaoSocial cnpj telefone telefoneResponsavel responsavel')
+    .lean();
+  const cnpjLimpo = normalizarCnpj(cnpj);
+  const cliente = clientes.find(item => normalizarCnpj(item.cnpj) === cnpjLimpo);
+  if (!cliente) {
+    res.status(404).json({ error: 'Cliente não encontrado.' });
+    return null;
+  }
+
+  return cliente;
+}
+
+async function obterAcessosDoCliente(cliente) {
+  const cnpjs = [...new Set([String(cliente.cnpj || ''), normalizarCnpj(cliente.cnpj)].filter(Boolean))];
+  return GerenciadorAcesso.find({ cnpj: { $in: cnpjs } })
+    .select('cnpj link login senha diciSolicitadoCompetencia')
+    .lean();
+}
+
 exports.getStatusAcessos = async (req, res) => {
   try {
-    const email = String(req.headers['x-user-email'] || '').trim();
-    if (!email) return res.status(401).json({ error: 'Usuário não autenticado.' });
+    const cliente = await obterClienteAutorizado(req, res, req.query.cnpj);
+    if (!cliente) return;
 
-    const user = await User.findOne({ email }).lean();
-    const role = user?.role || (email.toLowerCase() === ADMIN_EMAIL_FALLBACK ? 'ADMIN' : '');
-    if (!user && role !== 'ADMIN') {
-      return res.status(401).json({ error: 'Usuário não autenticado.' });
-    }
-    if (!['ADMIN', 'FILHO', 'NETO'].includes(role)) {
-      return res.status(403).json({ error: 'Acesso não autorizado.' });
+    const competencia = req.query.competencia || obterCompetenciaAtual();
+    if (!validarCompetencia(competencia)) {
+      return res.status(400).json({ error: 'Competência inválida.' });
     }
 
-    const filtroClientes = {};
-    if (role === 'FILHO') filtroClientes.consultoria = user.consultoria;
-    if (role === 'NETO') {
-      if (!user.clienteId) return res.json([]);
-      filtroClientes._id = user.clienteId;
+    const acessos = await obterAcessosDoCliente(cliente);
+    res.json({
+      cnpj: normalizarCnpj(cliente.cnpj),
+      completo: acessos.some(acessoCompleto),
+      solicitadoNesteMes: acessos.some(acesso => acesso.diciSolicitadoCompetencia === competencia),
+      telefone: cliente.telefone || '',
+      telefoneResponsavel: cliente.telefoneResponsavel || '',
+      responsavel: cliente.responsavel || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao verificar acesso do gerenciador.', details: err.message });
+  }
+};
+
+exports.marcarDiciSolicitado = async (req, res) => {
+  try {
+    const cliente = await obterClienteAutorizado(req, res, req.params.cnpj);
+    if (!cliente) return;
+
+    const competencia = String(req.body?.competencia || '');
+    if (!validarCompetencia(competencia)) {
+      return res.status(400).json({ error: 'Competência inválida.' });
     }
 
-    const clientes = await Cliente.find(filtroClientes)
-      .select('razaoSocial cnpj telefone telefoneResponsavel responsavel status')
-      .lean();
-    const cnpjSolicitado = normalizarCnpj(req.query.cnpj || '');
-    const clientesVisiveis = cnpjSolicitado
-      ? clientes.filter(cliente => normalizarCnpj(cliente.cnpj) === cnpjSolicitado)
-      : clientes;
-
-    if (cnpjSolicitado && clientesVisiveis.length === 0) {
-      return res.status(404).json({ error: 'Cliente não encontrado.' });
+    const acessos = await obterAcessosDoCliente(cliente);
+    if (acessos.some(acessoCompleto)) {
+      return res.status(409).json({ error: 'Este cliente já tem os dados do GERENCIADOR completos.' });
     }
 
-    const cnpjs = [...new Set(clientesVisiveis.flatMap(cliente => [
-      String(cliente.cnpj || ''),
-      normalizarCnpj(cliente.cnpj)
-    ]).filter(Boolean))];
-    const acessos = cnpjs.length
-      ? await GerenciadorAcesso.find({ cnpj: { $in: cnpjs } })
-        .select('cnpj link login senha')
-        .lean()
-      : [];
-    const cnpjsComAcessoCompleto = new Set(
-      acessos
-        .filter(acessoCompleto)
-        .map(acesso => normalizarCnpj(acesso.cnpj))
+    const cnpjLimpo = normalizarCnpj(cliente.cnpj);
+    await GerenciadorAcesso.findOneAndUpdate(
+      { cnpj: cnpjLimpo },
+      { $set: { diciSolicitadoCompetencia: competencia, diciSolicitadoEm: new Date() } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    if (cnpjSolicitado) {
-      const cliente = clientesVisiveis[0];
-      return res.json({
-        cnpj: normalizarCnpj(cliente.cnpj),
-        completo: cnpjsComAcessoCompleto.has(normalizarCnpj(cliente.cnpj))
-      });
-    }
-
-    res.json(clientesVisiveis
-      .filter(cliente => !cnpjsComAcessoCompleto.has(normalizarCnpj(cliente.cnpj)))
-      .map(({ razaoSocial, cnpj, telefone, telefoneResponsavel, responsavel, status }) => ({
-        razaoSocial,
-        cnpj,
-        telefone,
-        telefoneResponsavel,
-        responsavel,
-        status
-      })));
+    res.json({ success: true, solicitadoNesteMes: true, competencia });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao verificar acessos do gerenciador.', details: err.message });
+    res.status(500).json({ error: 'Erro ao registrar solicitação de DICI.', details: err.message });
   }
 };
 

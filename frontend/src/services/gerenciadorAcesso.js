@@ -1,6 +1,16 @@
+import API_URL from './api';
+
 // Função utilitária para limpar CNPJ (remover pontos, barras e traços)
-function limparCNPJ(cnpj) {
-  return cnpj.replace(/\D/g, '');
+function limparCNPJ(cnpj = '') {
+  return String(cnpj).replace(/\D/g, '');
+}
+
+function obterEmailUsuario() {
+  let emailUsuario = localStorage.getItem('emailUsuario') || '';
+  try {
+    emailUsuario = JSON.parse(localStorage.getItem('authUser') || 'null')?.email || emailUsuario;
+  } catch {}
+  return emailUsuario;
 }
 
 // Função para buscar dados do gerenciador por CNPJ
@@ -11,18 +21,31 @@ export async function getGerenciadorAcesso(cnpj) {
   return res.json();
 }
 
-export async function getGerenciadorAcessosPendentes(cnpj = '') {
+export async function getGerenciadorAcessoStatus(cnpj, competencia) {
   const cnpjLimpo = limparCNPJ(cnpj);
-  const query = cnpjLimpo ? `?cnpj=${encodeURIComponent(cnpjLimpo)}` : '';
-  let emailUsuario = localStorage.getItem('emailUsuario') || '';
-  try {
-    emailUsuario = JSON.parse(localStorage.getItem('authUser') || 'null')?.email || emailUsuario;
-  } catch {}
+  const params = new URLSearchParams({ cnpj: cnpjLimpo });
+  if (competencia) params.set('competencia', competencia);
 
-  const res = await fetch(`${API_URL}/api/gerenciador-acesso/status${query}`, {
+  const emailUsuario = obterEmailUsuario();
+  const res = await fetch(`${API_URL}/api/gerenciador-acesso/status?${params}`, {
     headers: emailUsuario ? { 'x-user-email': emailUsuario } : {}
   });
   if (!res.ok) throw new Error('Erro ao verificar os dados do gerenciador');
+  return res.json();
+}
+
+export async function marcarDiciSolicitado(cnpj, competencia) {
+  const cnpjLimpo = limparCNPJ(cnpj);
+  const emailUsuario = obterEmailUsuario();
+  const res = await fetch(`${API_URL}/api/gerenciador-acesso/${cnpjLimpo}/dici-solicitado`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(emailUsuario ? { 'x-user-email': emailUsuario } : {})
+    },
+    body: JSON.stringify({ competencia })
+  });
+  if (!res.ok) throw new Error('Erro ao registrar a solicitação de DICI');
   return res.json();
 }
 
@@ -39,4 +62,3 @@ export async function saveGerenciadorAcesso(cnpj, data, atualizadoPor) {
   if (!res.ok) throw new Error('Erro ao salvar acesso do gerenciador');
   return res.json();
 }
-import API_URL from './api';
